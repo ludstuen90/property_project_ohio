@@ -1,21 +1,12 @@
-from django.test import TestCase
+# from django.test import TestCase
 
 # Create your tests here.
 
 
-import unittest
-import utils
+def func(x):
+    return x + 1
 
 
-class TestAdd(unittest.TestCase):
+def test_answer():
+    assert func(4) == 5
 
-    def test_add_function_works(self):
-        # Capture the results of the function
-        result = utils.add_function(5, 6)
-        # Check for expected output
-        self.assertEqual(11, result)
-
-
-# Run the tests
-if __name__ == '__main__':
-    unittest.main()
