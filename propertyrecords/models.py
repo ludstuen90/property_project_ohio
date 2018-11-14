@@ -54,7 +54,7 @@ class AddressProperties(models.Model):
     street_name = models.CharField(max_length=24)
     street_direction = models.CharField(max_length=4, blank=True)
     street_type = models.CharField(max_length=6)
-    secondary_address_line = models.CharField(max_length=16, blank=True)
+    secondary_address_line = models.CharField(max_length=16, blank=True, help_text="Apartment, Floor, Etc. ")
     city = models.CharField(max_length=24)
     state = models.CharField(max_length=2)
     zipcode = models.IntegerField()
