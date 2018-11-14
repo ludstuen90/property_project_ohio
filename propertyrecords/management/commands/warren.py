@@ -1,5 +1,5 @@
 from django.core.management.base import BaseCommand, CommandError
-import csv
+from propertyrecords import utils
 import os
 
 
@@ -7,19 +7,9 @@ class Command(BaseCommand):
     help = 'Command for querying parcel IDs'
 
     def handle(self, *args, **options):
-
-        script_dir = os.path.dirname(__file__)  # <-- absolute dir the script is in
-        rel_path = "../../parcel_data/warren.csv"
+        script_dir = os.path.dirname(__file__)  # <-- absolute dir this current script is in
+        rel_path = "../../parcel_data/warren.csv" # <-- Look two directores up for relevant CSV files
         abs_file_path = os.path.join(script_dir, rel_path)
 
-        with open(abs_file_path,  encoding="utf-8") as csv_file:
-            csv_reader = csv.reader(csv_file, delimiter=',')
-            line_count = 0
-            for row in csv_reader:
-                if line_count == 0:
-                    print(f'''Account Number: {row[0]},Year: {row[1]} .''')
-                    line_count += 1
-                else:
-                    print(f'''Account Number: {row[0]},Year: {row[1]} .''')
-                    line_count += 1
-            print(f'Processed {line_count} lines.')
+        list_of_arrays = utils.loop_through_csv_file_and_return_array_of_account_ids(abs_file_path)
+        print('?!?!?', list_of_arrays)
