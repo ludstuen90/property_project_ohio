@@ -119,3 +119,20 @@ class OwnerAddress(AddressProperties):
 
     class Meta:
         verbose_name_plural = "owner addresses"
+
+
+class DatabaseProgram(models.Model):
+    name = models.CharField(max_length=24)
+    primary_url = models.CharField(max_length=82)
+
+    def __str__(self):
+        return self.name
+
+
+class County(models.Model):
+    name = models.CharField(max_length=18)
+    parcel_system_url = models.CharField(max_length=82)
+    database_type = models.ForeignKey(DatabaseProgram, on_delete=models.CASCADE)
+
+    def __str__(self):
+        return self.name

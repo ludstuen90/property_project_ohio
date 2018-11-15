@@ -12,4 +12,6 @@ class Command(BaseCommand):
         abs_file_path = os.path.join(script_dir, rel_path)
 
         list_of_arrays = utils.loop_through_csv_file_and_return_array_of_account_ids(abs_file_path)
-        print('?!?!?', list_of_arrays)
+
+
+
