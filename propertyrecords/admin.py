@@ -17,3 +17,5 @@ class PropertyAdmin(admin.ModelAdmin):
 admin.site.register(models.Property, PropertyAdmin)
 admin.site.register(models.TaxAddress)
 admin.site.register(models.OwnerAddress)
+admin.site.register(models.County)
+admin.site.register(models.DatabaseProgram)
