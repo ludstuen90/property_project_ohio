@@ -106,3 +106,6 @@ venv.bak/
 
 # Pycharm files
 .idea/
+
+# parcel data
+propertyrecords/parcel_data/
