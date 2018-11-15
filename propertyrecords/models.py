@@ -124,6 +124,9 @@ class OwnerAddress(AddressProperties):
 class DatabaseProgram(models.Model):
     name = models.CharField(max_length=24)
     primary_url = models.CharField(max_length=82)
+    parcel_download_url = models.CharField(max_length=82)
+    type_of_key = models.CharField(max_length=12, help_text='Indicate what type of key we search with; i.e. parcel id? '
+                                                            'account number?')
 
     def __str__(self):
         return self.name
@@ -131,7 +134,6 @@ class DatabaseProgram(models.Model):
 
 class County(models.Model):
     name = models.CharField(max_length=18)
-    parcel_system_url = models.CharField(max_length=82)
     database_type = models.ForeignKey(DatabaseProgram, on_delete=models.CASCADE)
 
     def __str__(self):
