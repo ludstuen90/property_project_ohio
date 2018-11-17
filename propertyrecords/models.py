@@ -1,4 +1,5 @@
 from django.db import models
+from scrapy_djangoitem import DjangoItem
 
 
 class Property(models.Model):
@@ -42,6 +43,10 @@ class Property(models.Model):
     def display_address(self):
         address = PropertyAddress.objects.get(property=self.id)
         return address
+
+
+class PropertyItem(DjangoItem):
+    django_model = Property
 
 
 class AddressProperties(models.Model):

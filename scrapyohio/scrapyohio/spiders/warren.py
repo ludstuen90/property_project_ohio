@@ -67,15 +67,6 @@ class WarrenSpider(scrapy.Spider):
             year_2017_taxes
               )
 
-        #Information on how to find the right page
-        # https://stackoverflow.com/questions/28974838/crawling-through-pages-with-postback-data-javascript-python-scrapy
-        # javascript: __doPostBack('ctl00$ContentPlaceHolderContent$lbTaxInfo', '')
-
-        #This code will allow us to access the tax history page
-
-
-        print("CAN WE HARVEST THE DATA WE NEED?")
-        # print('?!?!?!', response.headers.headers)
 
 
         self.data = {}
@@ -100,8 +91,9 @@ class WarrenSpider(scrapy.Spider):
 
     def parse_page(self, response):
         # current_page = response.meta['page'] + 1
-        parsed_tax_address = response.css("div.wrapper div.rightContent:nth-child(4) div:nth-child(1) fieldset::text").extract()
-        utils.parse_tax_address_from_css(parsed_tax_address)
+        returned_tax_address = response.css("div.wrapper div.rightContent:nth-child(4) div:nth-child(1) fieldset::text").extract()
+        print("RETURNED TAX: ", returned_tax_address)
+        utils.parse_tax_address_from_css(returned_tax_address)
 
         # parse agents (TODO: yield items instead of printing)
         # for agent in response.xpath('//a[@class="regtext"]/text()'):
