@@ -63,6 +63,8 @@ class AddressProperties(models.Model):
     city = models.CharField(max_length=24)
     state = models.CharField(max_length=2)
     zipcode = models.IntegerField()
+    latitude = models.DecimalField(max_digits=22, decimal_places=15, null=True, blank=True)
+    longitude = models.DecimalField(max_digits=22, decimal_places=15, null=True, blank=True)
 
     def __str__(self):
         self.address_string = f''' {self.street_number} {self.street_direction} { self.street_name}

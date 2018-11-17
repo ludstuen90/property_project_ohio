@@ -67,8 +67,6 @@ class WarrenSpider(scrapy.Spider):
             year_2017_taxes
               )
 
-
-
         self.data = {}
         self.data['ctl00$ToolkitScriptManager1'] = 'ctl00$UpdatePanel1|ctl00$ContentPlaceHolderContent$lbTaxInfo'
         self.data['__EVENTTARGET'] = "ctl00$ContentPlaceHolderContent$lbTaxInfo"

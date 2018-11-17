@@ -35,3 +35,4 @@ def parse_tax_address_from_css(parsed_tax_address):
     parsed_tax_address = [x.strip() for x in parsed_tax_address if (len(x.strip()) != 0)]
     return parsed_tax_address
 
+
