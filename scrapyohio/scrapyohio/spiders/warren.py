@@ -1,6 +1,17 @@
 # -*- coding: utf-8 -*-
 import scrapy
-from scrapy import Request
+from scrapy import Request, FormRequest
+from propertyrecords import utils
+
+
+HEADERS = {
+            "Info": "Request made as part of an Eye on Ohio Journalism project.",
+            "Questions": "With questions, contact Lucia Walinchus at lucia@eyeonohio.com.",
+            "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_1) AppleWebKit/537.36 (KHTML, "
+                          "like Gecko) Chrome/70.0.3538.102 Safari/537.36",
+            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8",
+            "X-MicrosoftAjax": "Delta=true"
+            }
 
 
 class WarrenSpider(scrapy.Spider):
@@ -13,10 +24,7 @@ class WarrenSpider(scrapy.Spider):
         # sent over to include Lucia's contact information
         for url in self.start_urls:
             yield Request(url, dont_filter=True,
-                          headers={
-                            "Info": "Request made as part of an Eye on Ohio Journalism project.",
-                            "Questions": "With questions, contact Lucia Walinchus at lucia@eyeonohio.com."
-                           }
+                          headers=HEADERS
                           )
 
     def parse(self, response):
@@ -58,4 +66,45 @@ class WarrenSpider(scrapy.Spider):
             taxable_value,
             year_2017_taxes
               )
+
+        #Information on how to find the right page
+        # https://stackoverflow.com/questions/28974838/crawling-through-pages-with-postback-data-javascript-python-scrapy
+        # javascript: __doPostBack('ctl00$ContentPlaceHolderContent$lbTaxInfo', '')
+
+        #This code will allow us to access the tax history page
+
+
+        print("CAN WE HARVEST THE DATA WE NEED?")
+        # print('?!?!?!', response.headers.headers)
+
+
+        self.data = {}
+        self.data['ctl00$ToolkitScriptManager1'] = 'ctl00$UpdatePanel1|ctl00$ContentPlaceHolderContent$lbTaxInfo'
+        self.data['__EVENTTARGET'] = "ctl00$ContentPlaceHolderContent$lbTaxInfo"
+        self.data['__EVENTARGUMENT'] = ""
+        self.data['__LASTFOCUS'] = ""
+        self.data['__VIEWSTATE'] = response.css('input#__VIEWSTATE::attr(value)').extract_first(),
+        self.data['__EVENTVALIDATION'] = response.css('input#__EVENTVALIDATION::attr(value)').extract_first(),
+        self.data['ctl00$ContentPlaceHolderContent$ddlTaxYear'] = '2017',
+        self.data['__ASYNCPOST'] = 'true',
+
+        return FormRequest(
+                url='http://www.co.warren.oh.us/property_search/summary.aspx?account_nbr=6150660',
+                method='POST',
+                callback=self.parse_page,
+                formdata=self.data,
+                meta={'page': 1},
+                dont_filter=True,
+                headers=HEADERS
+            )
+
+    def parse_page(self, response):
+        # current_page = response.meta['page'] + 1
+        parsed_tax_address = response.css("div.wrapper div.rightContent:nth-child(4) div:nth-child(1) fieldset::text").extract()
+        utils.parse_tax_address_from_css(parsed_tax_address)
+
+        # parse agents (TODO: yield items instead of printing)
+        # for agent in response.xpath('//a[@class="regtext"]/text()'):
+        #     print
+        #     agent.extract()
 
