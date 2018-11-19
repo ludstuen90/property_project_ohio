@@ -93,9 +93,7 @@ def convert_taxable_value_string_to_integer(taxable_value_string):
     """
     remove_currency_artifacts = taxable_value_string.replace("$", '').replace(",", "")
     if '.' in remove_currency_artifacts:
-        if remove_currency_artifacts[-3:-2] == '.':
-            return Decimal(remove_currency_artifacts)
-        else:
+        if remove_currency_artifacts[-3:-2] != '.':
             raise ValueError("Input contains an unexpected decimal point.")
-    else:
-        return Decimal(remove_currency_artifacts)
+
+    return Decimal(remove_currency_artifacts)
