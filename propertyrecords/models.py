@@ -1,6 +1,8 @@
 from django.db import models
 from scrapy_djangoitem import DjangoItem
 
+from propertyrecords import utils
+
 
 class Property(models.Model):
     parcel_number = models.BigIntegerField()
@@ -55,16 +57,11 @@ class AddressProperties(models.Model):
     later on, so as to keep our code neat and tidy.
     """
 
-    street_number = models.IntegerField()
-    street_name = models.CharField(max_length=24)
-    street_direction = models.CharField(max_length=4, blank=True)
-    street_type = models.CharField(max_length=6)
-    secondary_address_line = models.CharField(max_length=16, blank=True, help_text="Apartment, Floor, Etc. ")
-    city = models.CharField(max_length=24)
-    state = models.CharField(max_length=2)
-    zipcode = models.IntegerField()
-    latitude = models.DecimalField(max_digits=22, decimal_places=15, null=True, blank=True)
-    longitude = models.DecimalField(max_digits=22, decimal_places=15, null=True, blank=True)
+    primary_address_line = models.CharField(max_length=72, blank=True)
+    secondary_address_line = models.CharField(max_length=72, blank=True, help_text="Apartment, Floor, Etc. ")
+    city = models.CharField(max_length=24, blank=True)
+    state = models.CharField(max_length=2, blank=True)
+    zipcode = models.IntegerField(blank=True, null=True)
 
     def __str__(self):
         self.address_string = f''' {self.street_number} {self.street_direction} { self.street_name}
@@ -87,6 +84,40 @@ class AddressProperties(models.Model):
 
     class Meta:
         verbose_name_plural = "address properties"
+
+    @property
+    def address(self):
+        return f'''{self.street_number} {self.street_direction} {self.street_name} \
+        {self.secondary_address_line} {self.city}, {self.state} {self.zipcode}'''
+
+    @address.setter
+    def address(self, address):
+        """
+        This property takes in addresses in all of the possible forms, and will store them appropriately
+        in the database.
+        :param address:
+        :return:
+        """
+        length = len(address) - 1
+        if len(address) <= 1:
+            address[0] = self.primary_address_line
+            return False
+
+        if length == 2:
+            address[1] = self.secondary_address_line
+
+        parsed_last_line = utils.parse_city_state_and_zip_from_line(address[length])
+        self.city = parsed_last_line.city
+        self.state = parsed_last_line.state
+        self.zipcode = parsed_last_line.zipcode
+
+        #     3      ['SMITH  JASON E & JENNIFER', '265 LUDLOW CT', 'LEBANON OH           45036']
+        #     4      ['FRANKLIN REGIONAL WWT CORP', '8401 CLAUDE THOMAS', 'NO 21J', 'FRANKLIN OH          45005']
+        #      3     ['TATCO DEVELOPMENT', '1209 F LYONS RD', 'CENTERVILLE OH       45458']
+        #       4    ['WANG BROS INVESTMENTS', '1 BATES BLVD', 'SUITE 400', 'ORINDA  CA           94563']
+        #        4   ['TANGLEWOOD CREEK HOMEOWNERS ASSOC', '7625 PARAGON RD', 'STE E', 'DAYTON OH            45459']
+        #        4   ['LGHOA INC', '% TOWNE PROPERTIES', '32 N MAIN ST  # 1412', 'DAYTON OH            45402']
+        #        0   ['0']
 
 
 class PropertyAddress(AddressProperties):
@@ -111,9 +142,53 @@ class TaxAddress(AddressProperties):
     One to many relationship with properties
     """
     name = models.CharField(max_length=24, blank=True)
+    secondary_name = models.CharField(max_length=72, blank=True)
 
     class Meta:
         verbose_name_plural = "tax addresses"
+
+    @property
+    def address(self):
+        return f'''{self.street_number} {self.street_direction} {self.street_name} \
+        {self.secondary_address_line} {self.city}, {self.state} {self.zipcode}'''
+
+    @address.setter
+    def address(self, address):
+        """
+        This property takes in addresses in all of the possible forms, and will store them appropriately
+        in the database.
+        :param address:
+        :return:
+        """
+        length = len(address) - 1
+        if len(address) <= 1:
+            address[0] = self.primary_address_line
+            return False
+
+        self.name = address[0]
+
+        if length == 3:
+            if address[1][0].isdigit():
+                self.primary_address_line = address[1]
+                self.secondary_address_line = address[2]
+            else:
+                self.secondary_name = address[1]
+                self.primary_address_line = address[2]
+        else:
+            self.primary_address_line = address[1]
+
+        parsed_last_line = utils.parse_city_state_and_zip_from_line(address[length])
+        self.city = parsed_last_line.city
+        self.state = parsed_last_line.state
+        self.zipcode = parsed_last_line.zipcode
+
+        #     3      ['SMITH  JASON E & JENNIFER', '265 LUDLOW CT', 'LEBANON OH           45036']
+        #     4      ['FRANKLIN REGIONAL WWT CORP', '8401 CLAUDE THOMAS', 'NO 21J', 'FRANKLIN OH          45005']
+        #      3     ['TATCO DEVELOPMENT', '1209 F LYONS RD', 'CENTERVILLE OH       45458']
+        #       4    ['WANG BROS INVESTMENTS', '1 BATES BLVD', 'SUITE 400', 'ORINDA  CA           94563']
+        #        4   ['TANGLEWOOD CREEK HOMEOWNERS ASSOC', '7625 PARAGON RD', 'STE E', 'DAYTON OH            45459']
+        #        4   ['LGHOA INC', '% TOWNE PROPERTIES', '32 N MAIN ST  # 1412', 'DAYTON OH            45402']
+        #        0   ['0']
 
 
 class OwnerAddress(AddressProperties):

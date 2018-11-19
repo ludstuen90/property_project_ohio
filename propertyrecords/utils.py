@@ -36,3 +36,35 @@ def parse_tax_address_from_css(parsed_tax_address):
     return parsed_tax_address
 
 
+def parse_city_state_and_zip_from_line(address_line):
+    """
+    Given a string representing the last lines of an address block, this method will return the city,
+    state and zip in an object
+    :param address_line: 'RANCHO CUCA MONGA CA            98772'
+    :return: {city: 'RANCHO CUCA MONGA', state: 'CA', zip: 98872}
+    """
+    last_line_length = len(address_line)
+    zip_code = address_line[(last_line_length - 5):last_line_length]
+
+    if address_line[(last_line_length - 6)] != ' ':
+        raise LookupError("Unable to parse address. Zip code not in expected format.")
+
+    # We count back from the zip code, and look for a pattern that looks like a state abbreviation.
+    # We hope to find a pattern like: 'Space space space two letters space space'
+    for x in range(last_line_length - 6, 0, -1):
+        if (
+                address_line[x].isalpha() == False and
+                address_line[x + 1].isalpha() == True and
+                address_line[x + 2].isalpha() == True and
+                address_line[x + 4].isalpha() == False
+        ):
+            state_name = f'''{address_line[x+1]}{address_line[x+2]}'''
+            city_name = address_line[0:x]
+    return {
+        'city': str(city_name),
+        'state': state_name,
+        'zipcode': zip_code
+    }
+
+
+

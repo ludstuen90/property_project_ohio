@@ -14,10 +14,19 @@ HEADERS = {
             }
 
 
+temp_var_address_search = 6150660
+
 class WarrenSpider(scrapy.Spider):
     name = 'warren'
     allowed_domains = ['co.warren.oh.us']
-    start_urls = ['http://www.co.warren.oh.us/property_search/summary.aspx?account_nbr=6150660']
+    start_urls = [f'''http://www.co.warren.oh.us/property_search/summary.aspx?account_nbr={temp_var_address_search}''']
+    # 611341
+    # 6150660 - jas jenn smith
+    # 551305 - settlers walk
+    # 551865 -tatco dev tax
+    # 552375 - tanglewood creek assoc
+    # 551577 - LGHOA
+    # 551571 - OWNERS IN COMMON
 
     def start_requests(self):
         # We want to assign headers for each request triggered. Override the request object
@@ -78,7 +87,7 @@ class WarrenSpider(scrapy.Spider):
         self.data['__ASYNCPOST'] = 'true',
 
         return FormRequest(
-                url='http://www.co.warren.oh.us/property_search/summary.aspx?account_nbr=6150660',
+                url=f'''http://www.co.warren.oh.us/property_search/summary.aspx?account_nbr={temp_var_address_search}''',
                 method='POST',
                 callback=self.parse_page,
                 formdata=self.data,
@@ -90,8 +99,8 @@ class WarrenSpider(scrapy.Spider):
     def parse_page(self, response):
         # current_page = response.meta['page'] + 1
         returned_tax_address = response.css("div.wrapper div.rightContent:nth-child(4) div:nth-child(1) fieldset::text").extract()
-        print("RETURNED TAX: ", returned_tax_address)
-        utils.parse_tax_address_from_css(returned_tax_address)
+        parsed_address = utils.parse_tax_address_from_css(returned_tax_address)
+        print(f'''!!!!! PARSED: {parsed_address} ''')
 
         # parse agents (TODO: yield items instead of printing)
         # for agent in response.xpath('//a[@class="regtext"]/text()'):
