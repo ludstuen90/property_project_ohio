@@ -26,6 +26,8 @@ class Property(models.Model):
     tax_address = models.ForeignKey(
         'TaxAddress',
         on_delete=models.CASCADE,
+        null=True,
+        blank=True
     )
     owner_address = models.ForeignKey(
         'OwnerAddress',
@@ -64,8 +66,7 @@ class AddressProperties(models.Model):
     zipcode = models.IntegerField(blank=True, null=True)
 
     def __str__(self):
-        self.address_string = f''' {self.street_number} {self.street_direction} { self.street_name}
-            {self.street_type} {self.city}, {self.state} {self.zipcode}'''
+        self.address_string = f''' {self.primary_address_line} {self.city}, {self.state} {self.zipcode}'''
         try:
             if self.name:
                 return f'''{self.name}: {self.address_string}'''
@@ -87,8 +88,7 @@ class AddressProperties(models.Model):
 
     @property
     def address(self):
-        return f'''{self.street_number} {self.street_direction} {self.street_name} \
-        {self.secondary_address_line} {self.city}, {self.state} {self.zipcode}'''
+        return f'''{self.primary_address_line} {self.city}, {self.state} {self.zipcode}'''
 
     @address.setter
     def address(self, address):
@@ -100,8 +100,7 @@ class AddressProperties(models.Model):
         """
         length = len(address) - 1
         if len(address) <= 1:
-            address[0] = self.primary_address_line
-            return False
+            self.primary_address_line = address[0]
 
         if length == 2:
             address[1] = self.secondary_address_line
@@ -141,7 +140,7 @@ class TaxAddress(AddressProperties):
     Addresses listed as taxable addresses on properties
     One to many relationship with properties
     """
-    name = models.CharField(max_length=24, blank=True)
+    name = models.CharField(max_length=62, blank=True)
     secondary_name = models.CharField(max_length=72, blank=True)
 
     class Meta:
@@ -149,8 +148,7 @@ class TaxAddress(AddressProperties):
 
     @property
     def address(self):
-        return f'''{self.street_number} {self.street_direction} {self.street_name} \
-        {self.secondary_address_line} {self.city}, {self.state} {self.zipcode}'''
+        return f'''{self.name} {self.primary_address_line} {self.city}, {self.state} {self.zipcode}'''
 
     @address.setter
     def address(self, address):
@@ -161,34 +159,28 @@ class TaxAddress(AddressProperties):
         :return:
         """
         length = len(address) - 1
-        if len(address) <= 1:
-            address[0] = self.primary_address_line
-            return False
 
-        self.name = address[0]
+        try:
 
-        if length == 3:
-            if address[1][0].isdigit():
+            if len(address[0]) >= 1:
+                self.name = address[0]
+            if length == 3:
+                if address[1][0].isdigit():
+                    self.primary_address_line = address[1]
+                    self.secondary_address_line = address[2]
+                else:
+                    self.secondary_name = address[1]
+                    self.primary_address_line = address[2]
+            elif length == 2:
                 self.primary_address_line = address[1]
-                self.secondary_address_line = address[2]
-            else:
-                self.secondary_name = address[1]
-                self.primary_address_line = address[2]
-        else:
-            self.primary_address_line = address[1]
 
-        parsed_last_line = utils.parse_city_state_and_zip_from_line(address[length])
-        self.city = parsed_last_line.city
-        self.state = parsed_last_line.state
-        self.zipcode = parsed_last_line.zipcode
-
-        #     3      ['SMITH  JASON E & JENNIFER', '265 LUDLOW CT', 'LEBANON OH           45036']
-        #     4      ['FRANKLIN REGIONAL WWT CORP', '8401 CLAUDE THOMAS', 'NO 21J', 'FRANKLIN OH          45005']
-        #      3     ['TATCO DEVELOPMENT', '1209 F LYONS RD', 'CENTERVILLE OH       45458']
-        #       4    ['WANG BROS INVESTMENTS', '1 BATES BLVD', 'SUITE 400', 'ORINDA  CA           94563']
-        #        4   ['TANGLEWOOD CREEK HOMEOWNERS ASSOC', '7625 PARAGON RD', 'STE E', 'DAYTON OH            45459']
-        #        4   ['LGHOA INC', '% TOWNE PROPERTIES', '32 N MAIN ST  # 1412', 'DAYTON OH            45402']
-        #        0   ['0']
+            parsed_last_line = utils.parse_city_state_and_zip_from_line(address[length])
+            self.city = parsed_last_line['city']
+            self.state = parsed_last_line['state']
+            self.zipcode = parsed_last_line['zipcode']
+        except IndexError:
+            # In case any properties are not able to be included, don't worry about it.
+            pass
 
 
 class OwnerAddress(AddressProperties):
