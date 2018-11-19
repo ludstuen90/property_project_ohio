@@ -1,5 +1,8 @@
 # from django.test import TestCase
 import os
+from decimal import Decimal
+
+import pytest
 
 from propertyrecords import utils
 from propertyrecords.test_data import parse_tax_address_from_csv
@@ -59,3 +62,23 @@ def test_parse_city_state_and_zip_from_line():
         'state': 'NM',
         'zipcode': '77228'
     }
+
+
+def test_convert_acres_to_integer():
+
+    result = utils.convert_acres_to_integer('0.258 ACRES')
+
+    assert result == Decimal('0.258')
+
+
+def test_convert_taxable_value_string_to_integer():
+
+    result_no_decimals = utils.convert_taxable_value_string_to_integer('$123,456')
+    result_with_decimals = utils.convert_taxable_value_string_to_integer('$123,456.97')
+
+    assert result_no_decimals == Decimal('123456')
+    assert result_with_decimals == Decimal('123456.97')
+
+    with pytest.raises(ValueError):
+        utils.convert_taxable_value_string_to_integer('$123.456.789')
+

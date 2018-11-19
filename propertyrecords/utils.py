@@ -1,5 +1,7 @@
 # This function exists so that we can validate our Travis-CI instance works.
 import csv
+from datetime import datetime
+from decimal import Decimal
 
 
 def loop_through_csv_file_and_return_array_of_account_ids(absolute_csv_file_path):
@@ -67,4 +69,33 @@ def parse_city_state_and_zip_from_line(address_line):
     }
 
 
+def convert_acres_to_integer(acres_string):
+    """
+    Accepts a string like '0.258 ACRES' and returns decimal of acres
+    :param acres_string: '0.258 ACRES'
+    :return: Number (decimal) of number of acres in the property
+    """
+    if acres_string[-6:] != ' ACRES':
+        raise ValueError("Unexpected Acres format introduced")
 
+    for number, character in enumerate(acres_string):
+        if character == ' ':
+            return Decimal(acres_string[:number])
+
+
+def convert_taxable_value_string_to_integer(taxable_value_string):
+    """
+    Given a string that resembles a currency value, convert this value to
+    an integer.
+    Note, this will only work for integers, and not decimals.
+    :param taxable_value_string:
+    :return:
+    """
+    remove_currency_artifacts = taxable_value_string.replace("$", '').replace(",", "")
+    if '.' in remove_currency_artifacts:
+        if remove_currency_artifacts[-3:-2] == '.':
+            return Decimal(remove_currency_artifacts)
+        else:
+            raise ValueError("Input contains an unexpected decimal point.")
+    else:
+        return Decimal(remove_currency_artifacts)

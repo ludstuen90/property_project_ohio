@@ -14,6 +14,7 @@ class PropertyAdmin(admin.ModelAdmin):
                     'display_address')
 
 
+
 admin.site.register(models.Property, PropertyAdmin)
 admin.site.register(models.TaxAddress)
 admin.site.register(models.OwnerAddress)
