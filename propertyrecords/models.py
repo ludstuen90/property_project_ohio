@@ -13,8 +13,8 @@ class Property(models.Model):
     date_of_LLC_name_change = models.DateField()
     date_of_mortgage = models.DateField()
     mortgage_amount = models.DecimalField(max_digits=12, decimal_places=2)
-    property_class = models.CharField(max_length=3)
-    land_use = models.CharField(max_length=3)
+    property_class = models.IntegerField()
+    land_use = models.IntegerField()
     tax_district = models.CharField(max_length=42)
     school_district = models.CharField(max_length=42)
     tax_lien = models.BooleanField()
@@ -147,11 +147,28 @@ class TaxAddress(AddressProperties):
         verbose_name_plural = "tax addresses"
 
     @property
-    def address(self):
+    def tax_address(self):
         return f'''{self.name} {self.primary_address_line} {self.city}, {self.state} {self.zipcode}'''
 
-    @address.setter
-    def address(self, address):
+    @property
+    def tax_address_finder(self, address):
+        length = len(address)
+
+        if length == 3:
+            if address[1][0].isdigit():
+                # Try to get address based on this primary field
+                self.primary_address_line = address[1]
+                queryset = TaxAddress.objects.filter(primary_address_line = address[1])
+            else:
+                # Try to get address based on this primary field
+                queryset = TaxAddress.objects.filter(primary_address_line = address[2])
+        if len(queryset) == 1:
+            return queryset
+        else:
+            raise LookupError("Unable to find a property record with this address")
+
+    @tax_address.setter
+    def tax_address(self, address):
         """
         This property takes in addresses in all of the possible forms, and will store them appropriately
         in the database.

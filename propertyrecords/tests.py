@@ -82,3 +82,9 @@ def test_convert_taxable_value_string_to_integer():
     with pytest.raises(ValueError):
         utils.convert_taxable_value_string_to_integer('$123.456.789')
 
+
+def test_parse_ohio_state_use_code():
+
+    result = utils.parse_ohio_state_use_code('0510 - SINGLE FAMILY DWG (PLATTED)	')
+
+    assert result == 510

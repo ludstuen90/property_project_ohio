@@ -97,3 +97,19 @@ def convert_taxable_value_string_to_integer(taxable_value_string):
             raise ValueError("Input contains an unexpected decimal point.")
 
     return Decimal(remove_currency_artifacts)
+
+
+def parse_ohio_state_use_code(use_string):
+    """
+    Given a string, this method will return the numerical value of the Ohio State Use Code
+    :param use_string: A string containing a street value
+    :return: numerical value of state use code
+    """
+    for number, character in enumerate(use_string):
+        if character.isdigit():
+            pass
+        elif character == ' ':
+            if use_string[0] == '0':
+                return int(use_string[1:number])
+            else:
+                return int(use_string[:number])
