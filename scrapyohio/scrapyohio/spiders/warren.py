@@ -6,8 +6,11 @@ from scrapy import Request, FormRequest
 from propertyrecords import utils, models
 
 HEADERS = {
-            "Info": "Request made as part of an Eye on Ohio Journalism project.",
-            "Questions": "With questions, contact Lucia Walinchus at lucia@eyeonohio.com.",
+            "Info": "The Ohio Center for Investigative Journalism, Eye on Ohio, is requesting these public records for "
+                    "use in a journalism project, and to conserve valuable public funds and government employees' time "
+                    "instead of filing multiple freedom of information act requests.",
+            "Questions": "If you have questions or concerns, please contact Lucia Walinchus at 646-397-7761 or "
+                         "Lucia[the at symbol}eyeonohio.com.",
             "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_1) AppleWebKit/537.36 (KHTML, "
                           "like Gecko) Chrome/70.0.3538.102 Safari/537.36",
             "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8",
