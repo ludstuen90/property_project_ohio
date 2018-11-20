@@ -59,9 +59,8 @@ class WarrenSpider(scrapy.Spider):
         self.new_property.current_market_value = utils.convert_taxable_value_string_to_integer(response.xpath("//span[@id='ContentPlaceHolderContent_lblValSumTotalTrue']/text()").extract()[0])
         self.new_property.taxable_value = utils.convert_taxable_value_string_to_integer(response.xpath("//span[@id='ContentPlaceHolderContent_lblValSumTotalAssessed']/text()").extract()[0])
         self.new_property.year_2017_taxes = utils.convert_taxable_value_string_to_integer(response.xpath("//span[@id='ContentPlaceHolderContent_lblTaxSumTotChargeNetTax']/text()").extract()[0])
-
-        self.new_property.property_address = response.xpath("//span[@id='ContentPlaceHolderContent_lblSummaryPropAddress']/text()").extract()[0]
-
+        self.new_property.property_address = response.xpath("//span[@id='ContentPlaceHolderContent_lblSummaryPropAddress']/text()").extract()
+        print("PROP ADDR IS: ", utils.parse_white_space_from_each_line_of_address(self.new_property.property_address))
 
         # TEMPROARILY SET UNKNOWN VALUES:
         # --  tax_lien = response.xpath("/text()").extract()

@@ -25,6 +25,18 @@ def loop_through_csv_file_and_return_array_of_account_ids(absolute_csv_file_path
     return list_of_parcel_ids
 
 
+def parse_white_space_from_each_line_of_address(address_to_parse):
+    """
+    Given an address, this method will return a version of the same address,
+    but without white space.
+    :param address: A list including address parameters
+    :return: The same list but with extra spaces stripped out
+    """
+
+    parsed_addr = [x.strip() for x in address_to_parse if (len(x.strip()) != 0)]
+    return parsed_addr
+
+
 def parse_tax_address_from_css(parsed_tax_address):
     """
     This method removes a lot of junk from a parsed tax address. First, it removes
@@ -34,7 +46,7 @@ def parse_tax_address_from_css(parsed_tax_address):
     :return: A list containing the lines of the address.
     """
     parsed_tax_address = [x.replace("\r\n", "") for x in parsed_tax_address]
-    parsed_tax_address = [x.strip() for x in parsed_tax_address if (len(x.strip()) != 0)]
+    parsed_tax_address = parse_white_space_from_each_line_of_address(parsed_tax_address)
     return parsed_tax_address
 
 
@@ -67,6 +79,7 @@ def parse_city_state_and_zip_from_line(address_line):
         'state': state_name,
         'zipcode': zip_code
     }
+
 
 
 def convert_acres_to_integer(acres_string):
