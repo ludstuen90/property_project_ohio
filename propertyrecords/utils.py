@@ -179,7 +179,5 @@ def parse_address(address_block, state):
 def convert_y_n_to_boolean(response_string):
     if response_string == 'Y':
         return True
-    elif response_string == 'N':
-        return False
     else:
-        raise ValueError("Failed to parse input value")
+        return False
