@@ -195,8 +195,9 @@ def cauv_parser(cauv_value):
     :param cauv_value:
     :return:
     """
-    print("CAUV VALUE IS: ", cauv_value)
     if cauv_value != '$0':
         return True
     else:
         return False
+
+
