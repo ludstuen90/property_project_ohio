@@ -28,9 +28,6 @@ class Property(models.Model):
                                                     help_text="Checked if an owner received an owner occupancy tax "
                                                               "credit or if owner occupancy has been indicated on the "
                                                               "record.")
-    current_market_value = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
-    taxable_value = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
-    year_2017_taxes = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
     tax_address = models.ForeignKey(
         'TaxAddress',
         on_delete=models.CASCADE,
@@ -61,6 +58,23 @@ class Property(models.Model):
 
 class PropertyItem(DjangoItem):
     django_model = Property
+
+
+class TaxData(models.Model):
+    """
+    This table stores related tax data for properties.
+    """
+    tax_year = models.IntegerField()
+    market_value = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
+    taxable_value = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
+    taxes_paid = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
+    property_record = models.ForeignKey(
+        'Property',
+        on_delete=models.CASCADE,
+    )
+
+    def __str__(self):
+        return str(self.tax_year)
 
 
 class AddressProperties(models.Model):
