@@ -34,12 +34,7 @@ class Property(models.Model):
         null=True,
         blank=True
     )
-    owner_address = models.ForeignKey(
-        'OwnerAddress',
-        on_delete=models.CASCADE,
-        null=True,
-        blank=True
-    )
+
 
     def __str__(self):
         """
@@ -222,18 +217,6 @@ class TaxAddress(AddressProperties):
         except IndexError:
             # In case any properties are not able to be included, don't worry about it.
             pass
-
-
-class OwnerAddress(AddressProperties):
-    """
-    Addresses listed as property owners
-    One to many relationship with properties
-
-    """
-    name = models.CharField(max_length=24, blank=True)
-
-    class Meta:
-        verbose_name_plural = "owner addresses"
 
 
 class DatabaseProgram(models.Model):
