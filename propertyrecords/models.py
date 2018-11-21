@@ -5,25 +5,29 @@ from propertyrecords import utils
 
 
 class Property(models.Model):
+
+    """
+    We mark
+    """
     parcel_number = models.BigIntegerField()
-    legal_acres = models.DecimalField(max_digits=6, decimal_places=3)
-    legal_description = models.CharField(max_length=120)
-    owner = models.CharField(max_length=84)
+    legal_acres = models.DecimalField(max_digits=6, decimal_places=3, null=True, blank=True)
+    legal_description = models.CharField(max_length=120, blank=True)
+    owner = models.CharField(max_length=84, blank=True)
     date_sold = models.DateField(null=True, blank=True)
     date_of_LLC_name_change = models.DateField(null=True, blank=True)
     date_of_mortgage = models.DateField(null=True, blank=True)
-    mortgage_amount = models.DecimalField(max_digits=12, decimal_places=2)
-    property_class = models.IntegerField()
-    land_use = models.IntegerField()
-    tax_district = models.CharField(max_length=42)
-    school_district_name = models.CharField(max_length=52)
-    school_district = models.IntegerField()
-    tax_lien = models.BooleanField()
-    cauv_property = models.BooleanField()
-    rental_registration = models.BooleanField()
-    current_market_value = models.DecimalField(max_digits=12, decimal_places=2)
-    taxable_value = models.DecimalField(max_digits=12, decimal_places=2)
-    year_2017_taxes = models.DecimalField(max_digits=12, decimal_places=2)
+    mortgage_amount = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
+    property_class = models.IntegerField(null=True, blank=True)
+    land_use = models.IntegerField(null=True, blank=True)
+    tax_district = models.CharField(max_length=42, blank=True)
+    school_district_name = models.CharField(max_length=52, blank=True)
+    school_district = models.IntegerField(null=True, blank=True)
+    tax_lien = models.BooleanField(default=False)
+    cauv_property = models.BooleanField(default=False)
+    rental_registration = models.BooleanField(default=False)
+    current_market_value = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
+    taxable_value = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
+    year_2017_taxes = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
     tax_address = models.ForeignKey(
         'TaxAddress',
         on_delete=models.CASCADE,
@@ -33,6 +37,8 @@ class Property(models.Model):
     owner_address = models.ForeignKey(
         'OwnerAddress',
         on_delete=models.CASCADE,
+        null=True,
+        blank=True
     )
 
     def __str__(self):
