@@ -18,7 +18,7 @@ HEADERS = {
             }
 
 
-temp_var_address_search = 551571
+temp_var_address_search = 551305
 #f'''http://www.co.warren.oh.us/property_search/summary.aspx?account_nbr={temp_var_address_search}'''
 
 
@@ -69,13 +69,20 @@ class WarrenSpider(scrapy.Spider):
         self.property.year_2017_taxes = utils.convert_taxable_value_string_to_integer(response.xpath("//span[@id='ContentPlaceHolderContent_lblTaxSumTotChargeNetTax']/text()").extract()[0])
         self.property.property_address = utils.parse_address(response.xpath("//span[@id='ContentPlaceHolderContent_lblSummaryPropAddress']/text()").extract(), False)
 
+
         # TEMPROARILY SET UNKNOWN VALUES:
         # --  tax_lien = respon     se.xpath("/text()").extract()
         self.property.tax_lien = True
         # -- cauv_property = response.xpath("/text()").extract()
         self.property.cauv_property = True
-        # --  rental_registration = response.xpath("/text()").extract()
-        self.property.rental_registration = True
+
+        try:
+            self.property.owner_occupancy_indicated = utils.convert_y_n_to_boolean(response.xpath("//span[@id='ContentPlaceHolderContent_lblSingleResOwnerOccupied']/text()").extract()[0])
+        except IndexError:
+            # There are many reasons a property might not be owner occupied... if it's an office building,
+            # for example. This field will be False unless we found an owner occupied indication or tax credit
+            self.property.owner_occupancy_indicated = False
+
         # -- owner_address = response.xpath("/text()").extract()
         self.property.owner_address_id = 2
         # -- date_of_LLC_name_change = response.xpath("/text()").extract()

@@ -175,3 +175,9 @@ def parse_address(address_block, state):
 
     return dict_return
 
+
+def convert_y_n_to_boolean(response_string):
+    if response_string == 'Y':
+        return True
+    else:
+        return False
