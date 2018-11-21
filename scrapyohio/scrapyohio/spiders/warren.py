@@ -18,7 +18,9 @@ HEADERS = {
             }
 
 
-temp_var_address_search = 6150660
+temp_var_address_search = 551305
+#f'''http://www.co.warren.oh.us/property_search/summary.aspx?account_nbr={temp_var_address_search}'''
+
 
 class WarrenSpider(scrapy.Spider):
     name = 'warren'
@@ -46,12 +48,22 @@ class WarrenSpider(scrapy.Spider):
         :param response:
         :return:
         """
+        print("SELF IS", self)
+        print("make_requests_from_url IS", self.make_requests_from_url)
+        print("SELF IS", dir(self))
         self.new_property = models.Property()
         self.new_property.parcel_number = response.xpath("//span[@id='ContentPlaceHolderContent_lblSummaryParcelID']/text()").extract()[0]
         self.new_property.legal_acres = utils.convert_acres_to_integer(response.xpath("//span[@id='ContentPlaceHolderContent_lblSummaryLegalDesc']/text()").extract()[1])
         self.new_property.legal_description = response.xpath("//span[@id='ContentPlaceHolderContent_lblSummaryLegalDesc']/text()").extract()[0][0]
         self.new_property.owner = response.xpath("//span[@id='ContentPlaceHolderContent_lblSummaryCurrentOwner']/text()").extract()[0]
-        self.new_property.date_sold = datetime.datetime.strptime(response.xpath("//span[@id='ContentPlaceHolderContent_lblSingleResSaleDate']/text()").extract()[0], '%m/%d/%Y')
+
+        try:
+            print("TRYING: ", response.xpath("//span[@id='ContentPlaceHolderContent_lblSingleResSaleDate']/text()").extract())
+            self.new_property.date_sold = datetime.datetime.strptime(response.xpath("//span[@id='ContentPlaceHolderContent_lblSingleResSaleDate']/text()").extract()[0], '%m/%d/%Y')
+
+        except IndexError:
+            pass
+
         self.new_property.land_use = utils.parse_ohio_state_use_code(response.xpath("//span[@id='ContentPlaceHolderContent_lblSummaryStateUseCode']/text()").extract()[0])
         self.new_property.tax_district = response.xpath("//span[@id='ContentPlaceHolderContent_lblSummaryTaxDistrict']/text()").extract()[0]
         self.new_property.school_district = int(response.xpath("//span[@id='ContentPlaceHolderContent_lblSummaryOhioSchoolDistNumber']/text()").extract()[0])
@@ -59,11 +71,10 @@ class WarrenSpider(scrapy.Spider):
         self.new_property.current_market_value = utils.convert_taxable_value_string_to_integer(response.xpath("//span[@id='ContentPlaceHolderContent_lblValSumTotalTrue']/text()").extract()[0])
         self.new_property.taxable_value = utils.convert_taxable_value_string_to_integer(response.xpath("//span[@id='ContentPlaceHolderContent_lblValSumTotalAssessed']/text()").extract()[0])
         self.new_property.year_2017_taxes = utils.convert_taxable_value_string_to_integer(response.xpath("//span[@id='ContentPlaceHolderContent_lblTaxSumTotChargeNetTax']/text()").extract()[0])
-        self.new_property.property_address = response.xpath("//span[@id='ContentPlaceHolderContent_lblSummaryPropAddress']/text()").extract()
-        print("PROP ADDR IS: ", utils.parse_white_space_from_each_line_of_address(self.new_property.property_address))
+        self.new_property.property_address = utils.parse_address(response.xpath("//span[@id='ContentPlaceHolderContent_lblSummaryPropAddress']/text()").extract(), False)
 
         # TEMPROARILY SET UNKNOWN VALUES:
-        # --  tax_lien = response.xpath("/text()").extract()
+        # --  tax_lien = respon     se.xpath("/text()").extract()
         self.new_property.tax_lien = True
         # -- cauv_property = response.xpath("/text()").extract()
         self.new_property.cauv_property = True
@@ -72,13 +83,17 @@ class WarrenSpider(scrapy.Spider):
         # -- owner_address = response.xpath("/text()").extract()
         self.new_property.owner_address_id = 2
         # -- date_of_LLC_name_change = response.xpath("/text()").extract()
-        self.new_property.date_of_LLC_name_change = datetime.datetime.strptime(
-            response.xpath("//span[@id='ContentPlaceHolderContent_lblSingleResSaleDate']/text()").extract()[0],
-            '%m/%d/%Y')
-        # -- date_of_mortgage = response.xpath("/text()").extract()
-        self.new_property.date_of_mortgage = datetime.datetime.strptime(
-            response.xpath("//span[@id='ContentPlaceHolderContent_lblSingleResSaleDate']/text()").extract()[0],
-            '%m/%d/%Y')
+
+        # try:
+        #     self.new_property.date_of_LLC_name_change = datetime.datetime.strptime(
+        #         response.xpath("//span[@id='ContentPlaceHolderContent_lblSingleResSaleDate']/text()").extract()[0],
+        #         '%m/%d/%Y')
+        #     # -- date_of_mortgage = response.xpath("/text()").extract()
+        #     self.new_property.date_of_mortgage = datetime.datetime.strptime(
+        #         response.xpath("//span[@id='ContentPlaceHolderContent_lblSingleResSaleDate']/text()").extract()[0],
+        #         '%m/%d/%Y')
+        # except IndexError:
+        #     pass
         # -- mortgage_amount = response.xpath("/text()").extract()
         self.new_property.mortgage_amount = utils.convert_taxable_value_string_to_integer('$1,999,999')
         # ?? self.new_property.property_class = response.xpath("//span[@id='ContentPlaceHolderContent_lblSummaryStateUseCode']/text()").extract()[0]
@@ -107,29 +122,41 @@ class WarrenSpider(scrapy.Spider):
             )
 
     def parse_page(self, response):
+
         # current_page = response.meta['page'] + 1
         returned_tax_address = response.css("div.wrapper div.rightContent:nth-child(4) div:nth-child(1) fieldset::text").extract()
         parsed_address = utils.parse_tax_address_from_css(returned_tax_address)
         # FIND IF TAX ADDRESS EXISTS, IF NOT CREATE
-        print("PARSED_ADDRESS: ", parsed_address[1])
-        try:
-            tax_record = models.TaxAddress.objects.get(primary_address_line=parsed_address[1])
-
-        except models.TaxAddress.DoesNotExist:
-            tax_record = models.TaxAddress(tax_address=parsed_address)
-            tax_record.save()
-        # print("PARSED: ", parsed_address)
-        # returned_record = models.TaxAddress.objects.get_or_create(primary_address_line=parsed_address[1])
-        # print("RETURNED RECORD IS: ", returned_record)
-        # returned_record[0].tax_address = parsed_address
-        # returned_record.save()
+        print("AT THE END, Parsed address: ", parsed_address)
+        if len(parsed_address) == 1:
+            try:
+                tax_record = models.TaxAddress.objects.get(primary_address_line=parsed_address[0])
+            except models.TaxAddress.DoesNotExist:
+                tax_record = models.TaxAddress(tax_address=parsed_address)
+                tax_record.save()
+        else:
+            try:
+                tax_record = models.TaxAddress.objects.get(primary_address_line=parsed_address[1])
+            except models.TaxAddress.DoesNotExist:
+                tax_record = models.TaxAddress(tax_address=parsed_address)
+                tax_record.save()
         self.new_property.tax_address = tax_record
-        # else:
-        #     self.new_property.tax_address_id = returned_record_id
-        # self.new_property.tax_address = returned_record
         self.new_property.save()
-        print("!!!!!! BELOW WE CAN ACCESS: ", self.new_property)
-        print(f'''!!!!! PARSED: {parsed_address} ''')
+
+        # Do the work to also create a property address. Must come after property record is saved because
+        # We need the ID to be able to access the property record
+
+        self.property_address = models.PropertyAddress.objects.get_or_create(property_id=self.new_property.id)
+        self.property_address[0].primary_address_line = self.new_property.property_address['primary_address_line']
+        self.property_address[0].city = self.new_property.property_address['city']
+        self.property_address[0].zipcode = self.new_property.property_address['zipcode']
+        self.property_address[0].state = self.new_property.property_address['state']
+        try:
+            if self.new_property.secondary_address_line:
+                self.property_address[0].secondary_address_line = self.new_property.property_address['secondary_address_line']
+        except AttributeError:
+            pass
+        self.property_address[0].save()
 
         # parse agents (TODO: yield items instead of printing)
         # for agent in response.xpath('//a[@class="regtext"]/text()'):

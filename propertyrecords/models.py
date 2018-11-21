@@ -9,9 +9,9 @@ class Property(models.Model):
     legal_acres = models.DecimalField(max_digits=6, decimal_places=3)
     legal_description = models.CharField(max_length=120)
     owner = models.CharField(max_length=84)
-    date_sold = models.DateField()
-    date_of_LLC_name_change = models.DateField()
-    date_of_mortgage = models.DateField()
+    date_sold = models.DateField(null=True, blank=True)
+    date_of_LLC_name_change = models.DateField(null=True, blank=True)
+    date_of_mortgage = models.DateField(null=True, blank=True)
     mortgage_amount = models.DecimalField(max_digits=12, decimal_places=2)
     property_class = models.IntegerField()
     land_use = models.IntegerField()
@@ -92,10 +92,10 @@ class AddressProperties(models.Model):
         return f'''{self.primary_address_line} {self.city}, {self.state} {self.zipcode}'''
 
     @address.setter
-    def address(self, address):
+    def address(self, address, ):
         """
-        This property takes in addresses in all of the possible forms, and will store them appropriately
-        in the database.
+        This property will expect neatly formatted addresses and will store them appropriately.
+        Parsing of addresses into various forms will be handled elsewhere in the document.
         :param address:
         :return:
         """
@@ -192,7 +192,7 @@ class TaxAddress(AddressProperties):
             elif length == 2:
                 self.primary_address_line = address[1]
 
-            parsed_last_line = utils.parse_city_state_and_zip_from_line(address[length])
+            parsed_last_line = utils.parse_city_state_and_zip_from_line(address[length], True)
             self.city = parsed_last_line['city']
             self.state = parsed_last_line['state']
             self.zipcode = parsed_last_line['zipcode']
