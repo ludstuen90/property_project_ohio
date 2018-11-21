@@ -18,7 +18,7 @@ HEADERS = {
             }
 
 
-temp_var_address_search = 551305
+temp_var_address_search = 6150660
 #f'''http://www.co.warren.oh.us/property_search/summary.aspx?account_nbr={temp_var_address_search}'''
 
 
@@ -26,7 +26,7 @@ class WarrenSpider(scrapy.Spider):
     name = 'warren'
     allowed_domains = ['co.warren.oh.us']
     start_urls = [f'''http://www.co.warren.oh.us/property_search/summary.aspx?account_nbr={temp_var_address_search}''']
-    # 611341
+    # 1407775 - cauv
     # 6150660 - jas jenn smith
     # 551305 - settlers walk
     # 551865 -tatco dev tax
@@ -73,8 +73,7 @@ class WarrenSpider(scrapy.Spider):
         # TEMPROARILY SET UNKNOWN VALUES:
         # --  tax_lien = respon     se.xpath("/text()").extract()
         self.property.tax_lien = True
-        # -- cauv_property = response.xpath("/text()").extract()
-        self.property.cauv_property = True
+        self.property.cauv_property = utils.cauv_parser(response.xpath("//span[@id='ContentPlaceHolderContent_lblValSumCAUVTrue']/text()").extract()[0])
 
         try:
             self.property.owner_occupancy_indicated = utils.convert_y_n_to_boolean(response.xpath("//span[@id='ContentPlaceHolderContent_lblSingleResOwnerOccupied']/text()").extract()[0])

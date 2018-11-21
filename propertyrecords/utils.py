@@ -177,7 +177,26 @@ def parse_address(address_block, state):
 
 
 def convert_y_n_to_boolean(response_string):
+    """
+    Given a string value, will return True
+    if string value is equal to "Y"
+    :param response_string:
+    :return:
+    """
     if response_string == 'Y':
+        return True
+    else:
+        return False
+
+
+def cauv_parser(cauv_value):
+    """
+
+    :param cauv_value:
+    :return:
+    """
+    print("CAUV VALUE IS: ", cauv_value)
+    if cauv_value != '$0':
         return True
     else:
         return False

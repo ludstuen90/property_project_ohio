@@ -87,3 +87,21 @@ def test_parse_ohio_state_use_code():
     result = utils.parse_ohio_state_use_code('0510 - SINGLE FAMILY DWG (PLATTED)	')
 
     assert result == 510
+
+
+def test_convert_y_n_to_boolean():
+
+    result_y = utils.convert_y_n_to_boolean('Y')
+    result_n = utils.convert_y_n_to_boolean('N')
+
+    assert result_y is True
+    assert result_n is False
+
+
+def test_cauv_parser():
+
+    result_y = utils.cauv_parser('$999')
+    result_n = utils.cauv_parser('$0')
+
+    assert result_y is True
+    assert result_n is False
