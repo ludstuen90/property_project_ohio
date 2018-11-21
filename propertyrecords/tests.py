@@ -32,12 +32,12 @@ def test_parse_city_state_and_zip_from_line():
     one = 'LEBANON OH           45036'
     two = 'RANCHO CUCA MONGA CA          98662'
     three = 'ST. PAUL MN            55445'
-    four = 'SAINT IGNACIUS NM            77228'
+    four = 'SAINT IGNACIUS             77228'
 
-    result_one = utils.parse_city_state_and_zip_from_line(one)
-    result_two = utils.parse_city_state_and_zip_from_line(two)
-    result_three = utils.parse_city_state_and_zip_from_line(three)
-    result_four = utils.parse_city_state_and_zip_from_line(four)
+    result_one = utils.parse_city_state_and_zip_from_line(one, True)
+    result_two = utils.parse_city_state_and_zip_from_line(two, True)
+    result_three = utils.parse_city_state_and_zip_from_line(three, True)
+    result_four = utils.parse_city_state_and_zip_from_line(four, False)
 
     assert result_one == {
         'city': 'LEBANON',
@@ -59,7 +59,6 @@ def test_parse_city_state_and_zip_from_line():
 
     assert result_four == {
         'city': 'SAINT IGNACIUS',
-        'state': 'NM',
         'zipcode': '77228'
     }
 

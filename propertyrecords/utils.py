@@ -25,6 +25,18 @@ def loop_through_csv_file_and_return_array_of_account_ids(absolute_csv_file_path
     return list_of_parcel_ids
 
 
+def parse_white_space_from_each_line_of_address(address_to_parse):
+    """
+    Given an address, this method will return a version of the same address,
+    but without white space.
+    :param address: A list including address parameters
+    :return: The same list but with extra spaces stripped out
+    """
+
+    parsed_addr = [x.strip() for x in address_to_parse if (len(x.strip()) != 0)]
+    return parsed_addr
+
+
 def parse_tax_address_from_css(parsed_tax_address):
     """
     This method removes a lot of junk from a parsed tax address. First, it removes
@@ -34,15 +46,16 @@ def parse_tax_address_from_css(parsed_tax_address):
     :return: A list containing the lines of the address.
     """
     parsed_tax_address = [x.replace("\r\n", "") for x in parsed_tax_address]
-    parsed_tax_address = [x.strip() for x in parsed_tax_address if (len(x.strip()) != 0)]
+    parsed_tax_address = parse_white_space_from_each_line_of_address(parsed_tax_address)
     return parsed_tax_address
 
 
-def parse_city_state_and_zip_from_line(address_line):
+def parse_city_state_and_zip_from_line(address_line, state):
     """
     Given a string representing the last lines of an address block, this method will return the city,
     state and zip in an object
     :param address_line: 'RANCHO CUCA MONGA CA            98772'
+    :param state: True or false, indicating whether the address includes a state.
     :return: {city: 'RANCHO CUCA MONGA', state: 'CA', zip: 98872}
     """
     last_line_length = len(address_line)
@@ -51,22 +64,35 @@ def parse_city_state_and_zip_from_line(address_line):
     if address_line[(last_line_length - 6)] != ' ':
         raise LookupError("Unable to parse address. Zip code not in expected format.")
 
-    # We count back from the zip code, and look for a pattern that looks like a state abbreviation.
-    # We hope to find a pattern like: 'Space space space two letters space space'
-    for x in range(last_line_length - 6, 0, -1):
-        if (
-                address_line[x].isalpha() == False and
-                address_line[x + 1].isalpha() == True and
-                address_line[x + 2].isalpha() == True and
-                address_line[x + 4].isalpha() == False
-        ):
-            state_name = f'''{address_line[x+1]}{address_line[x+2]}'''
-            city_name = address_line[0:x]
-    return {
-        'city': str(city_name),
-        'state': state_name,
-        'zipcode': zip_code
-    }
+    if state:
+        # We count back from the zip code, and look for a pattern that looks like a state abbreviation.
+        # We hope to find a pattern like: 'Space space space two letters space space'
+        for x in range(last_line_length - 6, 0, -1):
+            if (
+                    address_line[x].isalpha() == False and
+                    address_line[x + 1].isalpha() == True and
+                    address_line[x + 2].isalpha() == True and
+                    address_line[x + 4].isalpha() == False
+            ):
+                state_name = f'''{address_line[x+1]}{address_line[x+2]}'''
+                city_name = address_line[0:x]
+        return {
+            'city': str(city_name),
+            'state': state_name,
+            'zipcode': zip_code
+        }
+    else:
+        # We count back from the zip code, and look for a pattern that looks like a state abbreviation.
+        # We hope to find a pattern like: 'Space space space two letters space space'
+        zipcode = address_line[-5:]
+        for x in range(last_line_length - 6, 0, -1):
+            if address_line[x].isalpha():
+                city_name = address_line[:(x+1)]
+                break
+        return {
+            'city': str(city_name),
+            'zipcode': zipcode
+        }
 
 
 def convert_acres_to_integer(acres_string):
@@ -113,3 +139,39 @@ def parse_ohio_state_use_code(use_string):
                 return int(use_string[1:number])
             else:
                 return int(use_string[:number])
+
+
+def parse_address(address_block, state):
+    """
+    This method works to parse property addresses from Warren County. Keep this in mind as we expand.
+    :param address_block:
+    :param state:
+    :return:
+    """
+    parsed_white_space = parse_white_space_from_each_line_of_address(address_block)
+    length = len(address_block) - 1
+    final_line_dict = parse_city_state_and_zip_from_line(parsed_white_space[length], state)
+    primary_address_line = parsed_white_space[0]
+
+    if length == 2:
+        secondary_address_line = parsed_white_space[1]
+
+    dict_return = {
+        'primary_address_line': primary_address_line,
+        'city': final_line_dict['city'],
+        'zipcode': final_line_dict['zipcode']
+    }
+
+    try:
+        if secondary_address_line:
+            dict_return['secondary_address_line'] = secondary_address_line
+    except UnboundLocalError:
+        pass
+
+    if state:
+        dict_return['state']: final_line_dict['state']
+    else:
+        dict_return['state'] = 'OH'
+
+    return dict_return
+
