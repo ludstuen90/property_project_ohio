@@ -73,10 +73,7 @@ class WarrenSpider(scrapy.Spider):
         # TEMPROARILY SET UNKNOWN VALUES:
         # --  tax_lien = respon     se.xpath("/text()").extract()
         self.property.tax_lien = True
-        # -- cauv_property = response.xpath("/text()").extract()
-
         self.property.cauv_property = utils.cauv_parser(response.xpath("//span[@id='ContentPlaceHolderContent_lblValSumCAUVTrue']/text()").extract()[0])
-        # self.property.cauv_property = True
 
         try:
             self.property.owner_occupancy_indicated = utils.convert_y_n_to_boolean(response.xpath("//span[@id='ContentPlaceHolderContent_lblSingleResOwnerOccupied']/text()").extract()[0])
