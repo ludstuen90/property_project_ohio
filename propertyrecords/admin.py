@@ -10,7 +10,7 @@ class AddressInline(admin.StackedInline):
 
 class PropertyAdmin(admin.ModelAdmin):
     inlines = (AddressInline,)
-    list_display = ('parcel_number', 'mortgage_amount', 'tax_lien', 'rental_registration', 'current_market_value',
+    list_display = ('parcel_number', 'mortgage_amount', 'tax_lien', 'owner_occupancy_indicated', 'current_market_value',
                     'display_address')
 
 

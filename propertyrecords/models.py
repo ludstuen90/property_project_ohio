@@ -24,7 +24,10 @@ class Property(models.Model):
     school_district = models.IntegerField(null=True, blank=True)
     tax_lien = models.BooleanField(default=False)
     cauv_property = models.BooleanField(default=False)
-    rental_registration = models.BooleanField(default=False)
+    owner_occupancy_indicated = models.BooleanField(default=False,
+                                                    help_text="Checked if an owner received an owner occupancy tax "
+                                                              "credit or if owner occupancy has been indicated on the "
+                                                              "record.")
     current_market_value = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
     taxable_value = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
     year_2017_taxes = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
