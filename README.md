@@ -30,3 +30,5 @@ The following environment variables are required:
 
 `PSQL_DATABASE_USER_PASSWORD`
 
+`WARREN_TOKEN_SITE`
+

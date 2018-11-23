@@ -3,21 +3,18 @@ import datetime
 
 import scrapy
 from scrapy import Request, FormRequest
-from scrapy_splash import SplashRequest
 
+from ohio import settings
 from propertyrecords import utils, models
 
 HEADERS = {
-            "Info": "The Ohio Center for Investigative Journalism, Eye on Ohio, is requesting these public records for "
-                    "use in a journalism project, and to conserve valuable public funds and government employees' time "
-                    "instead of filing multiple freedom of information act requests.",
-            "Questions": "If you have questions or concerns, please contact Lucia Walinchus at 646-397-7761 or "
-                         "Lucia[the at symbol}eyeonohio.com.",
             "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_1) AppleWebKit/537.36 (KHTML, "
                           "like Gecko) Chrome/70.0.3538.102 Safari/537.36",
             "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8",
             "X-MicrosoftAjax": "Delta=true"
             }
+
+HEADERS.update(settings.CONTACT_INFO_HEADINGS)
 
 
 temp_var_address_search = 551571
@@ -196,34 +193,6 @@ class WarrenSpider(scrapy.Spider):
             pass
 
         self.property_address.save()
-
-        yield SplashRequest(
-            'https://oh3laredo.fidlar.com/OHWarren/AvaWeb/#!/search?Parcel=0801219020',
-            self.pull_mortgage_info,
-            # args={'wait': 0.5},
-            headers=HEADERS
-        )
-
-
-    def pull_mortgage_info(self, response):
-        # print("RESPONSE: ", response.body)
-        parsable_body = response.body_as_unicode()
-        print("DIR: ", dir(response))
-
-        print("Kicks: ", response.meta)
-        print("Kicks: ", response.headers)
-        print("Kicks: ", response.request)
-        print("Kicks: ", response.request.headers)
-
-
-        # print("START", response.url)
-        # for num, x in enumerate(parsable_body):
-        #     if x[num:num + 5] == 'JASON':
-        #         print("FOUND IT")
-        # print("END")
-        # print("BOX: ", parsable_body.xpath("//div[@id='resultsContainer']/text()").extract())
-
-        # print("!??!?!?!", response.xpath("//body/div/div[@class='ng-scope']/div[@class='ng-scope']/section[@id='mainContent']/div[@id='viewWrapper']/div[@class='shuffle-animation ng-scope']/section[@class='ng-scope']/div[@class='avaSection']/div[@id='resultsContainer']/ul/li[1]/div[1]/div[1]/div[1]/label[4]").extract())
 
 
     # https://oh3laredo.fidlar.com/OHWarren/AvaWeb/#!/search?Parcel=0801219020
