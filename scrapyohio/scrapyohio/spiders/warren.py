@@ -3,6 +3,7 @@ import datetime
 
 import scrapy
 from scrapy import Request, FormRequest
+from scrapy_splash import SplashRequest
 
 from propertyrecords import utils, models
 
@@ -25,7 +26,7 @@ temp_var_address_search = 551571
 
 class WarrenSpider(scrapy.Spider):
     name = 'warren'
-    allowed_domains = ['co.warren.oh.us']
+    allowed_domains = ['co.warren.oh.us', 'oh3laredo.fidlar.com']
     start_urls = [
         # 'http://www.co.warren.oh.us/property_search/summary.aspx?account_nbr=551571',
         # 'http://www.co.warren.oh.us/property_search/summary.aspx?account_nbr=1407775',
@@ -48,9 +49,16 @@ class WarrenSpider(scrapy.Spider):
         # We want to assign headers for each request triggered. Override the request object
         # sent over to include Lucia's contact information
         for url in self.start_urls:
-            yield Request(url, dont_filter=True,
-                          headers=HEADERS
-                          )
+            # yield Request(url, dont_filter=True,
+            #               headers=HEADERS
+            #               )
+
+            yield SplashRequest(
+                'https://oh3laredo.fidlar.com/OHWarren/AvaWeb/#!/search?Parcel=0801219020',
+                self.pull_mortgage_info,
+                args={'wait': 0.5},
+                headers=HEADERS
+            )
 
     def parse(self, response):
         """
@@ -189,17 +197,35 @@ class WarrenSpider(scrapy.Spider):
 
         self.property_address.save()
 
-        yield Request(
-            f'''https://oh3laredo.fidlar.com/OHWarren/AvaWeb/#!/search?Parcel={self.parsed_prop}''',
-            dont_filter=True,
-            headers=HEADERS,
-            callback=self.pull_mortgage_info
+        yield SplashRequest(
+            'https://oh3laredo.fidlar.com/OHWarren/AvaWeb/#!/search?Parcel=0801219020',
+            self.pull_mortgage_info,
+            # args={'wait': 0.5},
+            headers=HEADERS
         )
 
+
     def pull_mortgage_info(self, response):
-        print("RESPONSE: ", response.body)
+        # print("RESPONSE: ", response.body)
+        parsable_body = response.body_as_unicode()
+        print("DIR: ", dir(response))
 
-        print("!??!?!?!", response.xpath("//body/div/div[@class='ng-scope']/div[@class='ng-scope']/section[@id='mainContent']/div[@id='viewWrapper']/div[@class='shuffle-animation ng-scope']/section[@class='ng-scope']/div[@class='avaSection']/div[@id='resultsContainer']/ul/li[1]/div[1]/div[1]/div[1]/label[4]").extract())
+        print("Kicks: ", response.meta)
+        print("Kicks: ", response.headers)
+        print("Kicks: ", response.request)
+        print("Kicks: ", response.request.headers)
 
 
-# https://oh3laredo.fidlar.com/OHWarren/AvaWeb/#!/search?Parcel=0801219020
+        # print("START", response.url)
+        # for num, x in enumerate(parsable_body):
+        #     if x[num:num + 5] == 'JASON':
+        #         print("FOUND IT")
+        # print("END")
+        # print("BOX: ", parsable_body.xpath("//div[@id='resultsContainer']/text()").extract())
+
+        # print("!??!?!?!", response.xpath("//body/div/div[@class='ng-scope']/div[@class='ng-scope']/section[@id='mainContent']/div[@id='viewWrapper']/div[@class='shuffle-animation ng-scope']/section[@class='ng-scope']/div[@class='avaSection']/div[@id='resultsContainer']/ul/li[1]/div[1]/div[1]/div[1]/label[4]").extract())
+
+
+    # https://oh3laredo.fidlar.com/OHWarren/AvaWeb/#!/search?Parcel=0801219020
+
+    # f'''https://oh3laredo.fidlar.com/OHWarren/AvaWeb/#!/search?Parcel={self.parsed_prop}'''

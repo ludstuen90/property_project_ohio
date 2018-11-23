@@ -28,7 +28,7 @@ NEWSPIDER_MODULE = 'scrapyohio.spiders'
 
 
 # START SCRAPY-SPLASH INFORMATION
-SPLASH_URL = 'http://192.168.59.103:8050'
+SPLASH_URL = 'http://0.0.0.0:8050'
 DUPEFILTER_CLASS = 'scrapy_splash.SplashAwareDupeFilter'
 
 
