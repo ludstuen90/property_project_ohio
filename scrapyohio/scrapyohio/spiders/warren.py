@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import datetime
 
 import scrapy
 from scrapy import Request, FormRequest
@@ -26,12 +27,12 @@ class WarrenSpider(scrapy.Spider):
     name = 'warren'
     allowed_domains = ['co.warren.oh.us']
     start_urls = [
-        'http://www.co.warren.oh.us/property_search/summary.aspx?account_nbr=551571',
-        'http://www.co.warren.oh.us/property_search/summary.aspx?account_nbr=1407775',
-        'http://www.co.warren.oh.us/property_search/summary.aspx?account_nbr=551305',
-        'http://www.co.warren.oh.us/property_search/summary.aspx?account_nbr=551865',
-        'http://www.co.warren.oh.us/property_search/summary.aspx?account_nbr=552375',
-        'http://www.co.warren.oh.us/property_search/summary.aspx?account_nbr=551577',
+        # 'http://www.co.warren.oh.us/property_search/summary.aspx?account_nbr=551571',
+        # 'http://www.co.warren.oh.us/property_search/summary.aspx?account_nbr=1407775',
+        # 'http://www.co.warren.oh.us/property_search/summary.aspx?account_nbr=551305',
+        # 'http://www.co.warren.oh.us/property_search/summary.aspx?account_nbr=551865',
+        # 'http://www.co.warren.oh.us/property_search/summary.aspx?account_nbr=552375',
+        # 'http://www.co.warren.oh.us/property_search/summary.aspx?account_nbr=551577',
         'http://www.co.warren.oh.us/property_search/summary.aspx?account_nbr=551571',
         # 'http://www.co.warren.oh.us/property_search/summary.aspx?account_nbr=6150660',
     ]
@@ -80,10 +81,16 @@ class WarrenSpider(scrapy.Spider):
             self.parsed_prop.owner_occupancy_indicated = False
 
 
-        self.parsed_prop.date_sold = datetime.datetime.strptime(
-            response.xpath("//span[@id='ContentPlaceHolderContent_lblSingleResSaleDate']/text()").extract()[0],
-            '%m/%d/%Y')
-
+        try:
+            # Single residential sale
+            self.parsed_prop.date_sold = datetime.datetime.strptime(
+                response.xpath("//span[@id='ContentPlaceHolderContent_lblSingleResSaleDate']/text()").extract()[0],
+                '%m/%d/%Y')
+        except IndexError:
+            # No Building last sale date
+            self.parsed_prop.date_sold = datetime.datetime.strptime(
+                response.xpath("//span[@id='ContentPlaceHolderContent_lblNoBldgLastSaleDate']/text()").extract()[0],
+                '%m/%d/%Y')
 
         self.parsed_prop.save()
 
@@ -131,14 +138,14 @@ class WarrenSpider(scrapy.Spider):
         yield FormRequest(
                 url=response.request.url,
                 method='POST',
-                callback=self.parse_page,
+                callback=self.parse_tax,
                 formdata=self.data,
                 meta={'page': 1},
                 dont_filter=True,
                 headers=HEADERS,
             )
 
-    def parse_page(self, response):
+    def parse_tax(self, response):
 
         self.parsed_prop = models.Property.objects.get(parcel_number=response.xpath("//span[@id='ContentPlaceHolderContent_lblSummaryParcelID']/text()").extract()[0])
         returned_tax_address = response.css("div.wrapper div.rightContent:nth-child(4) div:nth-child(1) fieldset::text").extract()
@@ -147,13 +154,18 @@ class WarrenSpider(scrapy.Spider):
         # FIND IF TAX ADDRESS EXISTS, IF NOT CREATE
         if len(parsed_address) == 1:
             try:
-                tax_record = models.TaxAddress.objects.get(primary_address_line=parsed_address[0])
+                tax_record = models.TaxAddress.objects.get(name=parsed_address[0])
             except models.TaxAddress.DoesNotExist:
                 tax_record = models.TaxAddress(tax_address=parsed_address)
                 tax_record.save()
         else:
             try:
-                tax_record = models.TaxAddress.objects.get(primary_address_line=parsed_address[1])
+                # Pass the parsed address through our name parser (in Tax Address model), to see
+                # what it would look like. Then, compare with existing records to see if we have
+                # one that matches.
+                # If so, get the record. Otherwise, create it.
+                self.dummy_obj = models.TaxAddress(tax_address=parsed_address)
+                tax_record = models.TaxAddress.objects.get(primary_address_line=self.dummy_obj.primary_address_line)
             except models.TaxAddress.DoesNotExist:
                 tax_record = models.TaxAddress(tax_address=parsed_address)
                 tax_record.save()
