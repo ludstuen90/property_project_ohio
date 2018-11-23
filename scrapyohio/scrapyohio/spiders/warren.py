@@ -122,7 +122,7 @@ class WarrenSpider(scrapy.Spider):
         self.data['ctl00$ContentPlaceHolderContent$ddlTaxYear'] = '2017',
         self.data['__ASYNCPOST'] = 'true',
 
-        form_return = FormRequest(
+        yield FormRequest(
                 url=response.request.url,
                 method='POST',
                 callback=self.parse_page,
@@ -131,7 +131,6 @@ class WarrenSpider(scrapy.Spider):
                 dont_filter=True,
                 headers=HEADERS,
             )
-        yield form_return
 
     def parse_page(self, response):
 
