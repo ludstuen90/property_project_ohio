@@ -57,26 +57,10 @@ class WarrenSpider(scrapy.Spider):
         :param response:
         :return:
         """
-        print("STARTING OUT WITH : ", response.xpath("//span[@id='ContentPlaceHolderContent_lblSummaryParcelID']/text()").extract()[0])
-
-        # parsed_prop = ItemLoader(item=models.PropertyItem(), response=response)
-        #
         parsed_parcel_number = response.xpath("//span[@id='ContentPlaceHolderContent_lblSummaryParcelID']/text()").extract()[0]
         self.parsed_prop, created = models.Property.objects.get_or_create(parcel_number=parsed_parcel_number)
+
         self.parsed_prop.parcel_number = parsed_parcel_number
-
-        # # If parcel number exists already, populate all of the properties of it
-        #
-        # try:
-        #     result = models.Property.objects.get(parcel_number=parsed_parcel_number)
-        #     for key in result._meta.get_fields():
-        #         value = key.name
-        #         self.parsed_prop[key] = value
-        #
-        # except ObjectDoesNotExist:
-        #     pass
-
-
         self.parsed_prop.legal_acres = utils.convert_acres_to_integer(response.xpath("//span[@id='ContentPlaceHolderContent_lblSummaryLegalDesc']/text()").extract()[1])
         self.parsed_prop.legal_description = response.xpath("//span[@id='ContentPlaceHolderContent_lblSummaryLegalDesc']/text()").extract()[0]
         self.parsed_prop.owner = response.xpath("//span[@id='ContentPlaceHolderContent_lblSummaryCurrentOwner']/text()").extract()[0]
@@ -99,7 +83,7 @@ class WarrenSpider(scrapy.Spider):
 
 
         # Tax values, will be changed to be stored in a new table below:
-        # detect current year
+        # Detect current year
         current_year = response.xpath("//span[@id='ContentPlaceHolderContent_lblcurrvalue']/text()").extract()[0][-4:]
         self.current_year_tax_values, created = models.TaxData.objects.update_or_create(
                                                                     tax_year=current_year,
@@ -110,8 +94,8 @@ class WarrenSpider(scrapy.Spider):
         self.current_year_tax_values.taxes_paid = utils.convert_taxable_value_string_to_integer(response.xpath("//span[@id='ContentPlaceHolderContent_lblTaxSumTotChargeNetTax']/text()").extract()[0])
         self.current_year_tax_values.save()
         # End tax values
-        #
-        #
+
+
         # Parse pay next year tentative values
         next_year = response.xpath("//p[contains(text(),'TENTATIVE VALUE AS OF 01-01-2018')]/text()").extract()[0][-4:]
         self.next_year_tax_values, created = models.TaxData.objects.update_or_create(
@@ -123,31 +107,10 @@ class WarrenSpider(scrapy.Spider):
         self.next_year_tax_values.save()
         # End next year
 
-
-
-
-        #
-        # # TEMPROARILY SET UNKNOWN VALUES:
-        # # --  tax_lien = respon     se.xpath("/text()").extract()
-        # self.property.tax_lien = True
-        #
-
-
-        # # -- date_of_LLC_name_change = response.xpath("/text()").extract()
-        #
-        # # try:
-        # #     self.new_property.date_of_LLC_name_change = datetime.datetime.strptime(
-        # #         response.xpath("//span[@id='ContentPlaceHolderContent_lblSingleResSaleDate']/text()").extract()[0],
-        # #         '%m/%d/%Y')
-        # #     # -- date_of_mortgage = response.xpath("/text()").extract()
         # #     self.new_property.date_of_mortgage = datetime.datetime.strptime(
         # #         response.xpath("//span[@id='ContentPlaceHolderContent_lblSingleResSaleDate']/text()").extract()[0],
         # #         '%m/%d/%Y')
-        # # except IndexError:
-        # #     pass
-        # # -- mortgage_amount = response.xpath("/text()").extract()
-        # # ?? self.new_property.property_class = response.xpath("//span[@id='ContentPlaceHolderContent_lblSummaryStateUseCode']/text()").extract()[0]
-        # self.property.property_class = 3
+
 
         self.data = {}
         self.data['ctl00$ToolkitScriptManager1'] = 'ctl00$UpdatePanel1|ctl00$ContentPlaceHolderContent$lbTaxInfo'
@@ -169,7 +132,6 @@ class WarrenSpider(scrapy.Spider):
                 headers=HEADERS,
             )
         yield form_return
-
 
     def parse_page(self, response):
 
