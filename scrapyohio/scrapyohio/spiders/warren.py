@@ -79,6 +79,12 @@ class WarrenSpider(scrapy.Spider):
             # for example. This field will be False unless we found an owner occupied indication or tax credit
             self.parsed_prop.owner_occupancy_indicated = False
 
+
+        self.parsed_prop.date_sold = datetime.datetime.strptime(
+            response.xpath("//span[@id='ContentPlaceHolderContent_lblSingleResSaleDate']/text()").extract()[0],
+            '%m/%d/%Y')
+
+
         self.parsed_prop.save()
 
 
