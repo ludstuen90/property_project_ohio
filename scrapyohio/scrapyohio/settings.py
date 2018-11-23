@@ -28,6 +28,11 @@ SPIDER_MODULES = ['scrapyohio.spiders']
 NEWSPIDER_MODULE = 'scrapyohio.spiders'
 
 
+ITEM_PIPELINES = {
+    # 'scrapyohio.pipelines.PricePipeline': 300,
+    # 'myproject.pipelines.JsonWriterPipeline': 800,
+}
+
 # Crawl responsibly by identifying yourself (and your website) on the user-agent
 #USER_AGENT = 'scrapyohio (+http://www.yourdomain.com)'
 
