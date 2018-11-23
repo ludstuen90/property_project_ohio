@@ -129,14 +129,6 @@ class AddressProperties(models.Model):
         self.state = parsed_last_line.state
         self.zipcode = parsed_last_line.zipcode
 
-        #     3      ['SMITH  JASON E & JENNIFER', '265 LUDLOW CT', 'LEBANON OH           45036']
-        #     4      ['FRANKLIN REGIONAL WWT CORP', '8401 CLAUDE THOMAS', 'NO 21J', 'FRANKLIN OH          45005']
-        #      3     ['TATCO DEVELOPMENT', '1209 F LYONS RD', 'CENTERVILLE OH       45458']
-        #       4    ['WANG BROS INVESTMENTS', '1 BATES BLVD', 'SUITE 400', 'ORINDA  CA           94563']
-        #        4   ['TANGLEWOOD CREEK HOMEOWNERS ASSOC', '7625 PARAGON RD', 'STE E', 'DAYTON OH            45459']
-        #        4   ['LGHOA INC', '% TOWNE PROPERTIES', '32 N MAIN ST  # 1412', 'DAYTON OH            45402']
-        #        0   ['0']
-
 
 class PropertyAddress(AddressProperties):
     """

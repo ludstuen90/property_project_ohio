@@ -33,8 +33,8 @@ class WarrenSpider(scrapy.Spider):
         # 'http://www.co.warren.oh.us/property_search/summary.aspx?account_nbr=551865',
         # 'http://www.co.warren.oh.us/property_search/summary.aspx?account_nbr=552375',
         # 'http://www.co.warren.oh.us/property_search/summary.aspx?account_nbr=551577',
-        'http://www.co.warren.oh.us/property_search/summary.aspx?account_nbr=551571',
-        # 'http://www.co.warren.oh.us/property_search/summary.aspx?account_nbr=6150660',
+        # 'http://www.co.warren.oh.us/property_search/summary.aspx?account_nbr=551571',
+        'http://www.co.warren.oh.us/property_search/summary.aspx?account_nbr=6150660',
     ]
     # 1407775 - cauv
     # 6150660 - jas jenn smith
@@ -189,5 +189,17 @@ class WarrenSpider(scrapy.Spider):
 
         self.property_address.save()
 
+        yield Request(
+            f'''https://oh3laredo.fidlar.com/OHWarren/AvaWeb/#!/search?Parcel={self.parsed_prop}''',
+            dont_filter=True,
+            headers=HEADERS,
+            callback=self.pull_mortgage_info
+        )
+
+    def pull_mortgage_info(self, response):
+        print("RESPONSE: ", response.body)
+
+        print("!??!?!?!", response.xpath("//body/div/div[@class='ng-scope']/div[@class='ng-scope']/section[@id='mainContent']/div[@id='viewWrapper']/div[@class='shuffle-animation ng-scope']/section[@class='ng-scope']/div[@class='avaSection']/div[@id='resultsContainer']/ul/li[1]/div[1]/div[1]/div[1]/label[4]").extract())
 
 
+# https://oh3laredo.fidlar.com/OHWarren/AvaWeb/#!/search?Parcel=0801219020
