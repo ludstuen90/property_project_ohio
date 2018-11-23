@@ -15,14 +15,7 @@ This application has been tested as it was developed. Keep tabs on tests here: h
 # Installing a new instance of this application. 
 - Scraping in this application depends on Twisted, which <a href="https://twistedmatrix.com/trac/wiki/Downloads">has a few requirements to install before-hand</a>. 
 - Users will need to set up a PostgreSQL database instance, and provide the database parameters to the application via environment variables.
-- Docker: Users will be required to install and start docker to run some scraping applications, such as that of Warren County.
-(This is because this project uses a <a href="https://github.com/scrapy-plugins/scrapy-splash">Scrapy plugin of Splash</a> to scrape some data)
 
-
-# Running the application
-- In order to scrape some counties, such as Warren, an instance of Splash must be running. 
-This can easily be accomplished through the command `docker run -p 8050:8050 scrapinghub/splash`
-<a href="https://github.com/scrapy-plugins/scrapy-splash">More info here</a>
 
 # Environment Variables
 The following environment variables are required: 

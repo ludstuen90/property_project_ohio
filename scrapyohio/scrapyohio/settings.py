@@ -27,13 +27,6 @@ NEWSPIDER_MODULE = 'scrapyohio.spiders'
 
 
 
-# START SCRAPY-SPLASH INFORMATION
-SPLASH_URL = 'http://0.0.0.0:8050'
-DUPEFILTER_CLASS = 'scrapy_splash.SplashAwareDupeFilter'
-
-
-# END SCRAPY SPLASH INFORMATION
-
 
 # ITEM_PIPELINES = {
     # 'scrapyohio.pipelines.PricePipeline': 300,
@@ -70,20 +63,15 @@ ROBOTSTXT_OBEY = True
 
 # Enable or disable spider middlewares
 # See https://doc.scrapy.org/en/latest/topics/spider-middleware.html
-SPIDER_MIDDLEWARES = {
-   'scrapyohio.middlewares.ScrapyohioSpiderMiddleware': 543,
-'scrapy_splash.SplashDeduplicateArgsMiddleware': 100,
-
-}
+# SPIDER_MIDDLEWARES = {
+#    'scrapyohio.middlewares.ScrapyohioSpiderMiddleware': 543,
+# }
 
 # Enable or disable downloader middlewares
 # See https://doc.scrapy.org/en/latest/topics/downloader-middleware.html
-DOWNLOADER_MIDDLEWARES = {
-    'scrapy_splash.SplashCookiesMiddleware': 723,
-    'scrapy_splash.SplashMiddleware': 725,
-    'scrapy.downloadermiddlewares.httpcompression.HttpCompressionMiddleware': 810,
-   'scrapyohio.middlewares.ScrapyohioDownloaderMiddleware': 543,
-}
+#DOWNLOADER_MIDDLEWARES = {
+#    'scrapyohio.middlewares.ScrapyohioDownloaderMiddleware': 543,
+#}
 
 # Enable or disable extensions
 # See https://doc.scrapy.org/en/latest/topics/extensions.html
