@@ -1,9 +1,11 @@
+import datetime
 import json
 
 import requests
 
 from ohio import settings
-from propertyrecords import models
+from propertyrecords import models, utils
+
 
 
 class WarrenMortgageInfo:
@@ -21,6 +23,7 @@ class WarrenMortgageInfo:
     WARREN_TOKEN_SITE = f'''{WARREN_MORTGAGE_SITE}/token'''
     WARREN_INITIAL_SEARCH = f'''{WARREN_MORTGAGE_SITE}/breeze/breeze/Search'''
     WARREN_DOCUMENT_DETAIL = f'''{WARREN_MORTGAGE_SITE}/breeze/breeze/DocumentDetail'''
+    DATE_FORMAT = '%m/%d/%Y %H:%M:%S %p'
 
     HEADERS = {
     'Content-Type': "application/json;charset=UTF-8",
@@ -38,7 +41,7 @@ class WarrenMortgageInfo:
         self.warren_county_object = models.County.objects.get(name='Warren')
         self.warren_county_items = models.Property.objects.all().filter(county=self.warren_county_object)
         # self.access_token = self.retrieve_access_token()
-        self.access_token = '12334'
+        self.access_token = ''
 
     @classmethod
     def retrieve_access_token(cls, explicit_request=False):
@@ -76,8 +79,23 @@ class WarrenMortgageInfo:
                               "tractTownship":"","tractRange":"","tractQuarter":"","tractQuarterQuarter":"",
                               "addressHouseNo":"","addressStreet":"","addressCity":"","addressZip":"","parcelNumber":
                                   parcel_number,"referenceNumber":""})
-        response = requests.request("POST", cls.WARREN_INITIAL_SEARCH, data=payload, headers=cls.HEADERS)
 
+        response = requests.request("POST", cls.WARREN_INITIAL_SEARCH, data=payload, headers=cls.HEADERS)
+        response_json = response.json()
+        return response_json
+
+    @staticmethod
+    def parse_recorder_data(recorder_data_dict):
+        """
+        This method expects a dictionary of data from the county recorder's
+        office, and will return the most recent MTG record.
+
+        Once we have this, we'll need to send another query to get more information on it
+        :param recorder_data_dict:
+        :return: most recent MTG record, if any
+        """
+
+        # for memo in recorder_data_dict['DocResults']:
 
     def download_mortgage_info(self):
         """
@@ -87,12 +105,14 @@ class WarrenMortgageInfo:
         successfully.
 
         """
-        # Call access token to ensure that if we haven't downloaded a token yet, we will have one
-        we_got = self.retrieve_access_token()
+        self.retrieve_access_token()
 
         for prop_to_parse in self.warren_county_items:
-            self.download_list_of_recorder_data_items(prop_to_parse.parcel_number)
+            recorder_data = self.download_list_of_recorder_data_items(f'''0{prop_to_parse.parcel_number}''')
 
+            # SELECT THE MOST RECENT MORTGAGE ITEM.
+            # RETURN IT
+            utils.select_most_recent_mtg_item(recorder_data, self.DATE_FORMAT)
 
 
 
@@ -103,3 +123,7 @@ class WarrenMortgageInfo:
         # Where should access token be stored?
         # We could pretty much store it in this class....
         # I was requesting access tokens earlier and it didn't seen to be a problem.
+
+
+# a = WarrenMortgageInfo()
+# a.download_mortgage_info()

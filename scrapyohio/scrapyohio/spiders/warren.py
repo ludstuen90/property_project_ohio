@@ -2,7 +2,7 @@
 import datetime
 
 import scrapy
-from scrapy import Request, FormRequest
+from scrapy import Request, FormRequest, signals
 
 from ohio import settings
 from propertyrecords import utils, models
@@ -44,6 +44,9 @@ class WarrenSpider(scrapy.Spider):
     # 551577 - LGHOA
     # 551571 - OWNERS IN COMMON
 
+    def __init__(self):
+        self.logged_out = False
+
     def start_requests(self):
        # Ensure we have a county in the database
         self.warren_county_object, created = models.County.objects.get_or_create(name="Warren")
@@ -54,8 +57,6 @@ class WarrenSpider(scrapy.Spider):
             yield Request(url, dont_filter=True,
                           headers=HEADERS
                           )
-
-
 
     def parse(self, response):
         """
@@ -191,9 +192,16 @@ class WarrenSpider(scrapy.Spider):
 
         self.property_address.save()
 
-        # We could here at the end of the scraper process trigger the mortgage download
-        a = warren_mortgage.WarrenMortgageInfo()
-        a.download_mortgage_info()
+        self.crawler.signals.connect(self.spider_idle, signal=signals.spider_idle)
 
+
+    def spider_idle(self):
+        # Wait until all records have downloaded, then trigger the mortgage download process
+        if not self.logged_out:
+            self.logged_out = True
+            a = warren_mortgage.WarrenMortgageInfo()
+            a.download_mortgage_info()
+            # req = Request('someurl', callback=self.parse_logout)
+            # self.crawler.engine.crawl(req, spider)
     # https://oh3laredo.fidlar.com/OHWarren/AvaWeb/#!/search?Parcel=0801219020
     # f'''https://oh3laredo.fidlar.com/OHWarren/AvaWeb/#!/search?Parcel={self.parsed_prop}'''

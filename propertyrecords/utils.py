@@ -1,6 +1,6 @@
 # This function exists so that we can validate our Travis-CI instance works.
 import csv
-from datetime import datetime
+import datetime
 from decimal import Decimal
 
 
@@ -201,3 +201,18 @@ def cauv_parser(cauv_value):
         return False
 
 
+def select_most_recent_mtg_item(recorder_data_dict, date_format):
+    most_recent_result_found = {}
+
+    mtg_items = [item for item in recorder_data_dict['DocResults'] if item['DocumentType'] == 'MTG']
+
+    for memo in mtg_items:
+        if most_recent_result_found == {}:
+            most_recent_result_found = memo
+        else:
+            if datetime.datetime.strptime(memo['RecordedDateTime'], date_format) > datetime.datetime.strptime(most_recent_result_found['RecordedDateTime'], date_format):
+                most_recent_result_found = memo
+            elif datetime.datetime.strptime(memo['RecordedDateTime'], date_format) == datetime.datetime.strptime(most_recent_result_found['RecordedDateTime'], date_format):
+                raise ImportError("Matching date times found, cannot resolve difference")
+
+    return most_recent_result_found

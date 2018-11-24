@@ -5,7 +5,9 @@ from decimal import Decimal
 import pytest
 
 from propertyrecords import utils
-from propertyrecords.test_data import parse_tax_address_from_csv
+from propertyrecords.test_data import parse_tax_address_from_csv, select_most_recent_mtg_item
+
+
 
 # Test to see that we can appropriately read a CSV file
 
@@ -105,3 +107,12 @@ def test_cauv_parser():
 
     assert result_y is True
     assert result_n is False
+
+
+def test_select_most_recent_mtg_item():
+
+    test_data = select_most_recent_mtg_item.results
+    parsed_result = utils.select_most_recent_mtg_item(test_data,'%m/%d/%Y %H:%M:%S %p')
+    expected_result = {'Id': 6323317, 'DocumentName': '2018-032687', 'DocumentType': 'MTG', 'RecordedDateTime': '11/14/2018 8:01:03 AM', 'Party1': 'SMITH, JASON E', 'Party2': 'FIFTH THIRD BANK', 'LegalSummary': ''}
+
+    assert parsed_result == expected_result
