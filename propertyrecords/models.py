@@ -28,6 +28,13 @@ class Property(models.Model):
                                                     help_text="Checked if an owner received an owner occupancy tax "
                                                               "credit or if owner occupancy has been indicated on the "
                                                               "record.")
+    county = models.ForeignKey(
+        'County',
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True
+
+    )
     tax_address = models.ForeignKey(
         'TaxAddress',
         on_delete=models.CASCADE,
@@ -223,8 +230,12 @@ class DatabaseProgram(models.Model):
 
 
 class County(models.Model):
-    name = models.CharField(max_length=18)
-    database_type = models.ForeignKey(DatabaseProgram, on_delete=models.CASCADE)
+    name = models.CharField(max_length=18, unique=True)
+    database_type = models.ForeignKey(DatabaseProgram,
+                                      on_delete=models.CASCADE,
+                                      null=True,
+                                      blank=True
+                                      )
 
     def __str__(self):
         return self.name

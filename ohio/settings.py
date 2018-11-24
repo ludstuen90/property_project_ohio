@@ -134,7 +134,7 @@ USE_TZ = True
 
 STATIC_URL = '/static/'
 
-WARREN_TOKEN_SITE = env('WARREN_TOKEN_SITE')
+WARREN_MORTGAGE_SITE = env('WARREN_MORTGAGE_SITE')
 
 CONTACT_INFO_HEADINGS = {
     "Info": "The Ohio Center for Investigative Journalism, Eye on Ohio, is requesting these public records for "

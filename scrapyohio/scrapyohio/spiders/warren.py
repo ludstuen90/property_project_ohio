@@ -7,6 +7,8 @@ from scrapy import Request, FormRequest
 from ohio import settings
 from propertyrecords import utils, models
 
+from scrapyohio.scraper_helpers import warren_mortgage
+
 HEADERS = {
             "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_1) AppleWebKit/537.36 (KHTML, "
                           "like Gecko) Chrome/70.0.3538.102 Safari/537.36",
@@ -43,19 +45,17 @@ class WarrenSpider(scrapy.Spider):
     # 551571 - OWNERS IN COMMON
 
     def start_requests(self):
+       # Ensure we have a county in the database
+        self.warren_county_object, created = models.County.objects.get_or_create(name="Warren")
+
         # We want to assign headers for each request triggered. Override the request object
         # sent over to include Lucia's contact information
         for url in self.start_urls:
-            # yield Request(url, dont_filter=True,
-            #               headers=HEADERS
-            #               )
+            yield Request(url, dont_filter=True,
+                          headers=HEADERS
+                          )
 
-            yield SplashRequest(
-                'https://oh3laredo.fidlar.com/OHWarren/AvaWeb/#!/search?Parcel=0801219020',
-                self.pull_mortgage_info,
-                args={'wait': 0.5},
-                headers=HEADERS
-            )
+
 
     def parse(self, response):
         """
@@ -65,7 +65,7 @@ class WarrenSpider(scrapy.Spider):
         """
         parsed_parcel_number = response.xpath("//span[@id='ContentPlaceHolderContent_lblSummaryParcelID']/text()").extract()[0]
         self.parsed_prop, created = models.Property.objects.get_or_create(parcel_number=parsed_parcel_number)
-
+        self.parsed_prop.county = self.warren_county_object
         self.parsed_prop.parcel_number = parsed_parcel_number
         self.parsed_prop.legal_acres = utils.convert_acres_to_integer(response.xpath("//span[@id='ContentPlaceHolderContent_lblSummaryLegalDesc']/text()").extract()[1])
         self.parsed_prop.legal_description = response.xpath("//span[@id='ContentPlaceHolderContent_lblSummaryLegalDesc']/text()").extract()[0]
@@ -99,7 +99,6 @@ class WarrenSpider(scrapy.Spider):
 
         self.parsed_prop.save()
 
-
         # Tax values, will be changed to be stored in a new table below:
         # Detect current year
         current_year = response.xpath("//span[@id='ContentPlaceHolderContent_lblcurrvalue']/text()").extract()[0][-4:]
@@ -112,7 +111,6 @@ class WarrenSpider(scrapy.Spider):
         self.current_year_tax_values.taxes_paid = utils.convert_taxable_value_string_to_integer(response.xpath("//span[@id='ContentPlaceHolderContent_lblTaxSumTotChargeNetTax']/text()").extract()[0])
         self.current_year_tax_values.save()
         # End tax values
-
 
         # Parse pay next year tentative values
         next_year = response.xpath("//p[contains(text(),'TENTATIVE VALUE AS OF 01-01-2018')]/text()").extract()[0][-4:]
@@ -128,7 +126,6 @@ class WarrenSpider(scrapy.Spider):
         # #     self.new_property.date_of_mortgage = datetime.datetime.strptime(
         # #         response.xpath("//span[@id='ContentPlaceHolderContent_lblSingleResSaleDate']/text()").extract()[0],
         # #         '%m/%d/%Y')
-
 
         self.data = {}
         self.data['ctl00$ToolkitScriptManager1'] = 'ctl00$UpdatePanel1|ctl00$ContentPlaceHolderContent$lbTaxInfo'
@@ -194,7 +191,9 @@ class WarrenSpider(scrapy.Spider):
 
         self.property_address.save()
 
+        # We could here at the end of the scraper process trigger the mortgage download
+        a = warren_mortgage.WarrenMortgageInfo()
+        a.download_mortgage_info()
 
     # https://oh3laredo.fidlar.com/OHWarren/AvaWeb/#!/search?Parcel=0801219020
-
     # f'''https://oh3laredo.fidlar.com/OHWarren/AvaWeb/#!/search?Parcel={self.parsed_prop}'''
