@@ -206,6 +206,9 @@ def select_most_recent_mtg_item(recorder_data_dict, date_format):
 
     mtg_items = [item for item in recorder_data_dict['DocResults'] if item['DocumentType'] == 'MTG']
 
+    if len(mtg_items) == 0:
+        return False
+
     for memo in mtg_items:
         if most_recent_result_found == {}:
             most_recent_result_found = memo

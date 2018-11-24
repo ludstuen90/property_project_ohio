@@ -7,7 +7,6 @@ from ohio import settings
 from propertyrecords import models, utils
 
 
-
 class WarrenMortgageInfo:
     """
     Loop through all of the items in the database and scrape them.
@@ -84,18 +83,60 @@ class WarrenMortgageInfo:
         response_json = response.json()
         return response_json
 
-    @staticmethod
-    def parse_recorder_data(recorder_data_dict):
+    def retrieve_document_details(self, property_id_item):
         """
-        This method expects a dictionary of data from the county recorder's
-        office, and will return the most recent MTG record.
 
+        :param property_id_item:
+        :return:
+        """
+        # response = requests.request("POST", cls.WARREN_TOKEN_SITE, data=payload, headers=headers)
+
+        payload = json.dumps({'id':property_id_item})
+
+        response = requests.request("POST", self.WARREN_DOCUMENT_DETAIL, data=payload, headers=self.HEADERS )
+        response_json = response.json()
+        print("!!!!!!!: ", response.json())
+
+        return response_json['DocumentDetail']['ConsiderationAmount']
+
+    def download_mortgage_detail(self, property_dictionary):
+        """
+        This method expects a dictionary with the key as a Property django item and the value of
+        a dictionary referring to recorder data in Warren County.
+
+        To get the information we care about, the mortgage amount, we'll need to make one last call.
         Once we have this, we'll need to send another query to get more information on it
-        :param recorder_data_dict:
-        :return: most recent MTG record, if any
+        :param property_dictionary: Dictionary {django_property_item:dictionary_of_recorder_data}
+        :return: Information which has been saved to database
         """
 
-        # for memo in recorder_data_dict['DocResults']:
+        for django_item, mortgage_info in property_dictionary.items():
+            print("MORTGAGE INFO: ", mortgage_info)
+            print("DJANGO_ITEM: ", django_item)
+
+            mortgage_amount = self.retrieve_document_details(mortgage_info['Id'])
+            django_item.mortgage_amount = mortgage_amount
+            django_item.save()
+
+    def identify_most_recent_mortage_for_each(self):
+        property_items = {}
+
+        for prop_to_parse in self.warren_county_items:
+            recorder_data = self.download_list_of_recorder_data_items(f'''0{prop_to_parse.parcel_number}''')
+
+            # SELECT THE MOST RECENT MORTGAGE ITEM.
+            # RETURN IT
+            most_recent_item = utils.select_most_recent_mtg_item(recorder_data, self.DATE_FORMAT)
+
+            if not most_recent_item:
+                # If no mortgage detected, do nothing.
+                pass
+            else:
+                property_items[prop_to_parse] = most_recent_item
+                prop_to_parse.date_of_mortgage = datetime.datetime.strptime(most_recent_item['RecordedDateTime'], self.DATE_FORMAT)
+                prop_to_parse.save()
+
+        return property_items
 
     def download_mortgage_info(self):
         """
@@ -107,12 +148,10 @@ class WarrenMortgageInfo:
         """
         self.retrieve_access_token()
 
-        for prop_to_parse in self.warren_county_items:
-            recorder_data = self.download_list_of_recorder_data_items(f'''0{prop_to_parse.parcel_number}''')
+        results_dict = self.identify_most_recent_mortage_for_each()
+        self.download_mortgage_detail(results_dict)
 
-            # SELECT THE MOST RECENT MORTGAGE ITEM.
-            # RETURN IT
-            utils.select_most_recent_mtg_item(recorder_data, self.DATE_FORMAT)
+
 
 
 

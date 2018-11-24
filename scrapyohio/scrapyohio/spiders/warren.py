@@ -27,13 +27,13 @@ class WarrenSpider(scrapy.Spider):
     name = 'warren'
     allowed_domains = ['co.warren.oh.us', 'oh3laredo.fidlar.com']
     start_urls = [
-        # 'http://www.co.warren.oh.us/property_search/summary.aspx?account_nbr=551571',
-        # 'http://www.co.warren.oh.us/property_search/summary.aspx?account_nbr=1407775',
-        # 'http://www.co.warren.oh.us/property_search/summary.aspx?account_nbr=551305',
-        # 'http://www.co.warren.oh.us/property_search/summary.aspx?account_nbr=551865',
-        # 'http://www.co.warren.oh.us/property_search/summary.aspx?account_nbr=552375',
-        # 'http://www.co.warren.oh.us/property_search/summary.aspx?account_nbr=551577',
-        # 'http://www.co.warren.oh.us/property_search/summary.aspx?account_nbr=551571',
+        'http://www.co.warren.oh.us/property_search/summary.aspx?account_nbr=551571',
+        'http://www.co.warren.oh.us/property_search/summary.aspx?account_nbr=1407775',
+        'http://www.co.warren.oh.us/property_search/summary.aspx?account_nbr=551305',
+        'http://www.co.warren.oh.us/property_search/summary.aspx?account_nbr=551865',
+        'http://www.co.warren.oh.us/property_search/summary.aspx?account_nbr=552375',
+        'http://www.co.warren.oh.us/property_search/summary.aspx?account_nbr=551577',
+        'http://www.co.warren.oh.us/property_search/summary.aspx?account_nbr=551571',
         'http://www.co.warren.oh.us/property_search/summary.aspx?account_nbr=6150660',
     ]
     # 1407775 - cauv
@@ -75,7 +75,6 @@ class WarrenSpider(scrapy.Spider):
         self.parsed_prop.tax_district = response.xpath("//span[@id='ContentPlaceHolderContent_lblSummaryTaxDistrict']/text()").extract()[0]
         self.parsed_prop.school_district = int(response.xpath("//span[@id='ContentPlaceHolderContent_lblSummaryOhioSchoolDistNumber']/text()").extract()[0])
         self.parsed_prop.school_district_name = response.xpath("//span[@id='ContentPlaceHolderContent_lblSummarySchoolDistrict']/text()").extract()[0]
-        self.parsed_prop.mortgage_amount = utils.convert_taxable_value_string_to_integer('$1,999,999')
 
         self.parsed_prop.cauv_property = utils.cauv_parser(response.xpath("//span[@id='ContentPlaceHolderContent_lblValSumCAUVTrue']/text()").extract()[0])
         try:
@@ -93,10 +92,17 @@ class WarrenSpider(scrapy.Spider):
                 response.xpath("//span[@id='ContentPlaceHolderContent_lblSingleResSaleDate']/text()").extract()[0],
                 '%m/%d/%Y')
         except IndexError:
-            # No Building last sale date
-            self.parsed_prop.date_sold = datetime.datetime.strptime(
-                response.xpath("//span[@id='ContentPlaceHolderContent_lblNoBldgLastSaleDate']/text()").extract()[0],
-                '%m/%d/%Y')
+            try:
+                # No Building last sale date
+                self.parsed_prop.date_sold = datetime.datetime.strptime(
+                    response.xpath("//span[@id='ContentPlaceHolderContent_lblNoBldgLastSaleDate']/text()").extract()[0],
+                    '%m/%d/%Y')
+
+            except IndexError:
+                # We might be seeing a property with multiple buildings, and therefore sales data will not be
+                # available on home page. In this case, we'll need to make a separate request.
+                # See:  https://github.com/ludstuen90/ohio/issues/70
+                pass
 
         self.parsed_prop.save()
 
