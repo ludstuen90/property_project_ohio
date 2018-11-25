@@ -15,7 +15,7 @@ class Property(models.Model):
     owner = models.CharField(max_length=84, blank=True)
     date_sold = models.DateField(null=True, blank=True)
     date_of_LLC_name_change = models.DateField(null=True, blank=True)
-    date_of_mortgage = models.DateField(null=True, blank=True)
+    date_of_mortgage = models.DateField(null=True, blank=True, help_text="Mortgages on a property at or after the date of sale")
     mortgage_amount = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
     property_class = models.IntegerField(null=True, blank=True)
     land_use = models.IntegerField(null=True, blank=True)
@@ -41,7 +41,6 @@ class Property(models.Model):
         null=True,
         blank=True
     )
-
 
     def __str__(self):
         """
