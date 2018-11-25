@@ -19,10 +19,6 @@ HEADERS = {
 HEADERS.update(settings.CONTACT_INFO_HEADINGS)
 
 
-temp_var_address_search = 551571
-#f'''http://www.co.warren.oh.us/property_search/summary.aspx?account_nbr={temp_var_address_search}'''
-
-
 class WarrenSpider(scrapy.Spider):
     name = 'warren'
     allowed_domains = ['co.warren.oh.us', 'oh3laredo.fidlar.com']
@@ -86,23 +82,21 @@ class WarrenSpider(scrapy.Spider):
             self.parsed_prop.owner_occupancy_indicated = False
 
 
-        try:
-            # Single residential sale
-            self.parsed_prop.date_sold = datetime.datetime.strptime(
-                response.xpath("//span[@id='ContentPlaceHolderContent_lblSingleResSaleDate']/text()").extract()[0],
-                '%m/%d/%Y')
-        except IndexError:
-            try:
-                # No Building last sale date
-                self.parsed_prop.date_sold = datetime.datetime.strptime(
-                    response.xpath("//span[@id='ContentPlaceHolderContent_lblNoBldgLastSaleDate']/text()").extract()[0],
-                    '%m/%d/%Y')
+        self.lookup_possibilities = [
+                response.xpath("//span[@id='ContentPlaceHolderContent_lblSingleResSaleDate']/text()").extract(),
+                response.xpath("//span[@id='ContentPlaceHolderContent_lblNoBldgLastSaleDate']/text()").extract(),
+        ]
 
+        for lookup in self.lookup_possibilities:
+            #     # We might be seeing a property with multiple buildings, and therefore sales data will not be
+            #     # available on home page. In this case, we'll need to make a separate request.
+            #     # See:  https://github.com/ludstuen90/ohio/issues/70
+            try:
+                parsed_lookup = datetime.datetime.strptime(lookup[0], '%m/%d/%Y')
+                self.parsed_prop.date_sold = parsed_lookup
+                break
             except IndexError:
-                # We might be seeing a property with multiple buildings, and therefore sales data will not be
-                # available on home page. In this case, we'll need to make a separate request.
-                # See:  https://github.com/ludstuen90/ohio/issues/70
-                pass
+                continue
 
         self.parsed_prop.save()
 
@@ -129,10 +123,6 @@ class WarrenSpider(scrapy.Spider):
         self.next_year_tax_values.taxable_value = utils.convert_taxable_value_string_to_integer(response.xpath("//span[@id='ContentPlaceHolderContent_lblTentValSumTotalAssessed']/text()").extract()[0])
         self.next_year_tax_values.save()
         # End next year
-
-        # #     self.new_property.date_of_mortgage = datetime.datetime.strptime(
-        # #         response.xpath("//span[@id='ContentPlaceHolderContent_lblSingleResSaleDate']/text()").extract()[0],
-        # #         '%m/%d/%Y')
 
         self.data = {}
         self.data['ctl00$ToolkitScriptManager1'] = 'ctl00$UpdatePanel1|ctl00$ContentPlaceHolderContent$lbTaxInfo'
@@ -200,14 +190,9 @@ class WarrenSpider(scrapy.Spider):
 
         self.crawler.signals.connect(self.spider_idle, signal=signals.spider_idle)
 
-
     def spider_idle(self):
         # Wait until all records have downloaded, then trigger the mortgage download process
         if not self.logged_out:
             self.logged_out = True
             a = warren_mortgage.WarrenMortgageInfo()
             a.download_mortgage_info()
-            # req = Request('someurl', callback=self.parse_logout)
-            # self.crawler.engine.crawl(req, spider)
-    # https://oh3laredo.fidlar.com/OHWarren/AvaWeb/#!/search?Parcel=0801219020
-    # f'''https://oh3laredo.fidlar.com/OHWarren/AvaWeb/#!/search?Parcel={self.parsed_prop}'''

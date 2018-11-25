@@ -39,7 +39,6 @@ class WarrenMortgageInfo:
         # warren.py
         self.warren_county_object = models.County.objects.get(name='Warren')
         self.warren_county_items = models.Property.objects.all().filter(county=self.warren_county_object)
-        # self.access_token = self.retrieve_access_token()
         self.access_token = ''
 
     @classmethod
@@ -95,7 +94,6 @@ class WarrenMortgageInfo:
 
         response = requests.request("POST", self.WARREN_DOCUMENT_DETAIL, data=payload, headers=self.HEADERS )
         response_json = response.json()
-        print("!!!!!!!: ", response.json())
 
         return response_json['DocumentDetail']['ConsiderationAmount']
 
@@ -111,9 +109,6 @@ class WarrenMortgageInfo:
         """
 
         for django_item, mortgage_info in property_dictionary.items():
-            print("MORTGAGE INFO: ", mortgage_info)
-            print("DJANGO_ITEM: ", django_item)
-
             mortgage_amount = self.retrieve_document_details(mortgage_info['Id'])
             django_item.mortgage_amount = mortgage_amount
             django_item.save()
@@ -124,18 +119,21 @@ class WarrenMortgageInfo:
         for prop_to_parse in self.warren_county_items:
             recorder_data = self.download_list_of_recorder_data_items(f'''0{prop_to_parse.parcel_number}''')
 
-            # SELECT THE MOST RECENT MORTGAGE ITEM.
-            # RETURN IT
+            # Select the most recent mortgage item, and return it
             most_recent_item = utils.select_most_recent_mtg_item(recorder_data, self.DATE_FORMAT)
-
-            if not most_recent_item:
+            if most_recent_item:
                 # If no mortgage detected, do nothing.
-                pass
-            else:
-                property_items[prop_to_parse] = most_recent_item
-                prop_to_parse.date_of_mortgage = datetime.datetime.strptime(most_recent_item['RecordedDateTime'], self.DATE_FORMAT)
-                prop_to_parse.save()
-
+                mortgage_date = datetime.datetime.strptime(most_recent_item['RecordedDateTime'], self.DATE_FORMAT)
+                try:
+                    if not prop_to_parse.date_sold <= datetime.datetime.date(mortgage_date):
+                        pass
+                    else:
+                        property_items[prop_to_parse] = most_recent_item
+                        prop_to_parse.date_of_mortgage = mortgage_date
+                        prop_to_parse.save()
+                except TypeError:
+                    # In the case of us not having any date sold in our system, we shouldn't store mortgage.
+                    pass
         return property_items
 
     def download_mortgage_info(self):
@@ -151,18 +149,3 @@ class WarrenMortgageInfo:
         results_dict = self.identify_most_recent_mortage_for_each()
         self.download_mortgage_detail(results_dict)
 
-
-
-
-
-        # What is the desired behavior we want?
-        # IF no access token, get one.
-        # If access token expired, get a new one.
-        # Otherwise, keep using an existing access token.
-        # Where should access token be stored?
-        # We could pretty much store it in this class....
-        # I was requesting access tokens earlier and it didn't seen to be a problem.
-
-
-# a = WarrenMortgageInfo()
-# a.download_mortgage_info()
