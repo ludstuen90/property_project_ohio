@@ -9,13 +9,9 @@ from propertyrecords import models, utils
 
 class WarrenMortgageInfo:
     """
-    Loop through all of the items in the database and scrape them.
-    Make a new class for each scrape attempt? that seems wasteful
-
-    Just do a method call? tha seems ... unsavory.
-
-    Class with an active connection
-
+    Loop through all of the Warren County
+    properties items in the database and scrape the
+    mortgage date and amount if possible.
     """
     access_token = ''
     WARREN_MORTGAGE_SITE = settings.WARREN_MORTGAGE_SITE
