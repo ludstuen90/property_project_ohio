@@ -20,12 +20,12 @@ sys.path.append(django_project_directory)
 os.environ['DJANGO_SETTINGS_MODULE'] = 'ohio.settings'
 django.setup()
 
-
-
 BOT_NAME = 'scrapyohio'
 
 SPIDER_MODULES = ['scrapyohio.spiders']
 NEWSPIDER_MODULE = 'scrapyohio.spiders'
+
+
 
 
 # ITEM_PIPELINES = {
@@ -63,9 +63,9 @@ ROBOTSTXT_OBEY = True
 
 # Enable or disable spider middlewares
 # See https://doc.scrapy.org/en/latest/topics/spider-middleware.html
-#SPIDER_MIDDLEWARES = {
+# SPIDER_MIDDLEWARES = {
 #    'scrapyohio.middlewares.ScrapyohioSpiderMiddleware': 543,
-#}
+# }
 
 # Enable or disable downloader middlewares
 # See https://doc.scrapy.org/en/latest/topics/downloader-middleware.html

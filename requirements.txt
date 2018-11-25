@@ -2,7 +2,9 @@ asn1crypto==0.24.0
 atomicwrites==1.2.1
 attrs==18.2.0
 Automat==0.7.0
+certifi==2018.10.15
 cffi==1.11.5
+chardet==3.0.4
 constantly==15.1.0
 cryptography==2.4.1
 cssselect==1.0.3
@@ -26,10 +28,12 @@ pyOpenSSL==18.0.0
 pytest==3.10.1
 pytz==2018.7
 queuelib==1.5.0
+requests==2.20.1
 Scrapy==1.5.1
 scrapy-djangoitem==1.1.1
 service-identity==17.0.0
 six==1.11.0
 Twisted==18.9.0
+urllib3==1.24.1
 w3lib==1.19.0
 zope.interface==4.6.0
