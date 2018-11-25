@@ -88,9 +88,7 @@ class WarrenMortgageInfo:
         :param property_id_item:
         :return:
         """
-        # response = requests.request("POST", cls.WARREN_TOKEN_SITE, data=payload, headers=headers)
-
-        payload = json.dumps({'id':property_id_item})
+        payload = json.dumps({'id': property_id_item})
 
         response = requests.request("POST", self.WARREN_DOCUMENT_DETAIL, data=payload, headers=self.HEADERS )
         response_json = response.json()
