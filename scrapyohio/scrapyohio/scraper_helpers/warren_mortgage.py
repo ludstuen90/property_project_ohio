@@ -111,7 +111,7 @@ class WarrenMortgageInfo:
         property_items = {}
 
         for prop_to_parse in self.warren_county_items:
-            recorder_data = self.download_list_of_recorder_data_items(f'''0{prop_to_parse.parcel_number}''')
+            recorder_data = self.download_list_of_recorder_data_items(prop_to_parse.parcel_number)
 
             # Select the most recent mortgage item, and return it
             most_recent_item = utils.select_most_recent_mtg_item(recorder_data, self.DATE_FORMAT)
