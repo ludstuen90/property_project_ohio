@@ -19,8 +19,10 @@ class Command(BaseCommand):
             reader = csv.DictReader(csvfile)
             for row in reader:
                 warren_county_property_item, created = models.Property.objects.get_or_create(parcel_number=row['Parcel Number'])
+                warren_county_property_item.account_number = row['Account Number']
                 warren_county_property_item.county = warren_county
-                warren_county_property_item.save()
+                if row['Account Number']:
+                    warren_county_property_item.save()
 
 
 
