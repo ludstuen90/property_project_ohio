@@ -6,7 +6,6 @@ import django.db.models.deletion
 
 class Migration(migrations.Migration):
 
-    replaces = [('propertyrecords', '0001_initial'), ('propertyrecords', '0002_auto_20181113_1818'), ('propertyrecords', '0003_auto_20181114_1713'), ('propertyrecords', '0004_auto_20181115_0048'), ('propertyrecords', '0005_auto_20181115_0050'), ('propertyrecords', '0006_auto_20181115_0132'), ('propertyrecords', '0007_auto_20181117_1415'), ('propertyrecords', '0008_auto_20181117_1525'), ('propertyrecords', '0009_auto_20181118_2347'), ('propertyrecords', '0010_auto_20181119_1435'), ('propertyrecords', '0011_auto_20181119_1505'), ('propertyrecords', '0012_auto_20181119_2036'), ('propertyrecords', '0013_auto_20181119_2039'), ('propertyrecords', '0014_auto_20181120_1841'), ('propertyrecords', '0015_auto_20181121_1546'), ('propertyrecords', '0016_auto_20181121_1652'), ('propertyrecords', '0017_auto_20181121_1747'), ('propertyrecords', '0018_auto_20181121_1749'), ('propertyrecords', '0019_taxdata'), ('propertyrecords', '0020_auto_20181121_2107'), ('propertyrecords', '0021_auto_20181121_2221'), ('propertyrecords', '0022_auto_20181122_1801'), ('propertyrecords', '0023_auto_20181124_1637'), ('propertyrecords', '0024_auto_20181125_0217')]
 
     initial = True
 
