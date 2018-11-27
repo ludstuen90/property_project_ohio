@@ -9,28 +9,28 @@ from propertyrecords import utils, models
 
 from scrapyohio.scraper_helpers import warren_mortgage
 
-HEADERS = {
-            "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_1) AppleWebKit/537.36 (KHTML, "
-                          "like Gecko) Chrome/70.0.3538.102 Safari/537.36",
-            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8",
-            "X-MicrosoftAjax": "Delta=true"
-            }
-
-HEADERS.update(settings.CONTACT_INFO_HEADINGS)
-
 
 class WarrenSpider(scrapy.Spider):
+    HEADERS = {
+        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_1) AppleWebKit/537.36 (KHTML, "
+                      "like Gecko) Chrome/70.0.3538.102 Safari/537.36",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8",
+        "X-MicrosoftAjax": "Delta=true"
+    }
+
+
+
     name = 'warren'
     allowed_domains = ['co.warren.oh.us', 'oh3laredo.fidlar.com']
     start_urls = [
-        'http://www.co.warren.oh.us/property_search/summary.aspx?account_nbr=551571',
-        'http://www.co.warren.oh.us/property_search/summary.aspx?account_nbr=1407775',
+        # 'http://www.co.warren.oh.us/property_search/summary.aspx?account_nbr=551571',
+        # 'http://www.co.warren.oh.us/property_search/summary.aspx?account_nbr=1407775',
         'http://www.co.warren.oh.us/property_search/summary.aspx?account_nbr=551305',
-        'http://www.co.warren.oh.us/property_search/summary.aspx?account_nbr=551865',
-        'http://www.co.warren.oh.us/property_search/summary.aspx?account_nbr=552375',
-        'http://www.co.warren.oh.us/property_search/summary.aspx?account_nbr=551577',
-        'http://www.co.warren.oh.us/property_search/summary.aspx?account_nbr=551571',
-        'http://www.co.warren.oh.us/property_search/summary.aspx?account_nbr=6150660',
+        # 'http://www.co.warren.oh.us/property_search/summary.aspx?account_nbr=551865',
+        # 'http://www.co.warren.oh.us/property_search/summary.aspx?account_nbr=552375',
+        # 'http://www.co.warren.oh.us/property_search/summary.aspx?account_nbr=551577',
+        # 'http://www.co.warren.oh.us/property_search/summary.aspx?account_nbr=551571',
+        # 'http://www.co.warren.oh.us/property_search/summary.aspx?account_nbr=6150660',
     ]
     # 1407775 - cauv
     # 6150660 - jas jenn smith
@@ -41,9 +41,11 @@ class WarrenSpider(scrapy.Spider):
     # 551571 - OWNERS IN COMMON
 
     def __init__(self):
+        self.HEADERS.update(settings.CONTACT_INFO_HEADINGS)
         self.logged_out = False
 
     def start_requests(self):
+
        # Ensure we have a county in the database
         self.warren_county_object, created = models.County.objects.get_or_create(name="Warren")
 
@@ -51,7 +53,7 @@ class WarrenSpider(scrapy.Spider):
         # sent over to include Lucia's contact information
         for url in self.start_urls:
             yield Request(url, dont_filter=True,
-                          headers=HEADERS
+                          headers=self.HEADERS
                           )
 
     def parse(self, response):
@@ -80,6 +82,8 @@ class WarrenSpider(scrapy.Spider):
             # There are many reasons a property might not be owner occupied... if it's an office building,
             # for example. This field will be False unless we found an owner occupied indication or tax credit
             self.parsed_prop.owner_occupancy_indicated = False
+
+
 
 
         self.lookup_possibilities = [
@@ -124,6 +128,7 @@ class WarrenSpider(scrapy.Spider):
         self.next_year_tax_values.save()
         # End next year
 
+        # Declare screen values so that we can parse other views if needed.
         self.data = {}
         self.data['ctl00$ToolkitScriptManager1'] = 'ctl00$UpdatePanel1|ctl00$ContentPlaceHolderContent$lbTaxInfo'
         self.data['__EVENTTARGET'] = "ctl00$ContentPlaceHolderContent$lbTaxInfo"
@@ -133,7 +138,6 @@ class WarrenSpider(scrapy.Spider):
         self.data['__EVENTVALIDATION'] = response.css('input#__EVENTVALIDATION::attr(value)').extract_first(),
         self.data['ctl00$ContentPlaceHolderContent$ddlTaxYear'] = '2017',
         self.data['__ASYNCPOST'] = 'true',
-
         yield FormRequest(
                 url=response.request.url,
                 method='POST',
@@ -141,11 +145,36 @@ class WarrenSpider(scrapy.Spider):
                 formdata=self.data,
                 meta={'page': 1},
                 dont_filter=True,
-                headers=HEADERS,
+                headers=self.HEADERS,
             )
 
-    def parse_tax(self, response):
+        # If at this point we still haven't been able to download the last property sale
+        # date, let's go explicitly to the sales page and parse it from there.
+        # If we can parse it earlier on, skipping this step will allow our scrapes
+        # to go faster
 
+        # if not self.parsed_prop.date_sold:
+        #     self.parsed_data = {}
+        #     self.parsed_data['ctl00$ToolkitScriptManager1'] = 'ctl00$UpdatePanel1|ctl00$ContentPlaceHolderContent$lbSalesHistory'
+        #     self.parsed_data['__EVENTTARGET'] = "ctl00$ContentPlaceHolderContent$lbSalesHistory"
+        #     self.parsed_data['__EVENTARGUMENT'] = ""
+        #     self.parsed_data['__LASTFOCUS'] = ""
+        #     self.parsed_data['__VIEWSTATE'] = response.css('input#__VIEWSTATE::attr(value)').extract_first(),
+        #     self.parsed_data['__EVENTVALIDATION'] = response.css('input#__EVENTVALIDATION::attr(value)').extract_first(),
+        #     self.parsed_data['ctl00$ContentPlaceHolderContent$ddlTaxYear'] = '2017',
+        #     self.parsed_data['__ASYNCPOST'] = 'true',
+        #
+        #     yield scrapy.FormRequest(
+        #             url=response.request.url,
+        #             method='POST',
+        #             callback=self.parse_sale,
+        #             formdata=self.parsed_data,
+        #             meta={'page': 1},
+        #             dont_filter=True,
+        #             headers=self.HEADERS,
+        #         )
+
+    def parse_tax(self, response):
         self.parsed_prop = models.Property.objects.get(parcel_number=response.xpath("//span[@id='ContentPlaceHolderContent_lblSummaryParcelID']/text()").extract()[0])
         returned_tax_address = response.css("div.wrapper div.rightContent:nth-child(4) div:nth-child(1) fieldset::text").extract()
         parsed_address = utils.parse_tax_address_from_css(returned_tax_address)
@@ -188,11 +217,27 @@ class WarrenSpider(scrapy.Spider):
 
         self.property_address.save()
 
+
+    def parse_sale(self, response):
+        """
+
+        :return:
+        """
+        self.sale_date = print("DIR: ", dir(response))
+        print("response::: ", response.body)
+        self.sale_date = response.xpath("/html[1]/body[1]/form[1]/div[6]/div[1]/div[1]/div[2]/div[1]/div[1]/table[1]/tbody[1]/tr[2]/td[1]/text()").extract()
+        print("!!!!SALE DATE: ", self.sale_date)
+        for x in self.sale_date:
+            print(x)
+        print("type: ", type(self.sale_date))
+        print("DIRTYPE: ", dir(self.sale_date))
+
+
         self.crawler.signals.connect(self.spider_idle, signal=signals.spider_idle)
 
     def spider_idle(self):
         # Wait until all records have downloaded, then trigger the mortgage download process
         if not self.logged_out:
             self.logged_out = True
-            a = warren_mortgage.WarrenMortgageInfo()
-            a.download_mortgage_info()
+            # a = warren_mortgage.WarrenMortgageInfo()
+            # a.download_mortgage_info()
