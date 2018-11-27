@@ -32,3 +32,23 @@ The following environment variables are required:
 
 `WARREN_MORTGAGE_SITE`
 
+
+# Downloading Initial Data
+
+For each county, data lives in a separate place. At this time,
+the process to download some of the data initial data (i.e. parcel IDs
+for each county) lives in a different place. 
+
+Below are instructions to download the initial data for each county: 
+
+### Warren County
+
+Access this page: 
+http://www.co.warren.oh.us/property_search/search.aspx?searchType=Advanced
+
+Search for properties built after year 1.
+
+When the results appear, download the file as a CSV file, and save it in 
+this project's folder: propertyrecords/parcel_data.csv (If existing file, overwrite)
+
+Then, run `python manage.py warren` and the CSV file will load automatically. 
