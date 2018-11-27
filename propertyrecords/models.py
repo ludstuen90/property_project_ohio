@@ -9,7 +9,7 @@ class Property(models.Model):
     """
     We mark
     """
-    parcel_number = models.BigIntegerField(unique=True)
+    parcel_number = models.CharField(max_length=13, unique=True)
     legal_acres = models.DecimalField(max_digits=6, decimal_places=3, null=True, blank=True)
     legal_description = models.CharField(max_length=120, blank=True)
     owner = models.CharField(max_length=84, blank=True)
@@ -23,6 +23,7 @@ class Property(models.Model):
     school_district_name = models.CharField(max_length=52, blank=True)
     school_district = models.IntegerField(null=True, blank=True)
     tax_lien = models.BooleanField(default=False)
+    tax_lien_information_source = models.CharField(blank=True, max_length=24)
     cauv_property = models.BooleanField(default=False)
     owner_occupancy_indicated = models.BooleanField(default=False,
                                                     help_text="Checked if an owner received an owner occupancy tax "
