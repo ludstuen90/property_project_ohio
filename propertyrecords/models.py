@@ -10,6 +10,7 @@ class Property(models.Model):
     We mark
     """
     parcel_number = models.CharField(max_length=13, unique=True)
+    account_number = models.CharField(max_length=10)
     legal_acres = models.DecimalField(max_digits=6, decimal_places=3, null=True, blank=True)
     legal_description = models.CharField(max_length=120, blank=True)
     owner = models.CharField(max_length=84, blank=True)
