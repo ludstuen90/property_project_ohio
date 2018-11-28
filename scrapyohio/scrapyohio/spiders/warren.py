@@ -18,15 +18,14 @@ class WarrenSpider(scrapy.Spider):
         "X-MicrosoftAjax": "Delta=true"
     }
 
-
-
     name = 'warren'
     allowed_domains = ['co.warren.oh.us', 'oh3laredo.fidlar.com']
 
     def retrieve_all_warren_county_urls(self):
         self.warren_county_object, created = models.County.objects.get_or_create(name="Warren")
 
-        self.please_parse_these_items = models.Property.objects.filter(county=self.warren_county_object)[:5]
+        # self.please_parse_these_items = models.Property.objects.filter(county=self.warren_county_object)[:5]
+        self.please_parse_these_items = models.Property.objects.filter(account_number=551305)
 
         for item in self.please_parse_these_items:
             url = f'''http://www.co.warren.oh.us/property_search/summary.aspx?account_nbr={item.account_number}'''
@@ -82,9 +81,6 @@ class WarrenSpider(scrapy.Spider):
             # There are many reasons a property might not be owner occupied... if it's an office building,
             # for example. This field will be False unless we found an owner occupied indication or tax credit
             self.parsed_prop.owner_occupancy_indicated = False
-
-
-
 
         self.lookup_possibilities = [
                 response.xpath("//span[@id='ContentPlaceHolderContent_lblSingleResSaleDate']/text()").extract(),
@@ -178,7 +174,7 @@ class WarrenSpider(scrapy.Spider):
         self.parsed_prop = models.Property.objects.get(parcel_number=f'''{response.xpath("//span[@id='ContentPlaceHolderContent_lblSummaryParcelID']/text()").extract()[0]}0''')
         returned_tax_address = response.css("div.wrapper div.rightContent:nth-child(4) div:nth-child(1) fieldset::text").extract()
         parsed_address = utils.parse_tax_address_from_css(returned_tax_address)
-
+        print("HERE IN TAX")
         # FIND IF TAX ADDRESS EXISTS, IF NOT CREATE
         if len(parsed_address) == 1:
             try:
@@ -223,7 +219,11 @@ class WarrenSpider(scrapy.Spider):
 
         :return:
         """
-        resopnse
+        from scrapy.utils.response import open_in_browser
+
+        open_in_browser(response)
+
+
         self.sale_date = print("DIR: ", dir(response))
         print("response::: ", response.body)
         self.sale_date = response.xpath("/html[1]/body[1]/form[1]/div[6]/div[1]/div[1]/div[2]/div[1]/div[1]/table[1]/tbody[1]/tr[2]/td[1]/text()").extract()
