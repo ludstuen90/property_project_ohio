@@ -30,11 +30,12 @@ class WarrenMortgageInfo:
     # Add in the journalism program contact information
     HEADERS.update(settings.CONTACT_INFO_HEADINGS)
 
-    def __init__(self):
+    def __init__(self, properties_to_parse):
         # Warren county should exist here because it would have been created earlier in
         # warren.py
         self.warren_county_object = models.County.objects.get(name='Warren')
-        self.warren_county_items = models.Property.objects.all().filter(county=self.warren_county_object)
+
+        self.warren_county_items = properties_to_parse
         self.access_token = ''
 
     @classmethod
@@ -111,7 +112,7 @@ class WarrenMortgageInfo:
         property_items = {}
 
         for prop_to_parse in self.warren_county_items:
-            recorder_data = self.download_list_of_recorder_data_items(f'''0{prop_to_parse.parcel_number}''')
+            recorder_data = self.download_list_of_recorder_data_items(int(str(prop_to_parse.parcel_number)[:-1]))
 
             # Select the most recent mortgage item, and return it
             most_recent_item = utils.select_most_recent_mtg_item(recorder_data, self.DATE_FORMAT)

@@ -22,16 +22,17 @@ class WarrenSpider(scrapy.Spider):
 
     name = 'warren'
     allowed_domains = ['co.warren.oh.us', 'oh3laredo.fidlar.com']
-    start_urls = [
-        # 'http://www.co.warren.oh.us/property_search/summary.aspx?account_nbr=551571',
-        # 'http://www.co.warren.oh.us/property_search/summary.aspx?account_nbr=1407775',
-        'http://www.co.warren.oh.us/property_search/summary.aspx?account_nbr=551305',
-        # 'http://www.co.warren.oh.us/property_search/summary.aspx?account_nbr=551865',
-        # 'http://www.co.warren.oh.us/property_search/summary.aspx?account_nbr=552375',
-        # 'http://www.co.warren.oh.us/property_search/summary.aspx?account_nbr=551577',
-        # 'http://www.co.warren.oh.us/property_search/summary.aspx?account_nbr=551571',
-        # 'http://www.co.warren.oh.us/property_search/summary.aspx?account_nbr=6150660',
-    ]
+
+    def retrieve_all_warren_county_urls(self):
+        self.warren_county_object, created = models.County.objects.get_or_create(name="Warren")
+
+        self.please_parse_these_items = models.Property.objects.filter(county=self.warren_county_object)[:5]
+
+        for item in self.please_parse_these_items:
+            url = f'''http://www.co.warren.oh.us/property_search/summary.aspx?account_nbr={item.account_number}'''
+            yield url
+
+
     # 1407775 - cauv
     # 6150660 - jas jenn smith
     # 551305 - settlers walk
@@ -51,7 +52,7 @@ class WarrenSpider(scrapy.Spider):
 
         # We want to assign headers for each request triggered. Override the request object
         # sent over to include Lucia's contact information
-        for url in self.start_urls:
+        for url in self.retrieve_all_warren_county_urls():
             yield Request(url, dont_filter=True,
                           headers=self.HEADERS
                           )
@@ -63,9 +64,8 @@ class WarrenSpider(scrapy.Spider):
         :return:
         """
         parsed_parcel_number = response.xpath("//span[@id='ContentPlaceHolderContent_lblSummaryParcelID']/text()").extract()[0]
-        self.parsed_prop, created = models.Property.objects.get_or_create(parcel_number=parsed_parcel_number)
+        self.parsed_prop, created = models.Property.objects.get_or_create(parcel_number=f'''{parsed_parcel_number}0''')
         self.parsed_prop.county = self.warren_county_object
-        self.parsed_prop.parcel_number = parsed_parcel_number
         self.parsed_prop.legal_acres = utils.convert_acres_to_integer(response.xpath("//span[@id='ContentPlaceHolderContent_lblSummaryLegalDesc']/text()").extract()[1])
         self.parsed_prop.legal_description = response.xpath("//span[@id='ContentPlaceHolderContent_lblSummaryLegalDesc']/text()").extract()[0]
         self.parsed_prop.owner = response.xpath("//span[@id='ContentPlaceHolderContent_lblSummaryCurrentOwner']/text()").extract()[0]
@@ -97,7 +97,7 @@ class WarrenSpider(scrapy.Spider):
             #     # See:  https://github.com/ludstuen90/ohio/issues/70
             try:
                 parsed_lookup = datetime.datetime.strptime(lookup[0], '%m/%d/%Y')
-                self.parsed_prop.date_sold = parsed_lookup
+                self.parsed_prop.date_sold = parsed_lookup.date()
                 break
             except IndexError:
                 continue
@@ -153,29 +153,29 @@ class WarrenSpider(scrapy.Spider):
         # If we can parse it earlier on, skipping this step will allow our scrapes
         # to go faster
 
-        # if not self.parsed_prop.date_sold:
-        #     self.parsed_data = {}
-        #     self.parsed_data['ctl00$ToolkitScriptManager1'] = 'ctl00$UpdatePanel1|ctl00$ContentPlaceHolderContent$lbSalesHistory'
-        #     self.parsed_data['__EVENTTARGET'] = "ctl00$ContentPlaceHolderContent$lbSalesHistory"
-        #     self.parsed_data['__EVENTARGUMENT'] = ""
-        #     self.parsed_data['__LASTFOCUS'] = ""
-        #     self.parsed_data['__VIEWSTATE'] = response.css('input#__VIEWSTATE::attr(value)').extract_first(),
-        #     self.parsed_data['__EVENTVALIDATION'] = response.css('input#__EVENTVALIDATION::attr(value)').extract_first(),
-        #     self.parsed_data['ctl00$ContentPlaceHolderContent$ddlTaxYear'] = '2017',
-        #     self.parsed_data['__ASYNCPOST'] = 'true',
-        #
-        #     yield scrapy.FormRequest(
-        #             url=response.request.url,
-        #             method='POST',
-        #             callback=self.parse_sale,
-        #             formdata=self.parsed_data,
-        #             meta={'page': 1},
-        #             dont_filter=True,
-        #             headers=self.HEADERS,
-        #         )
+        if not self.parsed_prop.date_sold:
+            self.parsed_data = {}
+            self.parsed_data['ctl00$ToolkitScriptManager1'] = 'ctl00$UpdatePanel1|ctl00$ContentPlaceHolderContent$lbSalesHistory'
+            self.parsed_data['__EVENTTARGET'] = "ctl00$ContentPlaceHolderContent$lbSalesHistory"
+            self.parsed_data['__EVENTARGUMENT'] = ""
+            self.parsed_data['__LASTFOCUS'] = ""
+            self.parsed_data['__VIEWSTATE'] = response.css('input#__VIEWSTATE::attr(value)').extract_first(),
+            self.parsed_data['__EVENTVALIDATION'] = response.css('input#__EVENTVALIDATION::attr(value)').extract_first(),
+            self.parsed_data['ctl00$ContentPlaceHolderContent$ddlTaxYear'] = '2017',
+            self.parsed_data['__ASYNCPOST'] = 'true',
+
+            yield scrapy.FormRequest(
+                    url=response.request.url,
+                    method='POST',
+                    callback=self.parse_sale,
+                    formdata=self.parsed_data,
+                    meta={'page': 1},
+                    dont_filter=True,
+                    headers=self.HEADERS,
+                )
 
     def parse_tax(self, response):
-        self.parsed_prop = models.Property.objects.get(parcel_number=response.xpath("//span[@id='ContentPlaceHolderContent_lblSummaryParcelID']/text()").extract()[0])
+        self.parsed_prop = models.Property.objects.get(parcel_number=f'''{response.xpath("//span[@id='ContentPlaceHolderContent_lblSummaryParcelID']/text()").extract()[0]}0''')
         returned_tax_address = response.css("div.wrapper div.rightContent:nth-child(4) div:nth-child(1) fieldset::text").extract()
         parsed_address = utils.parse_tax_address_from_css(returned_tax_address)
 
@@ -223,6 +223,7 @@ class WarrenSpider(scrapy.Spider):
 
         :return:
         """
+        resopnse
         self.sale_date = print("DIR: ", dir(response))
         print("response::: ", response.body)
         self.sale_date = response.xpath("/html[1]/body[1]/form[1]/div[6]/div[1]/div[1]/div[2]/div[1]/div[1]/table[1]/tbody[1]/tr[2]/td[1]/text()").extract()
@@ -239,5 +240,5 @@ class WarrenSpider(scrapy.Spider):
         # Wait until all records have downloaded, then trigger the mortgage download process
         if not self.logged_out:
             self.logged_out = True
-            # a = warren_mortgage.WarrenMortgageInfo()
-            # a.download_mortgage_info()
+            a = warren_mortgage.WarrenMortgageInfo( self.please_parse_these_items)
+            a.download_mortgage_info()

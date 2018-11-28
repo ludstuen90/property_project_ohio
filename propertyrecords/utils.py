@@ -215,7 +215,6 @@ def select_most_recent_mtg_item(recorder_data_dict, date_format):
         else:
             if datetime.datetime.strptime(memo['RecordedDateTime'], date_format) > datetime.datetime.strptime(most_recent_result_found['RecordedDateTime'], date_format):
                 most_recent_result_found = memo
-            elif datetime.datetime.strptime(memo['RecordedDateTime'], date_format) == datetime.datetime.strptime(most_recent_result_found['RecordedDateTime'], date_format):
-                raise ImportError("Matching date times found, cannot resolve difference")
 
     return most_recent_result_found
+
