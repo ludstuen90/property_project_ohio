@@ -8,14 +8,20 @@ class AddressInline(admin.StackedInline):
     model = models.PropertyAddress
 
 
+class TaxDataInline(admin.StackedInline):
+    model = models.TaxData
+    extra = 0
+
+
 class PropertyAdmin(admin.ModelAdmin):
-    inlines = (AddressInline,)
-    list_display = ('parcel_number', 'mortgage_amount', 'tax_lien', 'rental_registration', 'current_market_value',
+    inlines = (AddressInline, TaxDataInline)
+    list_display = ('parcel_number', 'mortgage_amount', 'tax_lien', 'owner_occupancy_indicated',
                     'display_address')
+    list_filter = ['county']
 
 
 admin.site.register(models.Property, PropertyAdmin)
 admin.site.register(models.TaxAddress)
-admin.site.register(models.OwnerAddress)
 admin.site.register(models.County)
 admin.site.register(models.DatabaseProgram)
+admin.site.register(models.TaxData)

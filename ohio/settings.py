@@ -133,3 +133,13 @@ USE_TZ = True
 # https://docs.djangoproject.com/en/1.11/howto/static-files/
 
 STATIC_URL = '/static/'
+
+WARREN_MORTGAGE_SITE = env('WARREN_MORTGAGE_SITE')
+
+CONTACT_INFO_HEADINGS = {
+    "Info": "The Ohio Center for Investigative Journalism, Eye on Ohio, is requesting these public records for "
+    "use in a journalism project, and to conserve valuable public funds and government employees' time "
+    "instead of filing multiple freedom of information act requests.",
+    "Questions": "If you have questions or concerns, please contact Lucia Walinchus at 646-397-7761 or "
+    "Lucia[the at symbol}eyeonohio.com.",
+}
