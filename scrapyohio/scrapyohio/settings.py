@@ -25,6 +25,9 @@ BOT_NAME = 'scrapyohio'
 SPIDER_MODULES = ['scrapyohio.spiders']
 NEWSPIDER_MODULE = 'scrapyohio.spiders'
 
+AUTOTHROTTLE_ENABLED = True
+AUTOTHROTTLE_START_DELAY = 1
+AUTOTHROTTLE_MAX_DELAY = 3
 
 
 
