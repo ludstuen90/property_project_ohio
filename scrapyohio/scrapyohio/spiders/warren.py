@@ -32,7 +32,6 @@ class WarrenSpider(scrapy.Spider):
             url = f'''http://www.co.warren.oh.us/property_search/summary.aspx?account_nbr={item.account_number}'''
             yield url
 
-
     # 1407775 - cauv
     # 6150660 - jas jenn smith
     # 551305 - settlers walk
