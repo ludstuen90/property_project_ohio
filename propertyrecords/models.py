@@ -105,8 +105,11 @@ class AddressProperties(models.Model):
 
     def save(self, *args, **kwargs):
         """
-        Override default save mechanism so that state names are always saved in upper case
+        Override default save mechanism so that information is always saved in upper case
         """
+        self.primary_address_line = self.primary_address_line.upper()
+        self.secondary_address_line = self.secondary_address_line.upper()
+        self.city = self.city.upper()
         self.state = self.state.upper()
         return super(AddressProperties, self).save(*args, **kwargs)
 

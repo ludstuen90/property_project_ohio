@@ -57,7 +57,13 @@ def cuyahoga_addr_splitter(input_address_string):
         for item in address_string:
             list.append(item.strip())
         city_line = list[2].split(' ')
-        primary_address = f'''{list[1]} {city_line[0]}'''
+
+
+        if len(city_line) == 1:
+            primary_address = f'''{list[1]}'''
+        else:
+            primary_address = f'''{list[1]} {city_line[0]}'''
+
         normalized_primary_address = " ".join(primary_address.split()).upper()
         list_len = len(list)
         zip_code = list[list_len-2]
@@ -74,14 +80,14 @@ def cuyahoga_addr_splitter(input_address_string):
         return {
             'primary_address': normalized_primary_address,
             'city': city_name,
-            'zip_code': zip_code,
+            'zipcode': zip_code,
             'state': state
         }
     except IndexError:
         return {
             'primary_address': address_string,
             'city': '',
-            'zip_code': '',
+            'zipcode': '',
             'state': ''
 
         }

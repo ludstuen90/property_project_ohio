@@ -1,7 +1,6 @@
 # from django.test import TestCase
 import os
 from decimal import Decimal
-
 import pytest
 
 import pickle
@@ -128,12 +127,27 @@ def test_base64_string_convert():
 
 
 def test_cuyahoga_addr_splitter():
-    import os
-    dirname, filename = os.path.split(os.path.abspath(__file__))
-    pickle_path = os.path.join(dirname, 'test_data/cuyahoga_address.p')
 
-    addr = pickle.load(open(pickle_path, "rb"))
-    first_result = utils.cuyahoga_addr_splitter(addr)
+    dirname, filename = os.path.split(os.path.abspath(__file__))
+    pickle_path1 = os.path.join(dirname, 'test_data/cuyahoga_address1.p')
+
+    addr1 = pickle.load(open(pickle_path1, "rb"))
+    first_result = utils.cuyahoga_addr_splitter(addr1)
 
     assert first_result == {'primary_address': '13461 LORAIN AVE', 'city': 'CLEVELAND',
-                            'zip_code': '44111', 'state': 'OH'}
+                            'zipcode': '44111', 'state': 'OH'}
+
+    pickle_path2 = os.path.join(dirname, 'test_data/cuyahoga_address2.p')
+    addr2 = pickle.load(open(pickle_path2, "rb"))
+    second_result = utils.cuyahoga_addr_splitter(addr2)
+
+
+    assert second_result == {'primary_address': '633 FALLS RD', 'city': 'CHAGRIN FALLS TWP',
+                            'zipcode': '44022', 'state': 'OH'}
+
+    pickle_path3 = os.path.join(dirname, 'test_data/cuyahoga_address3.p')
+    addr3 = pickle.load(open(pickle_path3, "rb"))
+    third_result = utils.cuyahoga_addr_splitter(addr3)
+
+    assert third_result == {'primary_address': '1951 W 26', 'city': 'CLEVELAND',
+                            'zipcode': '44113', 'state': 'OH'}

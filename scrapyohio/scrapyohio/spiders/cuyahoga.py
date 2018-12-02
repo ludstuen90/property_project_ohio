@@ -144,9 +144,12 @@ class WarrenSpider(scrapy.Spider):
             '-', '')
 
         property = models.Property.objects.get(parcel_number=parcel_number)
+        print("PROP ID IS: ", property.id)
 
         property.property_class = response.xpath("/html[1]/body[1]/div[1]/div[3]/div[2]/div[1]/div[1]/div[4]/div[1]/div[1]/div[1]/div[5]/div[2]/text()").extract_first()
         property.owner_occupancy_credit = utils.convert_y_n_to_boolean(response.xpath("//div[@class='taxDataBody']/div[1]/div[1]/div[3]/table/tr[2]/td[2]/text()").extract_first())
+
+
         # property_address = response.xpath("//div[@class='TaxBillSummaryHeadingTable']//div[2]//div[2]/text()").extract()[0].strip()
         #
         # tax_address = response.xpath("//div[@class='TaxBillSummaryHeadingTable']//div[3]//div[2]/text()").extract()[0].strip()
@@ -161,3 +164,10 @@ class WarrenSpider(scrapy.Spider):
         # Residential Condominium
         #
         #
+        property_address, created = models.PropertyAddress.objects.get_or_create(property = property)
+        property_address_dict = utils.cuyahoga_addr_splitter(response.xpath("//div[@class='TaxBillSummaryHeadingTable']//div[2]//div[2]/text()").extract_first())
+        property_address.primary_address_line = property_address_dict['primary_address']
+        property_address.city = property_address_dict['city']
+        property_address.state = property_address_dict['state']
+        property_address.zipcode = property_address_dict['zipcode']
+        property_address.save()
