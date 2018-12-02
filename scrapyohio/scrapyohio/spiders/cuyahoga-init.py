@@ -19,7 +19,7 @@ HEADERS.update(settings.CONTACT_INFO_HEADINGS)
 
 class WarrenSpider(scrapy.Spider):
     name = 'cuyahoga-init'
-    allowed_domains = ['co.warren.oh.us', 'oh3laredo.fidlar.com']
+    allowed_domains = ['myplace.cuyahogacounty.us']
 
     def retrieve_all_warren_county_urls(self):
         self.cuyahoga_county_object, created = models.County.objects.get_or_create(name="Cuyahoga")
@@ -46,8 +46,8 @@ class WarrenSpider(scrapy.Spider):
 
     def parse(self, response):
         """
-
-        :param response:
+        This method parses the API response, saves all parcel numbers.
+        :param response: A valid API call response from MyPlace's Cuyahoga
         :return:
         """
         remove_quotation_marks = response.text[1:][:-1]
