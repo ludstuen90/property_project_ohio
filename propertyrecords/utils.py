@@ -1,6 +1,8 @@
 # This function exists so that we can validate our Travis-CI instance works.
+import base64
 import csv
 import datetime
+import re
 from decimal import Decimal
 
 
@@ -35,6 +37,60 @@ def parse_white_space_from_each_line_of_address(address_to_parse):
 
     parsed_addr = [x.strip() for x in address_to_parse if (len(x.strip()) != 0)]
     return parsed_addr
+
+
+def cuyahoga_addr_splitter(input_address_string):
+    """
+    This method converts addresses as they are returned from
+    Cuyahoga's Property management system into a a format we can
+    store in our database.
+
+    It handles city names that are one to many words long, as well
+    as addresses that are not stored. (IE: Records that say just ','
+    :param address_string:
+    :return: Dictionary of all relevant properties
+    """
+    address_string = input_address_string.split('\n')
+    list = []
+
+    try:
+        for item in address_string:
+            list.append(item.strip())
+        city_line = list[2].split(' ')
+        primary_address = f'''{list[1]} {city_line[0]}'''
+        normalized_primary_address = " ".join(primary_address.split()).upper()
+        list_len = len(list)
+        zip_code = list[list_len-2]
+
+        city_state_split = city_line[-1].split(',')
+
+        first_city_name = ''
+        for item in city_line[1:-1]:
+            first_city_name += f'''{item.upper()} '''
+
+        city_name = f'''{first_city_name}{city_state_split[0].upper() }'''
+        state = city_state_split[1]
+
+        return {
+            'primary_address': normalized_primary_address,
+            'city': city_name,
+            'zip_code': zip_code,
+            'state': state
+        }
+    except IndexError:
+        return {
+            'primary_address': address_string,
+            'city': '',
+            'zip_code': '',
+            'state': ''
+
+        }
+    # Then to get the city, we will just ['', '633   Falls', 'RD Chagrin Falls Twp,OH', '44022']
+    # split the space split on the comma,and add in all the not-street-Rd thing as city,
+    # and the right side of the equation becomes the state
+    # zip is standard
+    #then we can delete all the mess above.
+    # be sure to handle when things are not real addresses!
 
 
 def parse_tax_address_from_css(parsed_tax_address):
@@ -218,3 +274,18 @@ def select_most_recent_mtg_item(recorder_data_dict, date_format):
 
     return most_recent_result_found
 
+
+def find_property_information_by_name(soup, td_name):
+    """
+    Given a property name, this will return the value of the item 2 elements down. (Elements defined in Beautiful Soup
+    :param td_name:
+    :return: Value of TD item two elements down
+    """
+
+    item_returned = soup.body.find(text=re.compile(f'''^{td_name}'''))
+    return item_returned.next_element.next_element.contents[0].contents[0]
+
+
+def convert_string_to_base64_bytes_object(string):
+    converted_string = base64.b64encode(string.encode("utf-8"))
+    return converted_string.decode("utf-8")

@@ -4,6 +4,8 @@ from decimal import Decimal
 
 import pytest
 
+import pickle
+
 from propertyrecords import utils
 from propertyrecords.test_data import parse_tax_address_from_csv, select_most_recent_mtg_item
 
@@ -116,3 +118,22 @@ def test_select_most_recent_mtg_item():
     expected_result = {'Id': 6323317, 'DocumentName': '2018-032687', 'DocumentType': 'MTG', 'RecordedDateTime': '11/14/2018 8:01:03 AM', 'Party1': 'SMITH, JASON E', 'Party2': 'FIFTH THIRD BANK', 'LegalSummary': ''}
 
     assert parsed_result == expected_result
+
+
+def test_base64_string_convert():
+
+    converted_string = utils.convert_string_to_base64_bytes_object('Parcel')
+
+    assert 'UGFyY2Vs' == converted_string
+
+
+def test_cuyahoga_addr_splitter():
+    import os
+    dirname, filename = os.path.split(os.path.abspath(__file__))
+    pickle_path = os.path.join(dirname, 'test_data/cuyahoga_address.p')
+
+    addr = pickle.load(open(pickle_path, "rb"))
+    first_result = utils.cuyahoga_addr_splitter(addr)
+
+    assert first_result == {'primary_address': '13461 LORAIN AVE', 'city': 'CLEVELAND',
+                            'zip_code': '44111', 'state': 'OH'}
