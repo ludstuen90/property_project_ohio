@@ -1,4 +1,3 @@
-
 import json
 import re
 
@@ -26,18 +25,10 @@ class WarrenSpider(scrapy.Spider):
     def retrieve_all_warren_county_urls(self):
         self.cuyahoga_county_object, created = models.County.objects.get_or_create(name="Cuyahoga")
         # all_cuyahoga_properties = models.Property.objects.filter(county=self.cuyahoga_county_object)[10]
-        all_cuyahoga_properties = models.Property.objects.filter(parcel_number='00338375')
+        all_cuyahoga_properties = models.Property.objects.filter(parcel_number='00338324')
 
         for property in all_cuyahoga_properties:
             yield f'''https://myplace.cuyahogacounty.us/{utils.convert_string_to_base64_bytes_object(property.parcel_number)}?city={utils.convert_string_to_base64_bytes_object('99')}&searchBy={utils.convert_string_to_base64_bytes_object('Parcel')}&dataRequested={utils.convert_string_to_base64_bytes_object('General Information')}'''
-
-
-        # yield "https://treasurer.cuyahogacounty.us/payments/real_prop/parcel_data.asp?txtParcel=00522056&year=2017"
-        #https://myplace.cuyahogacounty.us/MTAxMzcwMDE=?city=OTk=&searchBy=UGFyY2Vs&dataRequested=R2VuZXJhbCBJbmZvcm1hdGlvbg==
-        #https://myplace.cuyahogacounty.us/MDAzMDI0MzM=?city=OTk=&searchBy=UGFyY2Vs&dataRequested=R2VuZXJhbCBJbmZvcm1hdGlvbg==
-        #MDAzMDI0MzM=
-        # SECONDARY OWNER PROPERTY -- general information page appears different
-        #00302433
 
 
     def __init__(self):
@@ -60,7 +51,6 @@ class WarrenSpider(scrapy.Spider):
         :param response:
         :return:
         """
-        soup = BeautifulSoup(response.body, 'html.parser')
 
         property_number = response.xpath(
             "/html[1]/body[1]/div[1]/div[3]/div[2]/div[1]/div[1]/div[4]/div[1]/ul[1]/li[1]/text()").extract()[
@@ -100,22 +90,29 @@ class WarrenSpider(scrapy.Spider):
             headers=HEADERS
         )
 
-
-
     #### LAND PAGE
     #https://myplace.cuyahogacounty.us/MTAxMzcwMDE=?city=OTk=&searchBy=UGFyY2Vs&dataRequested=TGFuZA==
     # ACRES - response.xpath("/html[1]/body[1]/div[1]/div[3]/div[2]/div[1]/div[1]/div[4]/div[2]/div[2]/div[4]/div[4]/text()").extract()[0]
     #response.xpath("/html[1]/body[1]/div[1]/div[3]/div[2]/div[1]/div[1]/div[4]/div[2]/div[2]/div[4]/div[4]")
 
-
+        yield scrapy.Request(
+            url=f'''https://myplace.cuyahogacounty.us/{utils.convert_string_to_base64_bytes_object(
+                property.parcel_number)}?city={utils.convert_string_to_base64_bytes_object(
+                '99')}&searchBy={utils.convert_string_to_base64_bytes_object(
+                'Parcel')}&dataRequested={utils.convert_string_to_base64_bytes_object('Land')}''',
+            method='GET',
+            callback=self.parse_land_information,
+            dont_filter=True,
+            headers=HEADERS
+        )
+        
+        
+        
         #MORTGAGE AMOUNTS WE CAN SEE HERE
         # date_of_mortgage
         # mortgage_amount
         # date_sold
             # https://recorder.cuyahogacounty.us/searchs/parcelsearchs.aspx
-
-
-
 
         # SCHOOL DISTRICT: (* Requires VPN access)
         #https://thefinder.tax.ohio.gov/StreamlineSalesTaxWeb/default_SchoolDistrict.aspx
@@ -131,7 +128,6 @@ class WarrenSpider(scrapy.Spider):
         # date_of_LLC_name_change
 
 
-
     def parse_tax_page_information(self, response):
         """
 
@@ -142,32 +138,54 @@ class WarrenSpider(scrapy.Spider):
         parcel_number = response.xpath(
             "/html[1]/body[1]/div[1]/div[3]/div[2]/div[1]/div[1]/div[4]/div[1]/div[1]/div[1]/div[6]/div[2]/text()").extract_first().replace(
             '-', '')
-
-        property = models.Property.objects.get(parcel_number=parcel_number)
-        print("PROP ID IS: ", property.id)
-
-        property.property_class = response.xpath("/html[1]/body[1]/div[1]/div[3]/div[2]/div[1]/div[1]/div[4]/div[1]/div[1]/div[1]/div[5]/div[2]/text()").extract_first()
-        property.owner_occupancy_credit = utils.convert_y_n_to_boolean(response.xpath("//div[@class='taxDataBody']/div[1]/div[1]/div[3]/table/tr[2]/td[2]/text()").extract_first())
+        soup = BeautifulSoup(response.body, 'html.parser')
 
 
-        # property_address = response.xpath("//div[@class='TaxBillSummaryHeadingTable']//div[2]//div[2]/text()").extract()[0].strip()
-        #
-        # tax_address = response.xpath("//div[@class='TaxBillSummaryHeadingTable']//div[3]//div[2]/text()").extract()[0].strip()
-        #
-        # # TWO YEARS, IDEALLY:
-        # tax_year = 2017# response.xpath("//div[@class='HeaderHighlight']/text()").extract()[0].split(' ')[0]
-        # market_value = soup.body.find(text=re.compile('Market Values')).parent.parent.parent.findAll('tr')[3].findAll('td')[1].contents[0]
-        # taxable_value = soup.body.find(text=re.compile('Assessed Values')).parent.parent.parent.findAll('tr')[3].findAll('td')[1].contents[0]
-        # taxes_paid = response.xpath("//div[@class='row']//div[3]//div[2]//b[1]/text()").extract()[0]
-        # property_record =  'a'  #LINK TO  PROP RECORD
-        # # MARKET VALUES
-        # Residential Condominium
-        #
-        #
-        property_address, created = models.PropertyAddress.objects.get_or_create(property = property)
+        our_property = models.Property.objects.get(parcel_number=parcel_number)
+        print("PROP ID IS: ", our_property.id)
+
+        our_property.property_class = response.xpath("/html[1]/body[1]/div[1]/div[3]/div[2]/div[1]/div[1]/div[4]/div[1]/div[1]/div[1]/div[5]/div[2]/text()").extract_first()
+        # ooc_string = str(soup.body.find_all(text=re.compile('Owner Occupancy Credit'))[1].find_next('td').contents[0])
+        # our_property.owner_occupancy_indicated = utils.convert_y_n_to_boolean(ooc_string)
+        our_property.owner_occupancy_indicated = utils.convert_y_n_to_boolean(response.xpath("//div[@class='taxDataBody']/div[1]/div[1]/div[3]/table/tr[2]/td[2]/text()").extract_first())
+
+        tax_year = response.xpath("//div[@class='HeaderHighlight']/text()").extract_first().split(' ')[0]
+
+        tax_values_object, created = models.TaxData.objects.get_or_create(property_record=our_property,
+                                                                          tax_year=tax_year)
+        tax_values_object.market_value = utils.convert_taxable_value_string_to_integer(soup.body.find(text=re.compile('Market Values')).parent.parent.parent.findAll('tr')[3].findAll('td')[1].contents[0])
+        tax_values_object.taxable_value = utils.convert_taxable_value_string_to_integer(soup.body.find(text=re.compile('Assessed Values')).parent.parent.parent.findAll('tr')[3].findAll('td')[1].contents[0])
+        tax_values_object.taxes_paid = utils.convert_taxable_value_string_to_integer(response.xpath("//div[@class='row']//div[3]//div[2]//b[1]/text()").extract()[0])
+        tax_values_object.save()
+
+        property_address, created = models.PropertyAddress.objects.get_or_create(property = our_property)
         property_address_dict = utils.cuyahoga_addr_splitter(response.xpath("//div[@class='TaxBillSummaryHeadingTable']//div[2]//div[2]/text()").extract_first())
         property_address.primary_address_line = property_address_dict['primary_address']
         property_address.city = property_address_dict['city']
         property_address.state = property_address_dict['state']
         property_address.zipcode = property_address_dict['zipcode']
         property_address.save()
+
+        tax_addr = response.xpath("//div[@class='TaxBillSummaryHeadingTable']//div[3]//div[2]/text()").extract_first()
+
+        parsed_tax_result = utils.cuyahoga_tax_address_parser(tax_addr)
+
+        tax_object, created = models.TaxAddress.objects.get_or_create(name=parsed_tax_result['primary_address_line'])
+        tax_object.primary_address_line = parsed_tax_result['secondary_address_line']
+        tax_object.city = parsed_tax_result['city']
+        tax_object.state = parsed_tax_result['state']
+        tax_object.zipcode = parsed_tax_result['zipcode']
+        tax_object.save()
+
+        our_property.tax_address = tax_object
+        our_property.owner = response.xpath("/html[1]/body[1]/div[1]/div[3]/div[2]/div[1]/div[1]/div[4]/div[1]/div[1]/div[1]/div[1]/div[2]/text()").extract_first()
+        our_property.save()
+
+    def parse_land_information(self, response):
+
+        parcel_number = response.xpath("/html[1]/body[1]/div[1]/div[3]/div[2]/div[1]/div[1]/div[4]/div[1]/ul[1]/li[1]/text()").extract_first().strip().replace('-', '')
+
+        property_object = models.Property.objects.get(parcel_number=parcel_number)
+
+        property_object.legal_acres = response.xpath("/html[1]/body[1]/div[1]/div[3]/div[2]/div[1]/div[1]/div[4]/div[2]/div[2]/div[4]/div[4]/text()").extract_first()
+        property_object.save()

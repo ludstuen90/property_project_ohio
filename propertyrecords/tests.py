@@ -9,7 +9,6 @@ from propertyrecords import utils
 from propertyrecords.test_data import parse_tax_address_from_csv, select_most_recent_mtg_item
 
 
-
 # Test to see that we can appropriately read a CSV file
 
 
@@ -149,6 +148,15 @@ def test_cuyahoga_addr_splitter():
 
     assert third_result == {'primary_address': '1951 W 26', 'city': 'CLEVELAND',
                             'zipcode': '44113', 'state': 'OH'}
+
+    pickle_path4 = os.path.join(dirname, 'test_data/cuyahoga_address4.p')
+    addr4 = pickle.load(open(pickle_path4, "rb"))
+    fourth_result = utils.cuyahoga_addr_splitter(addr4)
+
+    assert fourth_result == {'primary_address': '', 'city': '',
+                            'zipcode': '0', 'state': ''}
+
+
 
 
 def test_cuyahoga_tax_address_storer():

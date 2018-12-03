@@ -26,7 +26,7 @@ class WarrenSpider(scrapy.Spider):
     def retrieve_all_warren_county_urls(self):
         self.cuyahoga_county_object, created = models.County.objects.get_or_create(name="Cuyahoga")
         # all_cuyahoga_properties = models.Property.objects.filter(county=self.cuyahoga_county_object).order_by('?')[:30]
-        all_cuyahoga_properties = models.Property.objects.filter(parcel_number='01805124')
+        all_cuyahoga_properties = models.Property.objects.filter(parcel_number='00338373')
         # all_cuyahoga_properties = models.Property.objects.filter(parcel_number='01312118')
         # all_cuyahoga_properties = models.Property.objects.filter(parcel_number='67111244')
 
@@ -64,10 +64,10 @@ class WarrenSpider(scrapy.Spider):
         !cauv_property -- UNKNOWN 
         """
 
-        tax_addr = response.xpath("//div[@class='TaxBillSummaryHeadingTable']//div[3]//div[2]/text()").extract_first()
+        tax_addr = response.xpath("//div[@class='TaxBillSummaryHeadingTable']//div[2]//div[2]/text()").extract_first()
         print("This  prop addr is: ", tax_addr)
 
-        print("RESULT: ", utils.cuyahoga_tax_address_parser(tax_addr))
+        # print("RESULT: ", utils.cuyahoga_tax_address_parser(tax_addr))
 
-        # import pickle
-        # pickle.dump(tax_addr, open("save.p", "wb"))
+        import pickle
+        pickle.dump(tax_addr, open("save.p", "wb"))

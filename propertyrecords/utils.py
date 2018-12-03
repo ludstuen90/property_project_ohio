@@ -68,6 +68,9 @@ def cuyahoga_addr_splitter(input_address_string):
         list_len = len(list)
         zip_code = list[list_len-2]
 
+        if len(zip_code) == 0:
+            zip_code = '0'
+
         city_state_split = city_line[-1].split(',')
 
         first_city_name = ''
@@ -87,7 +90,7 @@ def cuyahoga_addr_splitter(input_address_string):
         return {
             'primary_address': address_string,
             'city': '',
-            'zipcode': '',
+            'zipcode': '0',
             'state': ''
 
         }
@@ -245,7 +248,7 @@ def convert_y_n_to_boolean(response_string):
     :param response_string:
     :return:
     """
-    if response_string == 'Y':
+    if response_string.upper() == 'Y':
         return True
     else:
         return False
@@ -337,6 +340,7 @@ def cuyahoga_county_name_street_parser(string1, string2):
                     'secondary_line': secondary_line
                 }
 
+    # Else just return what we have as the first and second lines, our algorithm is unable to parse
     else:
         return{
             'primary_line': string1,
@@ -345,15 +349,16 @@ def cuyahoga_county_name_street_parser(string1, string2):
 
 
 
-    # Else just return what we have as the first and second lines, our algorithm is unable to parse
+
 
 def cuyahoga_tax_address_parser(input_string):
     """
-    Given the final string of an address (City, State and Zip), this
-    method will return a dictionary with each item identified
+    Given a tax address string as seen on Cuyahoga County's website (https://myplace.cuyahogacounty.us/),
+    this function parses out the name and address of the tax payer
 
-    :param string:CLEVELAND, OH 44114
-    :return: {'city': 'CLEVELAND', 'state': 'OH', 'zipcode': '44114'
+    :param string:  Richard M Mucci 1281 W \n 89 ST  \n CLEVELAND, OH 44102
+    :return: {'primary_address_line': 'Richard M Mucci', 'secondary_address_line': '1281 W 89 ST',
+     city': 'CLEVELAND', 'state': 'OH', 'zipcode': '44114'
     """
 
     address_list = input_string.split('\n')
