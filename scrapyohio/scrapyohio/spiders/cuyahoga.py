@@ -105,9 +105,18 @@ class WarrenSpider(scrapy.Spider):
             dont_filter=True,
             headers=HEADERS
         )
-        
-        
-        
+
+        yield scrapy.Request(
+            url=f'''https://myplace.cuyahogacounty.us/{utils.convert_string_to_base64_bytes_object(
+                property.parcel_number)}?city={utils.convert_string_to_base64_bytes_object(
+                '99')}&searchBy={utils.convert_string_to_base64_bytes_object(
+                'Parcel')}&dataRequested={utils.convert_string_to_base64_bytes_object('Transfers')}''',
+            method='GET',
+            callback=self.parse_transfers_info,
+            dont_filter=True,
+            headers=HEADERS
+        )
+
         #MORTGAGE AMOUNTS WE CAN SEE HERE
         # date_of_mortgage
         # mortgage_amount
@@ -189,3 +198,8 @@ class WarrenSpider(scrapy.Spider):
 
         property_object.legal_acres = response.xpath("/html[1]/body[1]/div[1]/div[3]/div[2]/div[1]/div[1]/div[4]/div[2]/div[2]/div[4]/div[4]/text()").extract_first()
         property_object.save()
+
+    def parse_transfers_info(self, response):
+
+        parcel_number = response.xpath("/html[1]/body[1]/div[1]/div[3]/div[2]/div[1]/div[1]/div[4]/div[1]/ul[1]/li[1]/text()").extract_first().strip().replace('-', '')
+        property_object = models.Property.objects.get(parcel_number=parcel_number)

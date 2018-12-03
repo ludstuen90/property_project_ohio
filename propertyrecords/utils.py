@@ -4,6 +4,8 @@ import csv
 import datetime
 import re
 from decimal import Decimal
+from bs4 import BeautifulSoup
+
 
 
 def loop_through_csv_file_and_return_array_of_account_ids(absolute_csv_file_path):
@@ -388,3 +390,12 @@ def cuyahoga_tax_address_parser(input_string):
 def convert_string_to_base64_bytes_object(string):
     converted_string = base64.b64encode(string.encode("utf-8"))
     return converted_string.decode("utf-8")
+
+# def find_most_recent_mortgage_date(soup, )
+# soup.find("div", {"id": "accordion"}).find_next('table').find_next('table')
+# on the mortgage page, this alternates so that we could theoretically
+# go between tables to find what we need
+# alternatively, there are h3 tags and we could use h3 to also parse the
+# properties to get what we need.
+
+# 003-38-305 - lots of things xferd to self
