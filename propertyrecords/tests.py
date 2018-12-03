@@ -156,16 +156,34 @@ def test_cuyahoga_tax_address_storer():
     pickle_path1 = os.path.join(dirname, 'test_data/cuyahoga_address_tax1.p')
 
     addr1 = pickle.load(open(pickle_path1, "rb"))
-    first_result = utils.city_state_zip_parser(addr1)
+    first_result = utils.cuyahoga_tax_address_parser(addr1)
 
-    assert first_result == {'primary_address_line':
-                                'VERSAL RATLIFF JR 4023', 'secondary_address_line': 'HYDE AVE', 'city': 'CLEVELAND', 'state': 'OH', 'zipcode': '44109-1329'}
+    assert first_result == {'primary_address_line': 'SCOTT MADIS', 'secondary_address_line':
+        '950 W LIBERTY', 'city': 'MEDINA', 'state': 'OH', 'zipcode': '44256'}
 
-    dirname, filename = os.path.split(os.path.abspath(__file__))
     pickle_path2 = os.path.join(dirname, 'test_data/cuyahoga_address_tax2.p')
 
     addr2 = pickle.load(open(pickle_path2, "rb"))
-    second_result = utils.city_state_zip_parser(addr2)
+    second_result = utils.cuyahoga_tax_address_parser(addr2)
 
-    assert second_result == {'primary_address_line': 'POKORNY, CONSTANCE ANNA 5909', 'secondary_address_line':
-        'WAKEFIELD AVE', 'city': 'CLEVELAND', 'state': 'OH', 'zipcode': '44102'}
+    assert second_result == {'primary_address_line': 'MARY COYNE NOGUERAS', 'secondary_address_line':
+        'P O  BOX  110324', 'city': 'CLEVELAND', 'state': 'OH', 'zipcode': '44111'}
+
+
+
+    pickle_path3 = os.path.join(dirname, 'test_data/cuyahoga_address_tax3.p')
+
+    addr3 = pickle.load(open(pickle_path3, "rb"))
+    third_result = utils.cuyahoga_tax_address_parser(addr3)
+
+    assert third_result == {'primary_address_line': 'WELLS FARGO MORTGAGE RE TAX SERVICE', 'secondary_address_line':
+        '1 HOME CAMPUS   MAC X2502-011', 'city': 'DES MOINES', 'state': 'IA', 'zipcode': '50328'}
+
+
+    pickle_path4 = os.path.join(dirname, 'test_data/cuyahoga_address_tax4.p')
+
+    addr4 = pickle.load(open(pickle_path4, "rb"))
+    fourth_result = utils.cuyahoga_tax_address_parser(addr4)
+
+    assert fourth_result == {'primary_address_line': 'CMHA', 'secondary_address_line': 'PO BOX 94967', 'city':
+        'CLEVELAND', 'state': 'OH', 'zipcode': '44101'}

@@ -292,7 +292,62 @@ def find_property_information_by_name(soup, td_name):
     return item_returned.next_element.next_element.contents[0].contents[0]
 
 
-def city_state_zip_parser(input_string):
+def cuyahoga_county_name_street_parser(string1, string2):
+    """
+
+        #Split name from earlier line
+    # LOOK FOR PO BOX OR ADDRESS NUMBER
+    # start back from end of first line and look for where the LAST NUMBER ends
+    # but also be able to capture the last single letter if it's a cardinal number
+
+    """
+    name_line_length = (len(string1) -1)
+
+    in_first_line_we_have_encountered_a_digit = False
+
+    for character_num in range(name_line_length, 0, -1):
+        if string1[character_num].isdigit():
+            in_first_line_we_have_encountered_a_digit = True
+        elif string1[character_num].isspace() and in_first_line_we_have_encountered_a_digit:
+            primary_line = string1[:character_num]
+            secondary_line = f'''{string1[character_num+1:]} {string2}'''
+            return {
+                'primary_line': primary_line,
+                'secondary_line': secondary_line
+            }
+
+            # parse digits we have encountered so far as the address number, return that
+
+    # Check for cardinal direction in the last spot
+    cardinal_directions = ['n', 'e', 's', 'w']
+    if string1[-1:].lower() in cardinal_directions and string1[-2:].isspace():
+        return {
+            'primary_line': string1[:-2],
+            'secondary_line': f'''{string1[-2:]} {string2}'''
+        }
+
+    #  Check for PO BOX listed in the first line
+    if 'PO BOX' in string1[-8:].upper():
+        for character_num in range(name_line_length, 0, -1):
+            if ' PO BOX' in string1[character_num:]:
+                primary_line = string1[:character_num]
+                secondary_line = f'''{string1[character_num+1:]} {string2}'''
+                return {
+                    'primary_line': primary_line,
+                    'secondary_line': secondary_line
+                }
+
+    else:
+        return{
+            'primary_line': string1,
+            'secondary_line': string2
+        }
+
+
+
+    # Else just return what we have as the first and second lines, our algorithm is unable to parse
+
+def cuyahoga_tax_address_parser(input_string):
     """
     Given the final string of an address (City, State and Zip), this
     method will return a dictionary with each item identified
@@ -306,6 +361,10 @@ def city_state_zip_parser(input_string):
 
     for item in address_list:
         our_list.append(item.strip())
+
+    first_lines_parsed = cuyahoga_county_name_street_parser(our_list[1], our_list[2])
+
+    # Split last line
     comma_split = our_list[-2].split(',')
     city = comma_split[0]
     space_split = comma_split[1].split(' ')
@@ -314,8 +373,8 @@ def city_state_zip_parser(input_string):
     state = space_split[-2]
 
     return {
-        'primary_address_line': our_list[1].upper(),
-        'secondary_address_line': our_list[2].upper(),
+        'primary_address_line': first_lines_parsed['primary_line'].upper(),
+        'secondary_address_line': first_lines_parsed['secondary_line'].upper(),
         'city': city.upper(),
         'state': state.upper(),
         'zipcode': zipcode
