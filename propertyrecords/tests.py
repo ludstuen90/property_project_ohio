@@ -149,3 +149,23 @@ def test_cuyahoga_addr_splitter():
 
     assert third_result == {'primary_address': '1951 W 26', 'city': 'CLEVELAND',
                             'zipcode': '44113', 'state': 'OH'}
+
+
+def test_cuyahoga_tax_address_storer():
+    dirname, filename = os.path.split(os.path.abspath(__file__))
+    pickle_path1 = os.path.join(dirname, 'test_data/cuyahoga_address_tax1.p')
+
+    addr1 = pickle.load(open(pickle_path1, "rb"))
+    first_result = utils.city_state_zip_parser(addr1)
+
+    assert first_result == {'primary_address_line':
+                                'VERSAL RATLIFF JR 4023', 'secondary_address_line': 'HYDE AVE', 'city': 'CLEVELAND', 'state': 'OH', 'zipcode': '44109-1329'}
+
+    dirname, filename = os.path.split(os.path.abspath(__file__))
+    pickle_path2 = os.path.join(dirname, 'test_data/cuyahoga_address_tax2.p')
+
+    addr2 = pickle.load(open(pickle_path2, "rb"))
+    second_result = utils.city_state_zip_parser(addr2)
+
+    assert second_result == {'primary_address_line': 'POKORNY, CONSTANCE ANNA 5909', 'secondary_address_line':
+        'WAKEFIELD AVE', 'city': 'CLEVELAND', 'state': 'OH', 'zipcode': '44102'}

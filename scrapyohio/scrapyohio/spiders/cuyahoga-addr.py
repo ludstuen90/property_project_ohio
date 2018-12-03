@@ -25,7 +25,7 @@ class WarrenSpider(scrapy.Spider):
 
     def retrieve_all_warren_county_urls(self):
         self.cuyahoga_county_object, created = models.County.objects.get_or_create(name="Cuyahoga")
-        all_cuyahoga_properties = models.Property.objects.filter(county=self.cuyahoga_county_object).order_by('?')[:20]
+        all_cuyahoga_properties = models.Property.objects.filter(county=self.cuyahoga_county_object).order_by('?')[:1]
         # all_cuyahoga_properties = models.Property.objects.filter(parcel_number='00338375')
         # all_cuyahoga_properties = models.Property.objects.filter(parcel_number='67111244')
 
@@ -86,7 +86,7 @@ class WarrenSpider(scrapy.Spider):
         print("RESULT: ", utils.city_state_zip_parser(tax_addr))
 
         # import pickle
-        # pickle.dump(not_strp, open("save.p", "wb"))
+        # pickle.dump(tax_addr, open("save.p", "wb"))
 
 
 

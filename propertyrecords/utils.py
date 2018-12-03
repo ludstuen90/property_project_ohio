@@ -321,8 +321,6 @@ def city_state_zip_parser(input_string):
         'zipcode': zipcode
     }
 
-
-
 def convert_string_to_base64_bytes_object(string):
     converted_string = base64.b64encode(string.encode("utf-8"))
     return converted_string.decode("utf-8")
