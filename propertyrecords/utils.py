@@ -292,6 +292,37 @@ def find_property_information_by_name(soup, td_name):
     return item_returned.next_element.next_element.contents[0].contents[0]
 
 
+def city_state_zip_parser(input_string):
+    """
+    Given the final string of an address (City, State and Zip), this
+    method will return a dictionary with each item identified
+
+    :param string:CLEVELAND, OH 44114
+    :return: {'city': 'CLEVELAND', 'state': 'OH', 'zipcode': '44114'
+    """
+
+    address_list = input_string.split('\n')
+    our_list = []
+
+    for item in address_list:
+        our_list.append(item.strip())
+    comma_split = our_list[-2].split(',')
+    city = comma_split[0]
+    space_split = comma_split[1].split(' ')
+
+    zipcode =space_split[-1]
+    state = space_split[-2]
+
+    return {
+        'primary_address_line': our_list[1].upper(),
+        'secondary_address_line': our_list[2].upper(),
+        'city': city.upper(),
+        'state': state.upper(),
+        'zipcode': zipcode
+    }
+
+
+
 def convert_string_to_base64_bytes_object(string):
     converted_string = base64.b64encode(string.encode("utf-8"))
     return converted_string.decode("utf-8")

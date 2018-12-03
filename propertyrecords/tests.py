@@ -125,7 +125,6 @@ def test_base64_string_convert():
 
     assert 'UGFyY2Vs' == converted_string
 
-
 def test_cuyahoga_addr_splitter():
 
     dirname, filename = os.path.split(os.path.abspath(__file__))
@@ -140,7 +139,6 @@ def test_cuyahoga_addr_splitter():
     pickle_path2 = os.path.join(dirname, 'test_data/cuyahoga_address2.p')
     addr2 = pickle.load(open(pickle_path2, "rb"))
     second_result = utils.cuyahoga_addr_splitter(addr2)
-
 
     assert second_result == {'primary_address': '633 FALLS RD', 'city': 'CHAGRIN FALLS TWP',
                             'zipcode': '44022', 'state': 'OH'}
