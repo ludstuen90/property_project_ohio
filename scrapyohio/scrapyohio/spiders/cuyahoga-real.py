@@ -34,11 +34,9 @@ form_data = {'__EVENTTARGET': '',
              '__EVENTVALIDATION': '/wEWBgKXtO2JDQLn5fPPBALa8JHqAgKS0KzHDQK72KCUAgLCqo+IBEh/UvTvj3m26LhHjPat6rAAAAAA',
              'txtRecStart': '12/4/1800',
              'txtRecEnd': '12/4/2018',
-             'ParcelID': '00235042',
              'lstQuery': '1',
              'ValidateButton': 'Begin Search',
              }
-
 
 class WarrenSpider(scrapy.Spider):
     name = 'cuyahoga-real'
@@ -46,11 +44,11 @@ class WarrenSpider(scrapy.Spider):
 
     def retrieve_all_warren_county_urls(self):
         self.cuyahoga_county_object, created = models.County.objects.get_or_create(name="Cuyahoga")
-        self.all_cuyahoga_properties = models.Property.objects.filter(county=self.cuyahoga_county_object)[2]
-        # all_cuyahoga_properties = models.Property.objects.filter(parcel_number='00338324')
+        # self.all_cuyahoga_properties = models.Property.objects.filter(county=self.cuyahoga_county_object)[2]
+        self.all_cuyahoga_properties = models.Property.objects.filter(parcel_number='00338373')
 
-        for item in range(0, 1, 1):
-            yield "https://recorder.cuyahogacounty.us/searchs/parcelsearchs.aspx"
+        for item in self.all_cuyahoga_properties:
+            yield {'url': "https://recorder.cuyahogacounty.us/searchs/parcelsearchs.aspx", 'parcel_id': item.parcel_number}
 
     def __init__(self, *args, **kwargs):
         self.logged_out = False
@@ -62,12 +60,14 @@ class WarrenSpider(scrapy.Spider):
 
         # We want to assign headers for each request triggered. Override the request object
         # sent over to include Lucia's contact information
-        for url in self.retrieve_all_warren_county_urls():
+        for package in self.retrieve_all_warren_county_urls():
+            form_data['ParcelID'] = package['parcel_id']
+
             yield FormRequest(
-                    url=url,
+                    url=package['url'],
                     formdata=form_data,
                     method='POST',
-                    meta={'page': 1},
+                    meta={'page': 1, 'parcel_id': package['parcel_id']},
                     dont_filter=True,
                     headers=HEADERS,
             )
@@ -78,10 +78,10 @@ class WarrenSpider(scrapy.Spider):
         :param response:
         :return:
         """
-        # print(response.text.encode('utf-8'))
         soup = BeautifulSoup(response.text, 'html.parser')
 
-        primary_owner = "Atwood, Raymond"
+        property_object = models.Property.objects.get(parcel_number=response.meta['parcel_id'])
+        primary_owner = property_object.owner
 
         deed_date = utils.parse_recorder_items(soup, primary_owner, 'DEED')
         mortgage = utils.parse_recorder_items(soup, primary_owner, 'MORT')
