@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import datetime
 
 import scrapy
 from scrapy import FormRequest
@@ -84,8 +85,14 @@ class WarrenSpider(scrapy.Spider):
         primary_owner = property_object.owner
 
         deed_date = utils.parse_recorder_items(soup, primary_owner, 'DEED')
-        mortgage = utils.parse_recorder_items(soup, primary_owner, 'MORT')
-        print("mortgage is: ", mortgage, "deed is : ", deed_date)
+        mortgage_date = utils.parse_recorder_items(soup, primary_owner, 'MORT')
+        property_object.date_sold = datetime.datetime.strptime(deed_date, '%m/%d/%Y')
+        property_object.date_of_mortgage = datetime.datetime.strptime(mortgage_date, '%m/%d/%Y')
+        property_object.save()
+
+
+
+
 
 
 

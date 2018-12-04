@@ -390,6 +390,23 @@ def convert_string_to_base64_bytes_object(string):
     return converted_string.decode("utf-8")
 
 
+def name_cleaner(name):
+    """
+    Given a name, this method will remove periods, commas, and white space, returning it
+    squeaky clean to wherever it came from.
+    :param name:
+    :return:
+    """
+
+    punct_free_name = name.replace(',', '').replace('.', '')
+    split_name = punct_free_name.split()
+    string_to_return = ''
+
+    for name in split_name:
+        string_to_return += f'''{name} '''
+    return string_to_return[:-1].upper()
+
+
 def parse_recorder_items(soup, primary_owner_name, type_of_parse):
 
     if type_of_parse == 'DEED':
@@ -400,30 +417,26 @@ def parse_recorder_items(soup, primary_owner_name, type_of_parse):
         raise TypeError("Unrecognized input passed into parse_recorder_items")
 
     # Find the last transfer of the appropraite type (MORT or DEED)
-    primary_owner_name = primary_owner_name.replace('.', '').replace(',', '').upper()
+    # Confirm doc type is still at column 2
+    cols = [header.string for header in soup.find_all('th')]
 
-    try:
-        all_transfers = soup.body.find_all(text=re.compile(search_terms))
+    cols.index('Doc. Type')
+    rows = soup.find('table', id='ctl00_ContentPlaceHolder1_GridView1').find_all('tr')
+    rows_length = len(rows) - 1
 
-        last_transfer_index = (len(all_transfers) - 1)
+    # Here, we loop through all of the table rows starting from the bottom. As soon as we find
+    # a document type matching the type of search we're doing, we'll analyze it.
+    # If it matches, we return the date it was filed; if not, we return None.
+    for i in range(rows_length, 0, -1):
+        if rows[i].find_all('td')[2].contents[0] in search_terms:
+            if type_of_parse == 'DEED':
+                if name_cleaner(rows[i].find_all('td')[4].contents[0]).upper() in name_cleaner(primary_owner_name):
+                    return rows[i].find_all('td')[5].contents[0]
+                else:
+                    return None
 
-        transfer_date = all_transfers[last_transfer_index].find_next('td').find_next('td').find_next('td').contents[0]
-
-        if type_of_parse == 'DEED':
-            grantee = all_transfers[last_transfer_index].find_next('td').find_next('td').contents[0]
-
-        elif type_of_parse == 'MORT':
-            grantee = all_transfers[last_transfer_index].find_next('td').contents[0]
-
-        if grantee.upper() == primary_owner_name:
-            return transfer_date
-    except IndexError:
-        pass
-
-# soup.find("div", {"id": "accordion"}).find_next('table').find_next('table')
-# on the mortgage page, this alternates so that we could theoretically
-# go between tables to find what we need
-# alternatively, there are h3 tags and we could use h3 to also parse the
-# properties to get what we need.
-
-# 003-38-305 - lots of things xferd to self
+            elif type_of_parse == 'MORT':
+                if name_cleaner(rows[i].find_all('td')[3].contents[0]) in name_cleaner(primary_owner_name):
+                    return rows[i].find_all('td')[5].contents[0]
+                else:
+                    return None

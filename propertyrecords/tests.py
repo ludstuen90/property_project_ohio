@@ -209,11 +209,13 @@ def test_cuyahoga_recorder_parser():
     mortgage_search_result = utils.parse_recorder_items(soup, '2015 WEST 53RD LLC', 'MORT')
     lowercase_search_result = utils.parse_recorder_items(soup, '2015 west 53rd llc', 'MORT')
     period_search_result = utils.parse_recorder_items(soup, '2015 WEST, 53RD LLC.', 'MORT')
+    extra_space_search_result = utils.parse_recorder_items(soup, '2015 WEST, 53RD            LLC.', 'MORT')
 
     assert deed_search_result == '3/26/2013'
     assert mortgage_search_result == '10/23/2013'
     assert lowercase_search_result == '10/23/2013'
     assert period_search_result == '10/23/2013'
+    assert extra_space_search_result == '10/23/2013'
 
     with pytest.raises(TypeError):
         utils.parse_recorder_items(soup, '2015 WEST 53RD LLC', 'COFFEE')
