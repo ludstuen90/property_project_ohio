@@ -350,9 +350,6 @@ def cuyahoga_county_name_street_parser(string1, string2):
         }
 
 
-
-
-
 def cuyahoga_tax_address_parser(input_string):
     """
     Given a tax address string as seen on Cuyahoga County's website (https://myplace.cuyahogacounty.us/),
@@ -387,11 +384,42 @@ def cuyahoga_tax_address_parser(input_string):
         'zipcode': zipcode
     }
 
+
 def convert_string_to_base64_bytes_object(string):
     converted_string = base64.b64encode(string.encode("utf-8"))
     return converted_string.decode("utf-8")
 
-# def find_most_recent_mortgage_date(soup, )
+
+def parse_recorder_items(soup, primary_owner_name, type_of_parse):
+
+    if type_of_parse == 'DEED':
+        search_terms = 'DECT|DEED|DESH|DEAF'
+    elif type_of_parse == 'MORT':
+        search_terms = 'MORT'
+    else:
+        raise TypeError("Unrecognized input passed into parse_recorder_items")
+
+    # Find the last transfer of the appropraite type (MORT or DEED)
+    primary_owner_name = primary_owner_name.replace('.', '').replace(',', '').upper()
+
+    try:
+        all_transfers = soup.body.find_all(text=re.compile(search_terms))
+
+        last_transfer_index = (len(all_transfers) - 1)
+
+        transfer_date = all_transfers[last_transfer_index].find_next('td').find_next('td').find_next('td').contents[0]
+
+        if type_of_parse == 'DEED':
+            grantee = all_transfers[last_transfer_index].find_next('td').find_next('td').contents[0]
+
+        elif type_of_parse == 'MORT':
+            grantee = all_transfers[last_transfer_index].find_next('td').contents[0]
+
+        if grantee.upper() == primary_owner_name:
+            return transfer_date
+    except IndexError:
+        pass
+
 # soup.find("div", {"id": "accordion"}).find_next('table').find_next('table')
 # on the mortgage page, this alternates so that we could theoretically
 # go between tables to find what we need
