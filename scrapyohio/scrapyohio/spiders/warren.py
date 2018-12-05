@@ -18,7 +18,6 @@ HEADERS = {
 
 HEADERS.update(settings.CONTACT_INFO_HEADINGS)
 
-
 class WarrenSpider(scrapy.Spider):
     name = 'warren'
     allowed_domains = ['co.warren.oh.us', 'oh3laredo.fidlar.com']
@@ -30,7 +29,6 @@ class WarrenSpider(scrapy.Spider):
         for item in self.please_parse_these_items:
             url = f'''http://www.co.warren.oh.us/property_search/summary.aspx?account_nbr={item.account_number}'''
             yield url
-
 
     # 1407775 - cauv
     # 6150660 - jas jenn smith
