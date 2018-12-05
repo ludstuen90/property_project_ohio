@@ -219,3 +219,12 @@ def test_cuyahoga_recorder_parser():
 
     with pytest.raises(TypeError):
         utils.parse_recorder_items(soup, '2015 WEST 53RD LLC', 'COFFEE')
+
+
+def test_convert_to_string_and_drop_final_zero():
+
+    string_result = utils.convert_to_string_and_drop_final_zero('12312000410')
+    integer_result = utils.convert_to_string_and_drop_final_zero(16364510030)
+
+    assert string_result == '1231200041'
+    assert integer_result == '1636451003'

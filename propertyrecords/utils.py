@@ -440,3 +440,8 @@ def parse_recorder_items(soup, primary_owner_name, type_of_parse):
                     return rows[i].find_all('td')[5].contents[0]
                 else:
                     return None
+
+
+def convert_to_string_and_drop_final_zero(integer):
+    return str(integer)[:-1]
+

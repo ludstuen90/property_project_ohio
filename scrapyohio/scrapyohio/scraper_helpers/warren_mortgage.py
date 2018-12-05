@@ -39,7 +39,7 @@ class WarrenMortgageInfo:
         self.warren_county_object = models.County.objects.get(name='Warren')
 
         # self.warren_county_items = models.Property.objects.filter(county=self.warren_county_object)[:5]
-        self.warren_county_items = models.Property.objects.filter(id=257450)
+        self.warren_county_items = models.Property.objects.filter(id=257451)
         self.access_token = ''
 
     @classmethod
@@ -116,8 +116,8 @@ class WarrenMortgageInfo:
         property_items = {}
 
         for prop_to_parse in self.warren_county_items:
-            print("SEARCHING BY ", str(prop_to_parse.parcel_number)[:-1])
-            recorder_data = self.download_list_of_recorder_data_items(str(prop_to_parse.parcel_number)[:-1])
+            trimmed_parcel_number = utils.convert_to_string_and_drop_final_zero(prop_to_parse.parcel_number)
+            recorder_data = self.download_list_of_recorder_data_items(trimmed_parcel_number)
             # Select the most recent mortgage item, and return it
             most_recent_item = utils.select_most_recent_mtg_item(recorder_data, self.DATE_FORMAT)
             if most_recent_item:
