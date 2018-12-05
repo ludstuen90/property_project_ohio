@@ -7,7 +7,8 @@ from propertyrecords import utils
 class Property(models.Model):
 
     """
-    We mark
+    Here we contain all information related to the property records we search. This record has relationships with
+    other classes through foreign key relationships and one-to-one relationships.
     """
     parcel_number = models.CharField(max_length=13, unique=True)
     account_number = models.CharField(max_length=10, blank=True)

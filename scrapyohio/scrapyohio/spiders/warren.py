@@ -18,6 +18,7 @@ HEADERS = {
 
 HEADERS.update(settings.CONTACT_INFO_HEADINGS)
 
+
 class WarrenSpider(scrapy.Spider):
     name = 'warren'
     allowed_domains = ['co.warren.oh.us', 'oh3laredo.fidlar.com']
