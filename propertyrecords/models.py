@@ -91,7 +91,7 @@ class AddressProperties(models.Model):
     secondary_address_line = models.CharField(max_length=72, blank=True, help_text="Apartment, Floor, Etc. ")
     city = models.CharField(max_length=24, blank=True)
     state = models.CharField(max_length=2, blank=True)
-    zipcode = models.IntegerField(blank=True, null=True)
+    zipcode = models.CharField(blank=True, max_length=11)
 
     def __str__(self):
         self.address_string = f''' {self.primary_address_line} {self.city}, {self.state} {self.zipcode}'''
