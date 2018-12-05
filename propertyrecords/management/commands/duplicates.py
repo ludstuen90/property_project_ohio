@@ -34,7 +34,7 @@ class Command(BaseCommand):
 
         junk_county, created = models.County.objects.get_or_create(name="junk")
 
-        for x in range(0, 2874672):
+        for x in range(0, 2502672):
             try:
                 created_property = models.Property.objects.create(
                     parcel_number=self.random_int_maker(12),
