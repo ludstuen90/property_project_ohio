@@ -1,12 +1,14 @@
 # from django.test import TestCase
 import os
 from decimal import Decimal
-
 import pytest
+
+import pickle
+
+from bs4 import BeautifulSoup
 
 from propertyrecords import utils
 from propertyrecords.test_data import parse_tax_address_from_csv, select_most_recent_mtg_item
-
 
 
 # Test to see that we can appropriately read a CSV file
@@ -116,3 +118,113 @@ def test_select_most_recent_mtg_item():
     expected_result = {'Id': 6323317, 'DocumentName': '2018-032687', 'DocumentType': 'MTG', 'RecordedDateTime': '11/14/2018 8:01:03 AM', 'Party1': 'SMITH, JASON E', 'Party2': 'FIFTH THIRD BANK', 'LegalSummary': ''}
 
     assert parsed_result == expected_result
+
+
+def test_base64_string_convert():
+
+    converted_string = utils.convert_string_to_base64_bytes_object('Parcel')
+
+    assert 'UGFyY2Vs' == converted_string
+
+def test_cuyahoga_addr_splitter():
+
+    dirname, filename = os.path.split(os.path.abspath(__file__))
+    pickle_path1 = os.path.join(dirname, 'test_data/cuyahoga_address1.p')
+
+    addr1 = pickle.load(open(pickle_path1, "rb"))
+    first_result = utils.cuyahoga_addr_splitter(addr1)
+
+    assert first_result == {'primary_address': '13461 LORAIN AVE', 'city': 'CLEVELAND',
+                            'zipcode': '44111', 'state': 'OH'}
+
+    pickle_path2 = os.path.join(dirname, 'test_data/cuyahoga_address2.p')
+    addr2 = pickle.load(open(pickle_path2, "rb"))
+    second_result = utils.cuyahoga_addr_splitter(addr2)
+
+    assert second_result == {'primary_address': '633 FALLS RD', 'city': 'CHAGRIN FALLS TWP',
+                            'zipcode': '44022', 'state': 'OH'}
+
+    pickle_path3 = os.path.join(dirname, 'test_data/cuyahoga_address3.p')
+    addr3 = pickle.load(open(pickle_path3, "rb"))
+    third_result = utils.cuyahoga_addr_splitter(addr3)
+
+    assert third_result == {'primary_address': '1951 W 26', 'city': 'CLEVELAND',
+                            'zipcode': '44113', 'state': 'OH'}
+
+    pickle_path4 = os.path.join(dirname, 'test_data/cuyahoga_address4.p')
+    addr4 = pickle.load(open(pickle_path4, "rb"))
+    fourth_result = utils.cuyahoga_addr_splitter(addr4)
+
+    assert fourth_result == {'primary_address': '', 'city': '',
+                            'zipcode': '0', 'state': ''}
+
+
+
+
+def test_cuyahoga_tax_address_storer():
+    dirname, filename = os.path.split(os.path.abspath(__file__))
+    pickle_path1 = os.path.join(dirname, 'test_data/cuyahoga_address_tax1.p')
+
+    addr1 = pickle.load(open(pickle_path1, "rb"))
+    first_result = utils.cuyahoga_tax_address_parser(addr1)
+
+    assert first_result == {'primary_address_line': 'SCOTT MADIS', 'secondary_address_line':
+        '950 W LIBERTY', 'city': 'MEDINA', 'state': 'OH', 'zipcode': '44256'}
+
+    pickle_path2 = os.path.join(dirname, 'test_data/cuyahoga_address_tax2.p')
+
+    addr2 = pickle.load(open(pickle_path2, "rb"))
+    second_result = utils.cuyahoga_tax_address_parser(addr2)
+
+    assert second_result == {'primary_address_line': 'MARY COYNE NOGUERAS', 'secondary_address_line':
+        'P O  BOX  110324', 'city': 'CLEVELAND', 'state': 'OH', 'zipcode': '44111'}
+
+
+
+    pickle_path3 = os.path.join(dirname, 'test_data/cuyahoga_address_tax3.p')
+
+    addr3 = pickle.load(open(pickle_path3, "rb"))
+    third_result = utils.cuyahoga_tax_address_parser(addr3)
+
+    assert third_result == {'primary_address_line': 'WELLS FARGO MORTGAGE RE TAX SERVICE', 'secondary_address_line':
+        '1 HOME CAMPUS   MAC X2502-011', 'city': 'DES MOINES', 'state': 'IA', 'zipcode': '50328'}
+
+
+    pickle_path4 = os.path.join(dirname, 'test_data/cuyahoga_address_tax4.p')
+
+    addr4 = pickle.load(open(pickle_path4, "rb"))
+    fourth_result = utils.cuyahoga_tax_address_parser(addr4)
+
+    assert fourth_result == {'primary_address_line': 'CMHA', 'secondary_address_line': 'PO BOX 94967', 'city':
+        'CLEVELAND', 'state': 'OH', 'zipcode': '44101'}
+
+
+def test_cuyahoga_recorder_parser():
+    dirname, filename = os.path.split(os.path.abspath(__file__))
+    pickle_path1 = os.path.join(dirname, 'test_data/cuyahoga_mort_deed_data.p')
+
+    html_response = pickle.load(open(pickle_path1, "rb"))
+    soup = BeautifulSoup(html_response, 'html.parser')
+    deed_search_result = utils.parse_recorder_items(soup, '2015 WEST 53RD LLC', 'DEED')
+    mortgage_search_result = utils.parse_recorder_items(soup, '2015 WEST 53RD LLC', 'MORT')
+    lowercase_search_result = utils.parse_recorder_items(soup, '2015 west 53rd llc', 'MORT')
+    period_search_result = utils.parse_recorder_items(soup, '2015 WEST, 53RD LLC.', 'MORT')
+    extra_space_search_result = utils.parse_recorder_items(soup, '2015 WEST, 53RD            LLC.', 'MORT')
+
+    assert deed_search_result == '3/26/2013'
+    assert mortgage_search_result == '10/23/2013'
+    assert lowercase_search_result == '10/23/2013'
+    assert period_search_result == '10/23/2013'
+    assert extra_space_search_result == '10/23/2013'
+
+    with pytest.raises(TypeError):
+        utils.parse_recorder_items(soup, '2015 WEST 53RD LLC', 'COFFEE')
+
+
+def test_convert_to_string_and_drop_final_zero():
+
+    string_result = utils.convert_to_string_and_drop_final_zero('12312000410')
+    integer_result = utils.convert_to_string_and_drop_final_zero(16364510030)
+
+    assert string_result == '1231200041'
+    assert integer_result == '1636451003'
