@@ -2,12 +2,11 @@
 import datetime
 
 import scrapy
-from scrapy import Request, FormRequest, signals
+from scrapy import Request, FormRequest
 
 from ohio import settings
 from propertyrecords import utils, models
 
-from scrapyohio.scraper_helpers import warren_mortgage
 
 HEADERS = {
             "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_1) AppleWebKit/537.36 (KHTML, "
@@ -25,11 +24,16 @@ class WarrenSpider(scrapy.Spider):
 
     def retrieve_all_warren_county_urls(self):
         self.warren_county_object, created = models.County.objects.get_or_create(name="Warren")
-        self.please_parse_these_items = models.Property.objects.filter(county=self.warren_county_object)
+        # self.please_parse_these_items = models.Property.objects.filter(county=self.warren_county_object)
+        list = ['2633485', '2633484', '2633483', '2633482', '2633481', '2633480']
+
+        self.please_parse_these_items = models.Property.objects.filter(account_number__in=list)
 
         for item in self.please_parse_these_items:
-            url = f'''http://www.co.warren.oh.us/property_search/summary.aspx?account_nbr={item.account_number}'''
-            yield url
+            property_parameters = {'url': f'''http://www.co.warren.oh.us/property_search/summary.aspx?account_nbr={item.account_number}''',
+                   'parcel_number': item.parcel_number
+                   }
+            yield property_parameters
 
     # 1407775 - cauv
     # 6150660 - jas jenn smith
@@ -43,15 +47,18 @@ class WarrenSpider(scrapy.Spider):
         self.logged_out = False
 
     def start_requests(self):
-       # Ensure we have a county in the database
+        # Ensure we have a county in the database
         self.warren_county_object, created = models.County.objects.get_or_create(name="Warren")
+
 
         # We want to assign headers for each request triggered. Override the request object
         # sent over to include Lucia's contact information
-        for url in self.retrieve_all_warren_county_urls():
-            yield Request(url, dont_filter=True,
-                          headers=HEADERS
-                          )
+        for parameter_dictionary in self.retrieve_all_warren_county_urls():
+            yield Request(parameter_dictionary['url'], dont_filter=True,
+                        headers=HEADERS,
+                        meta = {'parcel_id': parameter_dictionary['parcel_number']
+                                },
+            )
 
     def parse(self, response):
         """
@@ -59,8 +66,8 @@ class WarrenSpider(scrapy.Spider):
         :param response:
         :return:
         """
-        parsed_parcel_number = response.xpath("//span[@id='ContentPlaceHolderContent_lblSummaryParcelID']/text()").extract()[0]
-        self.parsed_prop, created = models.Property.objects.get_or_create(parcel_number=f'''{parsed_parcel_number}0''')
+        parsed_parcel_number = response.meta['parcel_id']
+        self.parsed_prop, created = models.Property.objects.get_or_create(parcel_number=parsed_parcel_number)
         self.parsed_prop.county = self.warren_county_object
         self.parsed_prop.legal_acres = utils.convert_acres_to_integer(response.xpath("//span[@id='ContentPlaceHolderContent_lblSummaryLegalDesc']/text()").extract()[1])
         self.parsed_prop.legal_description = response.xpath("//span[@id='ContentPlaceHolderContent_lblSummaryLegalDesc']/text()").extract()[0]
@@ -137,14 +144,14 @@ class WarrenSpider(scrapy.Spider):
                 method='POST',
                 callback=self.parse_tax,
                 formdata=self.data,
-                meta={'page': 1},
+                meta={'page': 1, 'parcel_id': response.meta['parcel_id']},
                 dont_filter=True,
                 headers=HEADERS,
             )
 
     def parse_tax(self, response):
 
-        self.parsed_prop = models.Property.objects.get(parcel_number=f'''{response.xpath("//span[@id='ContentPlaceHolderContent_lblSummaryParcelID']/text()").extract()[0]}0''')
+        self.parsed_prop = models.Property.objects.get(parcel_number=response.meta['parcel_id'])
         returned_tax_address = response.css("div.wrapper div.rightContent:nth-child(4) div:nth-child(1) fieldset::text").extract()
         parsed_address = utils.parse_tax_address_from_css(returned_tax_address)
 
@@ -186,11 +193,3 @@ class WarrenSpider(scrapy.Spider):
 
         self.property_address.save()
 
-        self.crawler.signals.connect(self.spider_idle, signal=signals.spider_idle)
-
-    def spider_idle(self):
-        # Wait until all records have downloaded, then trigger the mortgage download process
-        if not self.logged_out:
-            self.logged_out = True
-            a = warren_mortgage.WarrenMortgageInfo( self.please_parse_these_items)
-            a.download_mortgage_info()
