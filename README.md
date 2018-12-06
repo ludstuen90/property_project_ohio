@@ -17,7 +17,7 @@ This application has been tested as it was developed. Keep tabs on tests here: h
 - Users will need to set up a PostgreSQL database instance, and provide the database parameters to the application via environment variables.
 
 
-**A complete list of instructions is inside the Wiki** 
+**<a href="https://github.com/ludstuen90/property_project_ohio/wiki/"> A complete list of instructions is inside the Wiki</a>** 
 
 
 # Downloading Initial Data
