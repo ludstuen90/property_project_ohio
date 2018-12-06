@@ -1,5 +1,6 @@
 import json
 import re
+from _decimal import InvalidOperation
 
 import scrapy
 
@@ -24,8 +25,8 @@ class WarrenSpider(scrapy.Spider):
 
     def retrieve_all_warren_county_urls(self):
         self.cuyahoga_county_object, created = models.County.objects.get_or_create(name="Cuyahoga")
-        # all_cuyahoga_properties = models.Property.objects.filter(county=self.cuyahoga_county_object)[10]
-        all_cuyahoga_properties = models.Property.objects.filter(parcel_number='00338324')
+        all_cuyahoga_properties = models.Property.objects.filter(county=self.cuyahoga_county_object)
+        # all_cuyahoga_properties = models.Property.objects.filter(parcel_number='67111244')
 
         for property in all_cuyahoga_properties:
             yield f'''https://myplace.cuyahogacounty.us/{utils.convert_string_to_base64_bytes_object(property.parcel_number)}?city={utils.convert_string_to_base64_bytes_object('99')}&searchBy={utils.convert_string_to_base64_bytes_object('Parcel')}&dataRequested={utils.convert_string_to_base64_bytes_object('General Information')}'''
@@ -73,7 +74,10 @@ class WarrenSpider(scrapy.Spider):
         # GENERAL PAGE
         property.school_district_name = response.xpath('/html[1]/body[1]/div[1]/div[3]/div[2]/div[1]/div[1]/div[4]/div[2]/div[1]/div[2]/div[2]/text()').extract_first()
         property.tax_district = response.xpath("/html[1]/body[1]/div[1]/div[3]/div[2]/div[1]/div[1]/div[4]/div[2]/div[1]/div[1]/div[4]/text()").extract_first()
-        property.land_use = utils.parse_ohio_state_use_code(response.xpath("/html[1]/body[1]/div[1]/div[3]/div[2]/div[1]/div[1]/div[4]/div[2]/div[1]/div[3]/div[2]/text()").extract_first())
+        try:
+            property.land_use = utils.parse_ohio_state_use_code(response.xpath("/html[1]/body[1]/div[1]/div[3]/div[2]/div[1]/div[1]/div[4]/div[2]/div[1]/div[3]/div[2]/text()").extract_first())
+        except ValueError:
+            property.land_user = response.xpath("/html[1]/body[1]/div[1]/div[3]/div[2]/div[1]/div[1]/div[4]/div[2]/div[1]/div[3]/div[2]/text()").extract_first()
         property.legal_description = response.xpath("//div[@class='generalInfoValue col-lg-3']/text()").extract_first()
         property.primary_owner = response.xpath("/html[1]/body[1]/div[1]/div[3]/div[2]/div[1]/div[1]/div[4]/div[1]/ul[1]/li[2]/text()").extract_first().strip()
         property.save()
@@ -107,38 +111,13 @@ class WarrenSpider(scrapy.Spider):
             headers=HEADERS
         )
 
-        # self.data = {}
-        # self.data['ctl00$ToolkitScriptManager1'] = 'ctl00$UpdatePanel1|ctl00$ContentPlaceHolderContent$lbTaxInfo'
-        # self.data['__EVENTTARGET'] = ""
-        # self.data['__EVENTARGUMENT'] = ""
-        # self.data['__LASTFOCUS'] = ""
-        # self.data['__VIEWSTATE'] = "/wEPDwUKLTQ3NzIzMzE3NA9kFgICAw9kFgYCAQ8WAh4EVGV4dGVkAgMPPCsADQEMFCsABQUPMDowLDA6MSwwOjIsMDozFCsAAhYGHwAFBEhvbWUeBVZhbHVlBQExHgtOYXZpZ2F0ZVVybAUCfi9kFCsAAhYGHwAFD1NlYXJjaCBEYXRhYmFzZR8BBQEyHwIFHX4vc2VhcmNocy9nZW5lcmFsc2VhcmNocy5hc3B4FCsABAULMDowLDA6MSwwOjIUKwACFgYfAAUOR2VuZXJhbCBTZWFyY2gfAQUBMx8CBR1+L3NlYXJjaHMvZ2VuZXJhbHNlYXJjaHMuYXNweGQUKwACFgYfAAUNUGFyY2VsIFNlYXJjaB8BBQE0HwIFHH4vc2VhcmNocy9wYXJjZWxzZWFyY2hzLmFzcHhkFCsAAhYGHwAFFFZldGVyYW4gR3JhdmUgU2VhcmNoHwEFAjY2HwIFOmh0dHA6Ly9yZWNvcmRlci5jdXlhaG9nYWNvdW50eS51cy92ZXRlcmFuL0dyYXZlU2VhcmNoLmFzcHhkFCsAAhYGHwAFDlByb3BlcnR5IEFsZXJ0HwEFAjYxHwIFNH4vL01lbWJlcnMvTG9naW4uYXNweD9SZXR1cm5Vcmw9JTJmbWVtYmVycyUyZm5vdGlmaWMUKwACBQMwOjAUKwACFgYfAAUOUHJvcGVydHkgQWxlcnQfAQUCNjIfAgVkaHR0cDovL3JlY29yZGVyLmN1eWFob2dhY291bnR5LnVzL01lbWJlcnMvTG9naW4uYXNweD9SZXR1cm5Vcmw9JTJmbWVtYmVycyUyZm5vdGlmaWNhdGlvbm1hbmFnZXIuYXNweGQUKwACFgYfAAUNRmlzY2FsIE9mZmljZR8BBQI3Mh8CBSZodHRwOi8vZmlzY2Fsb2ZmaWNlci5jdXlhaG9nYWNvdW50eS51c2RkAg8PFgIfAAUZDQoJCTxjZW50ZXI+wqA8L2NlbnRlcj4NCmRkf9vKGL1V+/KL93FohlCdJQAAAAA=",
-        # self.data['__EVENTVALIDATION'] = '/wEWBgKXtO2JDQLn5fPPBALa8JHqAgKS0KzHDQK72KCUAgLCqo+IBEh/UvTvj3m26LhHjPat6rAAAAAA',
-        # self.data['ctl00$ContentPlaceHolderContent$ddlTaxYear'] = '2017',
-        # self.data['__VIEWSTATEGENERATOR'] = 'B99DED13',
-
-        data = yield scrapy.Request(
-            url='https://recorder.cuyahogacounty.us/searchs/parcelsearchs.aspx',
-            method='GET',
-            callback=self.mortgage_finder,
-            dont_filter=True,
-            headers=HEADERS,
-        )
-        # Take a look at this as the solution we're hoping for
-        # https://stackoverflow.com/questions/26962963/python-scrapy-return-from-child-page-to-carry-on-scraping
-        print("AL FINAL WE HAVE DATA: ", data)
-
         # yield scrapy.Request(
-        #     url=f'''https://myplace.cuyahogacounty.us/{utils.convert_string_to_base64_bytes_object(
-        #         property.parcel_number)}?city={utils.convert_string_to_base64_bytes_object(
-        #         '99')}&searchBy={utils.convert_string_to_base64_bytes_object(
-        #         'Parcel')}&dataRequested={utils.convert_string_to_base64_bytes_object('Transfers')}''',
+        #     url='https://recorder.cuyahogacounty.us/searchs/parcelsearchs.aspx',
         #     method='GET',
-        #     callback=self.parse_transfers_info,
+        #     callback=self.mortgage_finder,
         #     dont_filter=True,
-        #     headers=HEADERS
+        #     headers=HEADERS,
         # )
-
         #MORTGAGE AMOUNTS WE CAN SEE HERE
         # date_of_mortgage
         # mortgage_amount
@@ -173,7 +152,6 @@ class WarrenSpider(scrapy.Spider):
 
 
         our_property = models.Property.objects.get(parcel_number=parcel_number)
-        print("PROP ID IS: ", our_property.id)
 
         our_property.property_class = response.xpath("/html[1]/body[1]/div[1]/div[3]/div[2]/div[1]/div[1]/div[4]/div[1]/div[1]/div[1]/div[5]/div[2]/text()").extract_first()
         # ooc_string = str(soup.body.find_all(text=re.compile('Owner Occupancy Credit'))[1].find_next('td').contents[0])
@@ -184,9 +162,15 @@ class WarrenSpider(scrapy.Spider):
 
         tax_values_object, created = models.TaxData.objects.get_or_create(property_record=our_property,
                                                                           tax_year=tax_year)
-        tax_values_object.market_value = utils.convert_taxable_value_string_to_integer(soup.body.find(text=re.compile('Market Values')).parent.parent.parent.findAll('tr')[3].findAll('td')[1].contents[0])
-        tax_values_object.taxable_value = utils.convert_taxable_value_string_to_integer(soup.body.find(text=re.compile('Assessed Values')).parent.parent.parent.findAll('tr')[3].findAll('td')[1].contents[0])
-        tax_values_object.taxes_paid = utils.convert_taxable_value_string_to_integer(response.xpath("//div[@class='row']//div[3]//div[2]//b[1]/text()").extract()[0])
+        try:
+            tax_values_object.market_value = utils.convert_taxable_value_string_to_integer(soup.body.find(text=re.compile('Market Values')).parent.parent.parent.findAll('tr')[3].findAll('td')[1].contents[0])
+            tax_values_object.taxable_value = utils.convert_taxable_value_string_to_integer(soup.body.find(text=re.compile('Assessed Values')).parent.parent.parent.findAll('tr')[3].findAll('td')[1].contents[0])
+            tax_values_object.taxes_paid = utils.convert_taxable_value_string_to_integer(response.xpath("//div[@class='row']//div[3]//div[2]//b[1]/text()").extract()[0])
+        except InvalidOperation:
+            # tax_values_object.market_value = soup.body.find(text=re.compile('Market Values')).parent.parent.parent.findAll('tr')[3].findAll('td')[1].contents[0]
+            # tax_values_object.taxable_value = soup.body.find(text=re.compile('Assessed Values')).parent.parent.parent.findAll('tr')[3].findAll('td')[1].contents[0]
+            # tax_values_object.taxes_paid = response.xpath("//div[@class='row']//div[3]//div[2]//b[1]/text()").extract()[0]
+            pass
         tax_values_object.save()
 
         property_address, created = models.PropertyAddress.objects.get_or_create(property = our_property)
@@ -227,7 +211,6 @@ class WarrenSpider(scrapy.Spider):
         property_object = models.Property.objects.get(parcel_number=parcel_number)
 
     def mortgage_finder(self, response):
-        print("made it here ")
         from scrapy.utils.response import open_in_browser
         open_in_browser(response)
 

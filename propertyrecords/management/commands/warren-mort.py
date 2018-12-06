@@ -1,8 +1,4 @@
-import csv
-
 from django.core.management.base import BaseCommand
-import os
-
 from scrapyohio.scrapyohio.scraper_helpers import warren_mortgage
 
 
