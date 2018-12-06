@@ -1,7 +1,11 @@
 # This function exists so that we can validate our Travis-CI instance works.
+import base64
 import csv
 import datetime
+import re
 from decimal import Decimal
+from bs4 import BeautifulSoup
+
 
 
 def loop_through_csv_file_and_return_array_of_account_ids(absolute_csv_file_path):
@@ -35,6 +39,69 @@ def parse_white_space_from_each_line_of_address(address_to_parse):
 
     parsed_addr = [x.strip() for x in address_to_parse if (len(x.strip()) != 0)]
     return parsed_addr
+
+
+def cuyahoga_addr_splitter(input_address_string):
+    """
+    This method converts addresses as they are returned from
+    Cuyahoga's Property management system into a a format we can
+    store in our database.
+
+    It handles city names that are one to many words long, as well
+    as addresses that are not stored. (IE: Records that say just ','
+    :param address_string:
+    :return: Dictionary of all relevant properties
+    """
+    address_string = input_address_string.split('\n')
+    list = []
+
+    try:
+        for item in address_string:
+            list.append(item.strip())
+        city_line = list[2].split(' ')
+
+
+        if len(city_line) == 1:
+            primary_address = f'''{list[1]}'''
+        else:
+            primary_address = f'''{list[1]} {city_line[0]}'''
+
+        normalized_primary_address = " ".join(primary_address.split()).upper()
+        list_len = len(list)
+        zip_code = list[list_len-2]
+
+        if len(zip_code) == 0:
+            zip_code = '0'
+
+        city_state_split = city_line[-1].split(',')
+
+        first_city_name = ''
+        for item in city_line[1:-1]:
+            first_city_name += f'''{item.upper()} '''
+
+        city_name = f'''{first_city_name}{city_state_split[0].upper() }'''
+        state = city_state_split[1]
+
+        return {
+            'primary_address': normalized_primary_address,
+            'city': city_name,
+            'zipcode': zip_code,
+            'state': state
+        }
+    except IndexError:
+        return {
+            'primary_address': address_string,
+            'city': '',
+            'zipcode': '0',
+            'state': ''
+
+        }
+    # Then to get the city, we will just ['', '633   Falls', 'RD Chagrin Falls Twp,OH', '44022']
+    # split the space split on the comma,and add in all the not-street-Rd thing as city,
+    # and the right side of the equation becomes the state
+    # zip is standard
+    #then we can delete all the mess above.
+    # be sure to handle when things are not real addresses!
 
 
 def parse_tax_address_from_css(parsed_tax_address):
@@ -183,7 +250,7 @@ def convert_y_n_to_boolean(response_string):
     :param response_string:
     :return:
     """
-    if response_string == 'Y':
+    if response_string.upper() == 'Y':
         return True
     else:
         return False
@@ -217,4 +284,164 @@ def select_most_recent_mtg_item(recorder_data_dict, date_format):
                 most_recent_result_found = memo
 
     return most_recent_result_found
+
+
+def find_property_information_by_name(soup, td_name):
+    """
+    Given a property name, this will return the value of the item 2 elements down. (Elements defined in Beautiful Soup
+    :param td_name:
+    :return: Value of TD item two elements down
+    """
+
+    item_returned = soup.body.find(text=re.compile(f'''^{td_name}'''))
+    return item_returned.next_element.next_element.contents[0].contents[0]
+
+
+def cuyahoga_county_name_street_parser(string1, string2):
+    """
+
+        #Split name from earlier line
+    # LOOK FOR PO BOX OR ADDRESS NUMBER
+    # start back from end of first line and look for where the LAST NUMBER ends
+    # but also be able to capture the last single letter if it's a cardinal number
+
+    """
+    name_line_length = (len(string1) -1)
+
+    in_first_line_we_have_encountered_a_digit = False
+
+    for character_num in range(name_line_length, 0, -1):
+        if string1[character_num].isdigit():
+            in_first_line_we_have_encountered_a_digit = True
+        elif string1[character_num].isspace() and in_first_line_we_have_encountered_a_digit:
+            primary_line = string1[:character_num]
+            secondary_line = f'''{string1[character_num+1:]} {string2}'''
+            return {
+                'primary_line': primary_line,
+                'secondary_line': secondary_line
+            }
+
+            # parse digits we have encountered so far as the address number, return that
+
+    # Check for cardinal direction in the last spot
+    cardinal_directions = ['n', 'e', 's', 'w']
+    if string1[-1:].lower() in cardinal_directions and string1[-2:].isspace():
+        return {
+            'primary_line': string1[:-2],
+            'secondary_line': f'''{string1[-2:]} {string2}'''
+        }
+
+    #  Check for PO BOX listed in the first line
+    if 'PO BOX' in string1[-8:].upper():
+        for character_num in range(name_line_length, 0, -1):
+            if ' PO BOX' in string1[character_num:]:
+                primary_line = string1[:character_num]
+                secondary_line = f'''{string1[character_num+1:]} {string2}'''
+                return {
+                    'primary_line': primary_line,
+                    'secondary_line': secondary_line
+                }
+
+    # Else just return what we have as the first and second lines, our algorithm is unable to parse
+    else:
+        return{
+            'primary_line': string1,
+            'secondary_line': string2
+        }
+
+
+def cuyahoga_tax_address_parser(input_string):
+    """
+    Given a tax address string as seen on Cuyahoga County's website (https://myplace.cuyahogacounty.us/),
+    this function parses out the name and address of the tax payer
+
+    :param string:  Richard M Mucci 1281 W \n 89 ST  \n CLEVELAND, OH 44102
+    :return: {'primary_address_line': 'Richard M Mucci', 'secondary_address_line': '1281 W 89 ST',
+     city': 'CLEVELAND', 'state': 'OH', 'zipcode': '44114'
+    """
+
+    address_list = input_string.split('\n')
+    our_list = []
+
+    for item in address_list:
+        our_list.append(item.strip())
+
+    first_lines_parsed = cuyahoga_county_name_street_parser(our_list[1], our_list[2])
+
+    # Split last line
+    comma_split = our_list[-2].split(',')
+    city = comma_split[0]
+    space_split = comma_split[1].split(' ')
+
+    zipcode =space_split[-1]
+    state = space_split[-2]
+
+    return {
+        'primary_address_line': first_lines_parsed['primary_line'].upper(),
+        'secondary_address_line': first_lines_parsed['secondary_line'].upper(),
+        'city': city.upper(),
+        'state': state.upper(),
+        'zipcode': zipcode
+    }
+
+
+def convert_string_to_base64_bytes_object(string):
+    converted_string = base64.b64encode(string.encode("utf-8"))
+    return converted_string.decode("utf-8")
+
+
+def name_cleaner(name):
+    """
+    Given a name, this method will remove periods, commas, and white space, returning it
+    squeaky clean to wherever it came from.
+    :param name:
+    :return:
+    """
+
+    punct_free_name = name.replace(',', '').replace('.', '')
+    split_name = punct_free_name.split()
+    string_to_return = ''
+
+    for name in split_name:
+        string_to_return += f'''{name} '''
+    return string_to_return[:-1].upper()
+
+
+def parse_recorder_items(soup, primary_owner_name, type_of_parse):
+
+    if type_of_parse == 'DEED':
+        search_terms = 'DECT|DEED|DESH|DEAF'
+    elif type_of_parse == 'MORT':
+        search_terms = 'MORT'
+    else:
+        raise TypeError("Unrecognized input passed into parse_recorder_items")
+
+    # Find the last transfer of the appropraite type (MORT or DEED)
+    # Confirm doc type is still at column 2
+    cols = [header.string for header in soup.find_all('th')]
+
+    cols.index('Doc. Type')
+    rows = soup.find('table', id='ctl00_ContentPlaceHolder1_GridView1').find_all('tr')
+    rows_length = len(rows) - 1
+
+    # Here, we loop through all of the table rows starting from the bottom. As soon as we find
+    # a document type matching the type of search we're doing, we'll analyze it.
+    # If it matches, we return the date it was filed; if not, we return None.
+    for i in range(rows_length, 0, -1):
+        if rows[i].find_all('td')[2].contents[0] in search_terms:
+            if type_of_parse == 'DEED':
+                if name_cleaner(rows[i].find_all('td')[4].contents[0]).upper() in name_cleaner(primary_owner_name):
+                    return rows[i].find_all('td')[5].contents[0]
+                else:
+                    return None
+
+            elif type_of_parse == 'MORT':
+                if name_cleaner(rows[i].find_all('td')[3].contents[0]) in name_cleaner(primary_owner_name):
+                    return rows[i].find_all('td')[5].contents[0]
+                else:
+                    return None
+
+
+def convert_to_string_and_drop_final_zero(integer):
+    return str(integer)[:-1]
 

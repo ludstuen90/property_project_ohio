@@ -7,18 +7,19 @@ from propertyrecords import utils
 class Property(models.Model):
 
     """
-    We mark
+    Here we contain all information related to the property records we search. This record has relationships with
+    other classes through foreign key relationships and one-to-one relationships.
     """
     parcel_number = models.CharField(max_length=13, unique=True)
-    account_number = models.CharField(max_length=10)
+    account_number = models.CharField(max_length=10, blank=True)
     legal_acres = models.DecimalField(max_digits=6, decimal_places=3, null=True, blank=True)
     legal_description = models.CharField(max_length=120, blank=True)
     owner = models.CharField(max_length=84, blank=True)
-    date_sold = models.DateField(null=True, blank=True)
+    date_sold = models.DateField(null=True, blank=True, help_text="Date a property transfer was recorded. Might not have actually meant property sold for money, in the case of inheriting a property. ")
     date_of_LLC_name_change = models.DateField(null=True, blank=True)
     date_of_mortgage = models.DateField(null=True, blank=True, help_text="Mortgages on a property at or after the date of sale")
     mortgage_amount = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
-    property_class = models.IntegerField(null=True, blank=True)
+    property_class = models.CharField(max_length=48, blank=True)
     land_use = models.IntegerField(null=True, blank=True)
     tax_district = models.CharField(max_length=42, blank=True)
     school_district_name = models.CharField(max_length=52, blank=True)
@@ -90,7 +91,7 @@ class AddressProperties(models.Model):
     secondary_address_line = models.CharField(max_length=72, blank=True, help_text="Apartment, Floor, Etc. ")
     city = models.CharField(max_length=24, blank=True)
     state = models.CharField(max_length=2, blank=True)
-    zipcode = models.IntegerField(blank=True, null=True)
+    zipcode = models.CharField(blank=True, max_length=11)
 
     def __str__(self):
         self.address_string = f''' {self.primary_address_line} {self.city}, {self.state} {self.zipcode}'''
@@ -105,8 +106,11 @@ class AddressProperties(models.Model):
 
     def save(self, *args, **kwargs):
         """
-        Override default save mechanism so that state names are always saved in upper case
+        Override default save mechanism so that information is always saved in upper case
         """
+        self.primary_address_line = self.primary_address_line.upper()
+        self.secondary_address_line = self.secondary_address_line.upper()
+        self.city = self.city.upper()
         self.state = self.state.upper()
         return super(AddressProperties, self).save(*args, **kwargs)
 

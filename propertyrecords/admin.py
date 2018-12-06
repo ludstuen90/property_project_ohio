@@ -17,6 +17,8 @@ class PropertyAdmin(admin.ModelAdmin):
     inlines = (AddressInline, TaxDataInline)
     list_display = ('parcel_number', 'mortgage_amount', 'tax_lien', 'owner_occupancy_indicated',
                     'display_address')
+    list_filter = ['county']
+    search_fields = ['parcel_number']
 
 
 admin.site.register(models.Property, PropertyAdmin)
