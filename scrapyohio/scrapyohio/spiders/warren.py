@@ -2,32 +2,27 @@
 import datetime
 
 import scrapy
+from bs4 import BeautifulSoup
 from scrapy import Request, FormRequest
 
 from ohio import settings
 from propertyrecords import utils, models
 
 
-HEADERS = {
-            "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_1) AppleWebKit/537.36 (KHTML, "
-                          "like Gecko) Chrome/70.0.3538.102 Safari/537.36",
-            "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8",
-            "X-MicrosoftAjax": "Delta=true"
-            }
-
-HEADERS.update(settings.CONTACT_INFO_HEADINGS)
-
-
 class WarrenSpider(scrapy.Spider):
+    HEADERS = {
+        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_14_1) AppleWebKit/537.36 (KHTML, "
+                      "like Gecko) Chrome/70.0.3538.102 Safari/537.36",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,image/apng,*/*;q=0.8",
+        "X-MicrosoftAjax": "Delta=true"
+    }
+
     name = 'warren'
     allowed_domains = ['co.warren.oh.us', 'oh3laredo.fidlar.com']
 
     def retrieve_all_warren_county_urls(self):
         self.warren_county_object, created = models.County.objects.get_or_create(name="Warren")
-        # self.please_parse_these_items = models.Property.objects.filter(county=self.warren_county_object)
-        list = ['2633485', '2633484', '2633483', '2633482', '2633481', '2633480']
-
-        self.please_parse_these_items = models.Property.objects.filter(account_number__in=list)
+        self.please_parse_these_items = models.Property.objects.filter(county=self.warren_county_object)
 
         for item in self.please_parse_these_items:
             property_parameters = {'url': f'''http://www.co.warren.oh.us/property_search/summary.aspx?account_nbr={item.account_number}''',
@@ -35,19 +30,12 @@ class WarrenSpider(scrapy.Spider):
                    }
             yield property_parameters
 
-    # 1407775 - cauv
-    # 6150660 - jas jenn smith
-    # 551305 - settlers walk
-    # 551865 -tatco dev tax
-    # 552375 - tanglewood creek assoc
-    # 551577 - LGHOA
-    # 551571 - OWNERS IN COMMON
-
     def __init__(self):
+        self.HEADERS.update(settings.CONTACT_INFO_HEADINGS)
         self.logged_out = False
 
     def start_requests(self):
-        # Ensure we have a county in the database
+       # Ensure we have a county in the database
         self.warren_county_object, created = models.County.objects.get_or_create(name="Warren")
 
 
@@ -55,7 +43,7 @@ class WarrenSpider(scrapy.Spider):
         # sent over to include Lucia's contact information
         for parameter_dictionary in self.retrieve_all_warren_county_urls():
             yield Request(parameter_dictionary['url'], dont_filter=True,
-                        headers=HEADERS,
+                        headers=self.HEADERS,
                         meta = {'parcel_id': parameter_dictionary['parcel_number']
                                 },
             )
@@ -86,7 +74,6 @@ class WarrenSpider(scrapy.Spider):
             # for example. This field will be False unless we found an owner occupied indication or tax credit
             self.parsed_prop.owner_occupancy_indicated = False
 
-
         self.lookup_possibilities = [
                 response.xpath("//span[@id='ContentPlaceHolderContent_lblSingleResSaleDate']/text()").extract(),
                 response.xpath("//span[@id='ContentPlaceHolderContent_lblNoBldgLastSaleDate']/text()").extract(),
@@ -98,6 +85,7 @@ class WarrenSpider(scrapy.Spider):
             #     # See:  https://github.com/ludstuen90/ohio/issues/70
             try:
                 parsed_lookup = datetime.datetime.strptime(lookup[0], '%m/%d/%Y')
+                self.date_pulled_this_search = parsed_lookup.date()
                 self.parsed_prop.date_sold = parsed_lookup.date()
                 break
             except IndexError:
@@ -129,6 +117,7 @@ class WarrenSpider(scrapy.Spider):
         self.next_year_tax_values.save()
         # End next year
 
+        # Declare screen values so that we can parse other views if needed.
         self.data = {}
         self.data['ctl00$ToolkitScriptManager1'] = 'ctl00$UpdatePanel1|ctl00$ContentPlaceHolderContent$lbTaxInfo'
         self.data['__EVENTTARGET'] = "ctl00$ContentPlaceHolderContent$lbTaxInfo"
@@ -138,7 +127,6 @@ class WarrenSpider(scrapy.Spider):
         self.data['__EVENTVALIDATION'] = response.css('input#__EVENTVALIDATION::attr(value)').extract_first(),
         self.data['ctl00$ContentPlaceHolderContent$ddlTaxYear'] = '2017',
         self.data['__ASYNCPOST'] = 'true',
-
         yield FormRequest(
                 url=response.request.url,
                 method='POST',
@@ -146,15 +134,39 @@ class WarrenSpider(scrapy.Spider):
                 formdata=self.data,
                 meta={'page': 1, 'parcel_id': response.meta['parcel_id']},
                 dont_filter=True,
-                headers=HEADERS,
+                headers=self.HEADERS,
             )
 
-    def parse_tax(self, response):
+        # If at this point we still haven't been able to download the last property sale
+        # date, let's go explicitly to the sales page and parse it from there.
+        # If we can parse it earlier on, skipping this step will allow our scrapes
+        # to go faster
 
+        if not hasattr(self, 'date_pulled_this_search'):
+            self.parsed_data = {}
+            self.parsed_data['ctl00$ToolkitScriptManager1'] = 'ctl00$UpdatePanel1|ctl00$ContentPlaceHolderContent$lbSalesHistory'
+            self.parsed_data['__EVENTTARGET'] = "ctl00$ContentPlaceHolderContent$lbSalesHistory"
+            self.parsed_data['__EVENTARGUMENT'] = ""
+            self.parsed_data['__LASTFOCUS'] = ""
+            self.parsed_data['__VIEWSTATE'] = response.css('input#__VIEWSTATE::attr(value)').extract_first(),
+            self.parsed_data['__EVENTVALIDATION'] = response.css('input#__EVENTVALIDATION::attr(value)').extract_first(),
+            self.parsed_data['ctl00$ContentPlaceHolderContent$ddlTaxYear'] = '2017',
+            self.parsed_data['__ASYNCPOST'] = 'true',
+
+            yield scrapy.FormRequest(
+                    url=response.request.url,
+                    method='POST',
+                    callback=self.parse_sale,
+                    formdata=self.parsed_data,
+                    meta={'page': 1, 'parcel_id': response.meta['parcel_id']},
+                    dont_filter=True,
+                    headers=self.HEADERS,
+                )
+
+    def parse_tax(self, response):
         self.parsed_prop = models.Property.objects.get(parcel_number=response.meta['parcel_id'])
         returned_tax_address = response.css("div.wrapper div.rightContent:nth-child(4) div:nth-child(1) fieldset::text").extract()
         parsed_address = utils.parse_tax_address_from_css(returned_tax_address)
-
         # FIND IF TAX ADDRESS EXISTS, IF NOT CREATE
         if len(parsed_address) == 1:
             try:
@@ -192,4 +204,21 @@ class WarrenSpider(scrapy.Spider):
             pass
 
         self.property_address.save()
+
+
+    def parse_sale(self, response):
+        """
+            Buildings with multiple buildings will require loading the 'last sale' page in order to
+            verify when the buildings were last sold. This page loads if this is required.
+
+            If we can't find sale information on the home page, we'll always load this page so that way
+            we can keep tabs on any sales that might happen.
+        :return:
+        """
+        parsed_parcel_number = response.meta['parcel_id']
+        property_to_save = models.Property.objects.get(parcel_number=parsed_parcel_number)
+        soup = BeautifulSoup(response.body, 'html.parser')
+        sale_date = soup.find('th').find_next('td').contents[0]
+        property_to_save.date_sold = datetime.datetime.strptime(sale_date, "%m-%d-%Y")
+        property_to_save.save()
 
