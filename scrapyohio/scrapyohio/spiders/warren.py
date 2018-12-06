@@ -22,10 +22,7 @@ class WarrenSpider(scrapy.Spider):
 
     def retrieve_all_warren_county_urls(self):
         self.warren_county_object, created = models.County.objects.get_or_create(name="Warren")
-        # self.please_parse_these_items = models.Property.objects.filter(county=self.warren_county_object)
-        list = ['6121748', '2633479', '2633478', '2633477', '2633476']
-
-        self.please_parse_these_items = models.Property.objects.filter(account_number__in=list)
+        self.please_parse_these_items = models.Property.objects.filter(county=self.warren_county_object)
 
         for item in self.please_parse_these_items:
             property_parameters = {'url': f'''http://www.co.warren.oh.us/property_search/summary.aspx?account_nbr={item.account_number}''',
