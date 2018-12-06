@@ -7,7 +7,6 @@ from scrapy import FormRequest
 from ohio import settings
 from propertyrecords import models, utils
 from bs4 import BeautifulSoup
-import re
 
 
 HEADERS = {
@@ -46,7 +45,7 @@ class WarrenSpider(scrapy.Spider):
     def retrieve_all_warren_county_urls(self):
         self.cuyahoga_county_object, created = models.County.objects.get_or_create(name="Cuyahoga")
         # self.all_cuyahoga_properties = models.Property.objects.filter(county=self.cuyahoga_county_object)[2]
-        self.all_cuyahoga_properties = models.Property.objects.filter(parcel_number='00338373')
+        self.all_cuyahoga_properties = models.Property.objects.filter(parcel_number='67111244')
 
         for item in self.all_cuyahoga_properties:
             yield {'url': "https://recorder.cuyahogacounty.us/searchs/parcelsearchs.aspx", 'parcel_id': item.parcel_number}
