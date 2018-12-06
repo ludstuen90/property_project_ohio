@@ -17,20 +17,7 @@ This application has been tested as it was developed. Keep tabs on tests here: h
 - Users will need to set up a PostgreSQL database instance, and provide the database parameters to the application via environment variables.
 
 
-# Environment Variables
-The following environment variables are required: 
-
-`SECRET_KEY`
-
-`DEBUG`
-
-`PSQL_DATABASE_NAME`
-
-`PSQL_DATABASE_USER`
-
-`PSQL_DATABASE_USER_PASSWORD`
-
-`WARREN_MORTGAGE_SITE`
+**A complete list of instructions is inside the Wiki** 
 
 
 # Downloading Initial Data
