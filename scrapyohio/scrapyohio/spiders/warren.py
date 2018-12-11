@@ -90,6 +90,9 @@ class WarrenSpider(scrapy.Spider):
                 break
             except IndexError:
                 continue
+            except ValueError:
+                continue
+
 
         self.parsed_prop.save()
 
@@ -215,10 +218,14 @@ class WarrenSpider(scrapy.Spider):
             we can keep tabs on any sales that might happen.
         :return:
         """
-        parsed_parcel_number = response.meta['parcel_id']
-        property_to_save = models.Property.objects.get(parcel_number=parsed_parcel_number)
-        soup = BeautifulSoup(response.body, 'html.parser')
-        sale_date = soup.find('th').find_next('td').contents[0]
-        property_to_save.date_sold = datetime.datetime.strptime(sale_date, "%m-%d-%Y")
-        property_to_save.save()
+        try:
+            parsed_parcel_number = response.meta['parcel_id']
+            property_to_save = models.Property.objects.get(parcel_number=parsed_parcel_number)
+            soup = BeautifulSoup(response.body, 'html.parser')
+            sale_date = soup.find('th').find_next('td').contents[0]
+            property_to_save.date_sold = datetime.datetime.strptime(sale_date, "%m-%d-%Y")
+            property_to_save.save()
+        except AttributeError:
+            # It's possible there might not be any last sale dates saved. Account for this!
+            pass
 
