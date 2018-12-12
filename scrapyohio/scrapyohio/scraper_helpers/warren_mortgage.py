@@ -38,8 +38,8 @@ class WarrenMortgageInfo:
         # warren.py
         self.warren_county_object = models.County.objects.get(name='Warren')
 
-        # self.warren_county_items = models.Property.objects.filter(county=self.warren_county_object)[:5]
-        self.warren_county_items = models.Property.objects.filter(id=257453)
+        self.warren_county_items = models.Property.objects.filter(county=self.warren_county_object)
+        # self.warren_county_items = models.Property.objects.filter(id=257453)
         self.access_token = ''
 
     @classmethod
