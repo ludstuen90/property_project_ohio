@@ -271,7 +271,12 @@ def cauv_parser(cauv_value):
 def select_most_recent_mtg_item(recorder_data_dict, date_format):
     most_recent_result_found = {}
 
-    mtg_items = [item for item in recorder_data_dict['DocResults'] if item['DocumentType'] == 'MTG']
+    try:
+        mtg_items = [item for item in recorder_data_dict['DocResults'] if item['DocumentType'] == 'MTG']
+
+    except KeyError:
+        # This indicates we have not found any meeting type documents in this record.
+        return False
 
     if len(mtg_items) == 0:
         return False
