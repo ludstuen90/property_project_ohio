@@ -20,6 +20,7 @@ class Property(models.Model):
     date_of_mortgage = models.DateField(null=True, blank=True, help_text="Mortgages on a property at or after the date of sale")
     mortgage_amount = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
     property_class = models.CharField(max_length=48, blank=True)
+    property_rating = models.CharField(max_length=2, blank=True, help_text="Property class rating, eg: A, B, C or D")
     land_use = models.IntegerField(null=True, blank=True)
     tax_district = models.CharField(max_length=42, blank=True)
     school_district_name = models.CharField(max_length=52, blank=True)
