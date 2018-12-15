@@ -33,7 +33,6 @@ class WarrenSpider(scrapy.Spider):
             }
             yield prop_dict
 
-
     def __init__(self):
         self.logged_out = False
 
@@ -73,8 +72,7 @@ class WarrenSpider(scrapy.Spider):
         property.property_rating = response.xpath("/html[1]/body[1]/div[1]/div[3]/div[2]/div[1]/div[1]/div[4]/div[2]/div[1]/div[2]/div[4]/text()").extract_first()
         property.save()
 
-        # # TAX BILL PAGE
-
+        # TAX BILL PAGE
         yield scrapy.Request(
             url=f'''https://myplace.cuyahogacounty.us/{utils.convert_string_to_base64_bytes_object(property.parcel_number)}?city={utils.convert_string_to_base64_bytes_object('99')}&searchBy={utils.convert_string_to_base64_bytes_object('Parcel')}&dataRequested={utils.convert_string_to_base64_bytes_object('Tax Bill')}''',
             method='GET',
@@ -108,13 +106,6 @@ class WarrenSpider(scrapy.Spider):
 
         # TAX INFO (* Requires VPN access)
         # Ideally would look by address, but zip code could provide a starting point. (zip + 4 digits would be ideal)
-
-
-        # HOW COULD WE STORE LLC NAMES?
-        # Call back to earlier tax years, and look at the name each year... record different primary
-        # owner names as they exist.
-        # date_of_LLC_name_change
-
 
     def parse_tax_page_information(self, response):
         """

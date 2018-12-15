@@ -61,6 +61,16 @@ class Property(models.Model):
         return address
 
 
+class PropertyTransfer(models.Model):
+    guarantor = models.CharField(max_length=74)
+    guarantee = models.CharField(max_length=74)
+    sale_amount = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
+    conveyance_fee = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
+    conveyance_number = models.IntegerField(null=True, blank=True)
+    transfer_date = models.DateField(null=True, blank=True)
+    property = models.ForeignKey(Property, on_delete=models.CASCADE)
+
+
 class PropertyItem(DjangoItem):
     django_model = Property
 
