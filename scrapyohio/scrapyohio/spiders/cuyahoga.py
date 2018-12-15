@@ -26,8 +26,6 @@ class WarrenSpider(scrapy.Spider):
     def retrieve_all_warren_county_urls(self):
         self.cuyahoga_county_object, created = models.County.objects.get_or_create(name="Cuyahoga")
         all_cuyahoga_properties = models.Property.objects.filter(county=self.cuyahoga_county_object)
-        # all_cuyahoga_properties = models.Property.objects.filter(county=self.cuyahoga_county_object,
-        #                                                          parcel_number='00338041')
 
         for property in all_cuyahoga_properties:
             prop_dict = {
