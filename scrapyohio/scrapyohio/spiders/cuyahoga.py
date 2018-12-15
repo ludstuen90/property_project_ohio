@@ -26,9 +26,15 @@ class WarrenSpider(scrapy.Spider):
     def retrieve_all_warren_county_urls(self):
         self.cuyahoga_county_object, created = models.County.objects.get_or_create(name="Cuyahoga")
         all_cuyahoga_properties = models.Property.objects.filter(county=self.cuyahoga_county_object)
+        # all_cuyahoga_properties = models.Property.objects.filter(county=self.cuyahoga_county_object,
+        #                                                          parcel_number='00338041')
 
         for property in all_cuyahoga_properties:
-            yield f'''https://myplace.cuyahogacounty.us/{utils.convert_string_to_base64_bytes_object(property.parcel_number)}?city={utils.convert_string_to_base64_bytes_object('99')}&searchBy={utils.convert_string_to_base64_bytes_object('Parcel')}&dataRequested={utils.convert_string_to_base64_bytes_object('General Information')}'''
+            prop_dict = {
+                'url': f'''https://myplace.cuyahogacounty.us/{utils.convert_string_to_base64_bytes_object(property.parcel_number)}?city={utils.convert_string_to_base64_bytes_object('99')}&searchBy={utils.convert_string_to_base64_bytes_object('Parcel')}&dataRequested={utils.convert_string_to_base64_bytes_object('General Information')}''',
+                'parcel_number': property.parcel_number,
+            }
+            yield prop_dict
 
 
     def __init__(self):
@@ -40,9 +46,11 @@ class WarrenSpider(scrapy.Spider):
 
         # We want to assign headers for each request triggered. Override the request object
         # sent over to include Lucia's contact information
-        for url in self.retrieve_all_warren_county_urls():
-            yield scrapy.Request(url, dont_filter=True,
-                          headers=HEADERS
+        for parameter_dictionary in self.retrieve_all_warren_county_urls():
+            yield scrapy.Request(parameter_dictionary['url'], dont_filter=True,
+                          headers=HEADERS,
+                          meta = {'parcel_number': parameter_dictionary['parcel_number']
+                                },
                           )
 
     def parse(self, response):
@@ -53,11 +61,9 @@ class WarrenSpider(scrapy.Spider):
         :return:
         """
 
-        property_number = response.xpath(
-            "/html[1]/body[1]/div[1]/div[3]/div[2]/div[1]/div[1]/div[4]/div[1]/ul[1]/li[1]/text()").extract()[
-            0].strip().replace('-', '')
+        parcel_number = response.meta['parcel_number']
 
-        property = models.Property.objects.get(parcel_number=property_number)
+        property = models.Property.objects.get(parcel_number=parcel_number)
 
         """
         *date_sold - can find, but not super accurate
@@ -90,6 +96,7 @@ class WarrenSpider(scrapy.Spider):
             url=f'''https://myplace.cuyahogacounty.us/{utils.convert_string_to_base64_bytes_object(property.parcel_number)}?city={utils.convert_string_to_base64_bytes_object('99')}&searchBy={utils.convert_string_to_base64_bytes_object('Parcel')}&dataRequested={utils.convert_string_to_base64_bytes_object('Tax Bill')}''',
             method='GET',
             callback=self.parse_tax_page_information,
+            meta={'parcel_number': response.meta['parcel_number']},
             dont_filter=True,
             headers=HEADERS
         )
@@ -106,6 +113,7 @@ class WarrenSpider(scrapy.Spider):
                 'Parcel')}&dataRequested={utils.convert_string_to_base64_bytes_object('Land')}''',
             method='GET',
             callback=self.parse_land_information,
+            meta={'parcel_number': response.meta['parcel_number']},
             dont_filter=True,
             headers=HEADERS
         )
@@ -144,9 +152,7 @@ class WarrenSpider(scrapy.Spider):
         :return:
         """
 
-        parcel_number = response.xpath(
-            "/html[1]/body[1]/div[1]/div[3]/div[2]/div[1]/div[1]/div[4]/div[1]/div[1]/div[1]/div[6]/div[2]/text()").extract_first().replace(
-            '-', '')
+        parcel_number = response.meta['parcel_number']
         soup = BeautifulSoup(response.body, 'html.parser')
 
 
@@ -197,31 +203,30 @@ class WarrenSpider(scrapy.Spider):
 
     def parse_land_information(self, response):
 
-        parcel_number = response.xpath("/html[1]/body[1]/div[1]/div[3]/div[2]/div[1]/div[1]/div[4]/div[1]/ul[1]/li[1]/text()").extract_first().strip().replace('-', '')
+        parcel_number = response.meta['parcel_number']
 
         property_object = models.Property.objects.get(parcel_number=parcel_number)
 
         property_object.legal_acres = response.xpath("/html[1]/body[1]/div[1]/div[3]/div[2]/div[1]/div[1]/div[4]/div[2]/div[2]/div[4]/div[4]/text()").extract_first()
         property_object.save()
 
-    def parse_transfers_info(self, response):
+    #
+    # def parse_transfers_info(self, response):
+    #
+    #     parcel_number = response.xpath("/html[1]/body[1]/div[1]/div[3]/div[2]/div[1]/div[1]/div[4]/div[1]/ul[1]/li[1]/text()").extract_first().strip().replace('-', '')
+    #     property_object = models.Property.objects.get(parcel_number=parcel_number)
 
-        parcel_number = response.xpath("/html[1]/body[1]/div[1]/div[3]/div[2]/div[1]/div[1]/div[4]/div[1]/ul[1]/li[1]/text()").extract_first().strip().replace('-', '')
-        property_object = models.Property.objects.get(parcel_number=parcel_number)
-
-    def mortgage_finder(self, response):
-        from scrapy.utils.response import open_in_browser
-        open_in_browser(response)
-
-        # print('response!: ', response.body)
-
-        self.data = {}
-        self.data['ctl00$ToolkitScriptManager1'] = 'ctl00$UpdatePanel1|ctl00$ContentPlaceHolderContent$lbTaxInfo'
-        self.data['__EVENTTARGET'] = "ctl00$ContentPlaceHolderContent$lbTaxInfo"
-        self.data['__EVENTARGUMENT'] = ""
-        self.data['__LASTFOCUS'] = ""
-        self.data['__VIEWSTATE'] = response.css('input#__VIEWSTATE::attr(value)').extract_first(),
-        self.data['__EVENTVALIDATION'] = response.css('input#__EVENTVALIDATION::attr(value)').extract_first(),
-        self.data['ctl00$ContentPlaceHolderContent$ddlTaxYear'] = '2017',
-        self.data['__ASYNCPOST'] = 'true',
-        return self.data
+    # def mortgage_finder(self, response):
+    #     from scrapy.utils.response import open_in_browser
+    #     open_in_browser(response)
+    #
+    #     self.data = {}
+    #     self.data['ctl00$ToolkitScriptManager1'] = 'ctl00$UpdatePanel1|ctl00$ContentPlaceHolderContent$lbTaxInfo'
+    #     self.data['__EVENTTARGET'] = "ctl00$ContentPlaceHolderContent$lbTaxInfo"
+    #     self.data['__EVENTARGUMENT'] = ""
+    #     self.data['__LASTFOCUS'] = ""
+    #     self.data['__VIEWSTATE'] = response.css('input#__VIEWSTATE::attr(value)').extract_first(),
+    #     self.data['__EVENTVALIDATION'] = response.css('input#__EVENTVALIDATION::attr(value)').extract_first(),
+    #     self.data['ctl00$ContentPlaceHolderContent$ddlTaxYear'] = '2017',
+    #     self.data['__ASYNCPOST'] = 'true',
+    #     return self.data
