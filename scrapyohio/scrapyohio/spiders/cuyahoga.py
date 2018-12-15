@@ -79,6 +79,7 @@ class WarrenSpider(scrapy.Spider):
             property.land_user = response.xpath("/html[1]/body[1]/div[1]/div[3]/div[2]/div[1]/div[1]/div[4]/div[2]/div[1]/div[3]/div[2]/text()").extract_first()
         property.legal_description = response.xpath("//div[@class='generalInfoValue col-lg-3']/text()").extract_first()
         property.primary_owner = response.xpath("/html[1]/body[1]/div[1]/div[3]/div[2]/div[1]/div[1]/div[4]/div[1]/ul[1]/li[2]/text()").extract_first().strip()
+        property.property_rating = response.xpath("/html[1]/body[1]/div[1]/div[3]/div[2]/div[1]/div[1]/div[4]/div[2]/div[1]/div[2]/div[4]/text()").extract_first()
         property.save()
 
         # # Often will not exist, and will throw an IndexError if so
