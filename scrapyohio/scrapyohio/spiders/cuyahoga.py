@@ -1,4 +1,3 @@
-import json
 import re
 from _decimal import InvalidOperation
 
@@ -47,8 +46,8 @@ class WarrenSpider(scrapy.Spider):
         for parameter_dictionary in self.retrieve_all_warren_county_urls():
             yield scrapy.Request(parameter_dictionary['url'], dont_filter=True,
                           headers=HEADERS,
-                          meta = {'parcel_number': parameter_dictionary['parcel_number']
-                                },
+                          meta={'parcel_number': parameter_dictionary['parcel_number']
+                            },
                           )
 
     def parse(self, response):
@@ -60,19 +59,7 @@ class WarrenSpider(scrapy.Spider):
         """
 
         parcel_number = response.meta['parcel_number']
-
         property = models.Property.objects.get(parcel_number=parcel_number)
-
-        """
-        *date_sold - can find, but not super accurate
-        !date_of_LLC_name_change - 
-        *date_of_mortgage -can find, other site 
-        *mortgage_amount -can find, other site  
-        school_district - could be other site
-        *tax_lien - unknown for both 
-        *tax_lien_information_source -- unknown for both  
-        !cauv_property -- UNKNOWN 
-        """
 
         # GENERAL PAGE
         property.school_district_name = response.xpath('/html[1]/body[1]/div[1]/div[3]/div[2]/div[1]/div[1]/div[4]/div[2]/div[1]/div[2]/div[2]/text()').extract_first()
@@ -86,9 +73,6 @@ class WarrenSpider(scrapy.Spider):
         property.property_rating = response.xpath("/html[1]/body[1]/div[1]/div[3]/div[2]/div[1]/div[1]/div[4]/div[2]/div[1]/div[2]/div[4]/text()").extract_first()
         property.save()
 
-        # # Often will not exist, and will throw an IndexError if so
-        # secondary_owner = response.xpath("//li[@class='liGreen']/text()").extract()[0].strip()
-        #
         # # TAX BILL PAGE
 
         yield scrapy.Request(
@@ -99,11 +83,6 @@ class WarrenSpider(scrapy.Spider):
             dont_filter=True,
             headers=HEADERS
         )
-
-    #### LAND PAGE
-    #https://myplace.cuyahogacounty.us/MTAxMzcwMDE=?city=OTk=&searchBy=UGFyY2Vs&dataRequested=TGFuZA==
-    # ACRES - response.xpath("/html[1]/body[1]/div[1]/div[3]/div[2]/div[1]/div[1]/div[4]/div[2]/div[2]/div[4]/div[4]/text()").extract()[0]
-    #response.xpath("/html[1]/body[1]/div[1]/div[3]/div[2]/div[1]/div[1]/div[4]/div[2]/div[2]/div[4]/div[4]")
 
         yield scrapy.Request(
             url=f'''https://myplace.cuyahogacounty.us/{utils.convert_string_to_base64_bytes_object(
@@ -117,13 +96,6 @@ class WarrenSpider(scrapy.Spider):
             headers=HEADERS
         )
 
-        # yield scrapy.Request(
-        #     url='https://recorder.cuyahogacounty.us/searchs/parcelsearchs.aspx',
-        #     method='GET',
-        #     callback=self.mortgage_finder,
-        #     dont_filter=True,
-        #     headers=HEADERS,
-        # )
         #MORTGAGE AMOUNTS WE CAN SEE HERE
         # date_of_mortgage
         # mortgage_amount
@@ -154,12 +126,9 @@ class WarrenSpider(scrapy.Spider):
         parcel_number = response.meta['parcel_number']
         soup = BeautifulSoup(response.body, 'html.parser')
 
-
         our_property = models.Property.objects.get(parcel_number=parcel_number)
 
         our_property.property_class = response.xpath("/html[1]/body[1]/div[1]/div[3]/div[2]/div[1]/div[1]/div[4]/div[1]/div[1]/div[1]/div[5]/div[2]/text()").extract_first()
-        # ooc_string = str(soup.body.find_all(text=re.compile('Owner Occupancy Credit'))[1].find_next('td').contents[0])
-        # our_property.owner_occupancy_indicated = utils.convert_y_n_to_boolean(ooc_string)
         our_property.owner_occupancy_indicated = utils.convert_y_n_to_boolean(response.xpath("//div[@class='taxDataBody']/div[1]/div[1]/div[3]/table/tr[2]/td[2]/text()").extract_first())
 
         tax_year = response.xpath("//div[@class='HeaderHighlight']/text()").extract_first().split(' ')[0]
@@ -171,9 +140,6 @@ class WarrenSpider(scrapy.Spider):
             tax_values_object.taxable_value = utils.convert_taxable_value_string_to_integer(soup.body.find(text=re.compile('Assessed Values')).parent.parent.parent.findAll('tr')[3].findAll('td')[1].contents[0])
             tax_values_object.taxes_paid = utils.convert_taxable_value_string_to_integer(response.xpath("//div[@class='row']//div[3]//div[2]//b[1]/text()").extract()[0])
         except InvalidOperation:
-            # tax_values_object.market_value = soup.body.find(text=re.compile('Market Values')).parent.parent.parent.findAll('tr')[3].findAll('td')[1].contents[0]
-            # tax_values_object.taxable_value = soup.body.find(text=re.compile('Assessed Values')).parent.parent.parent.findAll('tr')[3].findAll('td')[1].contents[0]
-            # tax_values_object.taxes_paid = response.xpath("//div[@class='row']//div[3]//div[2]//b[1]/text()").extract()[0]
             pass
         tax_values_object.save()
 
@@ -201,31 +167,9 @@ class WarrenSpider(scrapy.Spider):
         our_property.save()
 
     def parse_land_information(self, response):
-
         parcel_number = response.meta['parcel_number']
 
         property_object = models.Property.objects.get(parcel_number=parcel_number)
 
         property_object.legal_acres = response.xpath("/html[1]/body[1]/div[1]/div[3]/div[2]/div[1]/div[1]/div[4]/div[2]/div[2]/div[4]/div[4]/text()").extract_first()
         property_object.save()
-
-    #
-    # def parse_transfers_info(self, response):
-    #
-    #     parcel_number = response.xpath("/html[1]/body[1]/div[1]/div[3]/div[2]/div[1]/div[1]/div[4]/div[1]/ul[1]/li[1]/text()").extract_first().strip().replace('-', '')
-    #     property_object = models.Property.objects.get(parcel_number=parcel_number)
-
-    # def mortgage_finder(self, response):
-    #     from scrapy.utils.response import open_in_browser
-    #     open_in_browser(response)
-    #
-    #     self.data = {}
-    #     self.data['ctl00$ToolkitScriptManager1'] = 'ctl00$UpdatePanel1|ctl00$ContentPlaceHolderContent$lbTaxInfo'
-    #     self.data['__EVENTTARGET'] = "ctl00$ContentPlaceHolderContent$lbTaxInfo"
-    #     self.data['__EVENTARGUMENT'] = ""
-    #     self.data['__LASTFOCUS'] = ""
-    #     self.data['__VIEWSTATE'] = response.css('input#__VIEWSTATE::attr(value)').extract_first(),
-    #     self.data['__EVENTVALIDATION'] = response.css('input#__EVENTVALIDATION::attr(value)').extract_first(),
-    #     self.data['ctl00$ContentPlaceHolderContent$ddlTaxYear'] = '2017',
-    #     self.data['__ASYNCPOST'] = 'true',
-    #     return self.data
