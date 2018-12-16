@@ -22,10 +22,12 @@ class WarrenSpider(scrapy.Spider):
     name = 'cuyahoga'
     allowed_domains = ['myplace.cuyahogacounty.us']
 
+
     def retrieve_all_warren_county_urls(self):
         self.cuyahoga_county_object, created = models.County.objects.get_or_create(name="Cuyahoga")
 
-        all_cuyahoga_properties = models.Property.objects.filter(county=self.cuyahoga_county_object)
+        all_cuyahoga_properties = models.Property.objects.filter(county=self.cuyahoga_county_object,
+                                                                 )
 
         for property in all_cuyahoga_properties:
             prop_dict = {
@@ -68,7 +70,7 @@ class WarrenSpider(scrapy.Spider):
             property.land_use = utils.parse_ohio_state_use_code(response.xpath("/html[1]/body[1]/div[1]/div[3]/div[2]/div[1]/div[1]/div[4]/div[2]/div[1]/div[3]/div[2]/text()").extract_first())
         except ValueError:
             property.land_user = response.xpath("/html[1]/body[1]/div[1]/div[3]/div[2]/div[1]/div[1]/div[4]/div[2]/div[1]/div[3]/div[2]/text()").extract_first()
-        property.legal_description = response.xpath("//div[@class='generalInfoValue col-lg-3']/text()").extract_first()
+        property.legal_description = response.xpath("//div[@class='generalInfoValue col-lg-3']/text()").extract_first()[:249]
         property.primary_owner = response.xpath("/html[1]/body[1]/div[1]/div[3]/div[2]/div[1]/div[1]/div[4]/div[1]/ul[1]/li[2]/text()").extract_first().strip()
         property.property_rating = response.xpath("/html[1]/body[1]/div[1]/div[3]/div[2]/div[1]/div[1]/div[4]/div[2]/div[1]/div[2]/div[4]/text()").extract_first()
         property.save()
