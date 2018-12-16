@@ -110,12 +110,6 @@ class WarrenSpider(scrapy.Spider):
 
         )
 
-        #MORTGAGE AMOUNTS WE CAN SEE HERE
-        # date_of_mortgage
-        # mortgage_amount
-        # date_sold
-            # https://recorder.cuyahogacounty.us/searchs/parcelsearchs.aspx
-
         # SCHOOL DISTRICT: (* Requires VPN access)
         #https://thefinder.tax.ohio.gov/StreamlineSalesTaxWeb/default_SchoolDistrict.aspx
         # school_district
