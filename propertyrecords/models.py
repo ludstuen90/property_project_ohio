@@ -13,7 +13,7 @@ class Property(models.Model):
     parcel_number = models.CharField(max_length=13, unique=True)
     account_number = models.CharField(max_length=10, blank=True)
     legal_acres = models.DecimalField(max_digits=6, decimal_places=3, null=True, blank=True)
-    legal_description = models.CharField(max_length=120, blank=True)
+    legal_description = models.CharField(max_length=250, blank=True)
     owner = models.CharField(max_length=84, blank=True)
     date_sold = models.DateField(null=True, blank=True, help_text="Date a property transfer was recorded. Might not have actually meant property sold for money, in the case of inheriting a property. ")
     date_of_LLC_name_change = models.DateField(null=True, blank=True)
@@ -59,6 +59,16 @@ class Property(models.Model):
     def display_address(self):
         address = PropertyAddress.objects.get(property=self.id)
         return address
+
+
+class PropertyTransfer(models.Model):
+    guarantor = models.CharField(max_length=74)
+    guarantee = models.CharField(max_length=74)
+    sale_amount = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
+    conveyance_fee = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
+    conveyance_number = models.IntegerField(null=True, blank=True)
+    transfer_date = models.DateField(null=True, blank=True)
+    property = models.ForeignKey(Property, on_delete=models.CASCADE)
 
 
 class PropertyItem(DjangoItem):

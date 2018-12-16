@@ -22,9 +22,12 @@ class WarrenSpider(scrapy.Spider):
     name = 'cuyahoga'
     allowed_domains = ['myplace.cuyahogacounty.us']
 
+
     def retrieve_all_warren_county_urls(self):
         self.cuyahoga_county_object, created = models.County.objects.get_or_create(name="Cuyahoga")
-        all_cuyahoga_properties = models.Property.objects.filter(county=self.cuyahoga_county_object)
+
+        all_cuyahoga_properties = models.Property.objects.filter(county=self.cuyahoga_county_object,
+                                                                 )
 
         for property in all_cuyahoga_properties:
             prop_dict = {
@@ -32,7 +35,6 @@ class WarrenSpider(scrapy.Spider):
                 'parcel_number': property.parcel_number,
             }
             yield prop_dict
-
 
     def __init__(self):
         self.logged_out = False
@@ -68,13 +70,12 @@ class WarrenSpider(scrapy.Spider):
             property.land_use = utils.parse_ohio_state_use_code(response.xpath("/html[1]/body[1]/div[1]/div[3]/div[2]/div[1]/div[1]/div[4]/div[2]/div[1]/div[3]/div[2]/text()").extract_first())
         except ValueError:
             property.land_user = response.xpath("/html[1]/body[1]/div[1]/div[3]/div[2]/div[1]/div[1]/div[4]/div[2]/div[1]/div[3]/div[2]/text()").extract_first()
-        property.legal_description = response.xpath("//div[@class='generalInfoValue col-lg-3']/text()").extract_first()
+        property.legal_description = response.xpath("//div[@class='generalInfoValue col-lg-3']/text()").extract_first()[:249]
         property.primary_owner = response.xpath("/html[1]/body[1]/div[1]/div[3]/div[2]/div[1]/div[1]/div[4]/div[1]/ul[1]/li[2]/text()").extract_first().strip()
         property.property_rating = response.xpath("/html[1]/body[1]/div[1]/div[3]/div[2]/div[1]/div[1]/div[4]/div[2]/div[1]/div[2]/div[4]/text()").extract_first()
         property.save()
 
-        # # TAX BILL PAGE
-
+        # TAX BILL PAGE
         yield scrapy.Request(
             url=f'''https://myplace.cuyahogacounty.us/{utils.convert_string_to_base64_bytes_object(property.parcel_number)}?city={utils.convert_string_to_base64_bytes_object('99')}&searchBy={utils.convert_string_to_base64_bytes_object('Parcel')}&dataRequested={utils.convert_string_to_base64_bytes_object('Tax Bill')}''',
             method='GET',
@@ -96,11 +97,18 @@ class WarrenSpider(scrapy.Spider):
             headers=HEADERS
         )
 
-        #MORTGAGE AMOUNTS WE CAN SEE HERE
-        # date_of_mortgage
-        # mortgage_amount
-        # date_sold
-            # https://recorder.cuyahogacounty.us/searchs/parcelsearchs.aspx
+        yield scrapy.Request(
+            url=f'''https://myplace.cuyahogacounty.us/{utils.convert_string_to_base64_bytes_object(
+                property.parcel_number)}?city={utils.convert_string_to_base64_bytes_object(
+                '99')}&searchBy={utils.convert_string_to_base64_bytes_object(
+                'Parcel')}&dataRequested={utils.convert_string_to_base64_bytes_object('Transfers')}''',
+            method='GET',
+            callback=self.parse_transfer_information,
+            meta={'parcel_number': response.meta['parcel_number']},
+            dont_filter=True,
+            headers=HEADERS
+
+        )
 
         # SCHOOL DISTRICT: (* Requires VPN access)
         #https://thefinder.tax.ohio.gov/StreamlineSalesTaxWeb/default_SchoolDistrict.aspx
@@ -108,13 +116,6 @@ class WarrenSpider(scrapy.Spider):
 
         # TAX INFO (* Requires VPN access)
         # Ideally would look by address, but zip code could provide a starting point. (zip + 4 digits would be ideal)
-
-
-        # HOW COULD WE STORE LLC NAMES?
-        # Call back to earlier tax years, and look at the name each year... record different primary
-        # owner names as they exist.
-        # date_of_LLC_name_change
-
 
     def parse_tax_page_information(self, response):
         """
@@ -173,3 +174,55 @@ class WarrenSpider(scrapy.Spider):
 
         property_object.legal_acres = response.xpath("/html[1]/body[1]/div[1]/div[3]/div[2]/div[1]/div[1]/div[4]/div[2]/div[2]/div[4]/div[4]/text()").extract_first()
         property_object.save()
+
+
+    def parse_transfer_information(self, response):
+        parcel_number = response.meta['parcel_number']
+        property_object = models.Property.objects.get(parcel_number=parcel_number)
+
+        # Delete existing property transfer records so that we can be sure our database reflects information
+        # on the site.
+        models.PropertyTransfer.objects.filter(property=property_object).delete()
+
+        # COUNT NUMBER OF TRANSFERS WE WILL WANT TO RETURN
+        total_number_of_transfers = response.xpath(
+            'count(/html[1]/body[1]/div[1]/div[3]/div[2]/div[1]/div[1]/div[4]/div[2]/div[1]/div)').extract_first()
+        transfer_as_digit = total_number_of_transfers.split('.')
+        digit_to_add = (int(transfer_as_digit[0]) + 1)
+
+        for transfer_item in range(1, digit_to_add):
+
+            date = response.xpath(
+                f'''/html[1]/body[1]/div[1]/div[3]/div[2]/div[1]/div[1]/div[4]/div[2]/div[1]/div[{transfer_item}]/div[1]/div[1]/span[2]/text()''').extract_first()
+
+            guarantor_guarantee = response.xpath(
+                f'''/html[1]/body[1]/div[1]/div[3]/div[2]/div[1]/div[1]/div[4]/div[2]/div[1]/div[{transfer_item}]/table/tr/td/text()''').extract()
+
+            try:
+                guarantor = guarantor_guarantee[1]
+            except IndexError:
+                guarantor = ''
+            try:
+                guarantee = guarantor_guarantee[0]
+            except IndexError:
+                guarantee = ''
+
+            sale_amount = response.xpath(f'''/html[1]/body[1]/div[1]/div[3]/div[2]/div[1]/div[1]/div[4]/div[2]/div[1]/div[{transfer_item}]/div[2]/div[1]/table[1]/tbody[1]/tr[1]/td[4]/text()''').extract_first()
+
+            conveyance_amount = response.xpath(f'''/html[1]/body[1]/div[1]/div[3]/div[2]/div[1]/div[1]/div[4]/div[2]/div[1]/div[{transfer_item}]/div[2]/div[1]/table[1]/tbody[1]/tr[1]/td[5]/text()''').extract_first()
+            conveyance_number_string = response.xpath(
+                f'''/html[1]/body[1]/div[1]/div[3]/div[2]/div[1]/div[1]/div[4]/div[2]/div[1]/div[{transfer_item}]/div[2]/div[1]/table[1]/tbody[1]/tr[1]/td[6]/text()''').extract_first().strip(' ')
+            try:
+                conveyance_number = int(conveyance_number_string)
+            except ValueError:
+                conveyance_number = None
+
+            property_transfer_obj, created = models.PropertyTransfer.objects.get_or_create(
+                property=property_object,
+                transfer_date=utils.datetime_to_date_string_parser(date, '%m/%d/%Y'),
+                sale_amount=utils.convert_taxable_value_string_to_integer(sale_amount),
+                guarantor=guarantor,
+                guarantee=guarantee,
+                conveyance_fee=utils.convert_taxable_value_string_to_integer(conveyance_amount),
+                conveyance_number=conveyance_number
+            )

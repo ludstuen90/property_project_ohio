@@ -1,5 +1,6 @@
 # from django.test import TestCase
 import os
+from datetime import datetime
 from decimal import Decimal
 import pytest
 
@@ -228,3 +229,14 @@ def test_convert_to_string_and_drop_final_zero():
 
     assert string_result == '1231200041'
     assert integer_result == '1636451003'
+
+
+def test_datetime_to_date_string_parser():
+    result_one = utils.datetime_to_date_string_parser('10/7/1977 12:00:00 AM', '%m/%d/%Y')
+
+    result_two = utils.datetime_to_date_string_parser('10/07/1999 12:00:00 AM', '%m/%d/%Y')
+
+    assert result_one == datetime(1977, 10, 7, 0, 0)
+
+    assert result_two == datetime(1999, 10, 7, 0, 0)
+
