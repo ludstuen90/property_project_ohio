@@ -1,9 +1,5 @@
 import datetime
 import json
-import os
-import sys
-
-import django
 import requests
 
 from ohio import settings
@@ -38,49 +34,51 @@ class WarrenMortgageInfo:
         # warren.py
         self.warren_county_object = models.County.objects.get(name='Warren')
 
-        self.warren_county_items = models.Property.objects.filter(county=self.warren_county_object)
-        # self.warren_county_items = models.Property.objects.filter(id=257453)
-        self.access_token = ''
+        self.warren_county_items = models.Property.objects.filter(county=self.warren_county_object).order_by('?')
 
-    @classmethod
-    def retrieve_access_token(cls, explicit_request=False):
+    def retrieve_access_token(self):
         """
         This method is responsible for going out to retrieve an access token
         from the mortgage site and returns it.
         :return: A token with which to query the mortgage site
         """
-        if len(cls.access_token) == 0 or explicit_request:
-            payload = "grant_type=password&username=anonymous&password=&undefined="
-            headers = {
-                'Content-Type': "application/x-www-form-urlencoded",
-                'cache-control': "no-cache",
-            }
+        payload = "grant_type=password&username=anonymous&password=&undefined="
+        headers = {
+            'Content-Type': "application/x-www-form-urlencoded",
+            'cache-control': "no-cache",
+        }
 
-            response = requests.request("POST", cls.WARREN_TOKEN_SITE, data=payload, headers=headers)
+        response = requests.request("POST", self.WARREN_TOKEN_SITE, data=payload, headers=headers)
 
-            response_json = response.json()
-            cls.access_token = response_json['access_token']
-            access_token_dict = {'Authorization': f'''Bearer {cls.access_token}''', }
-            cls.HEADERS.update(access_token_dict)
-            return cls.access_token
+        response_json = response.json()
+        self.access_token = response_json['access_token']
+        access_token_dict = {'Authorization': f'''Bearer {self.access_token}''', }
+        self.HEADERS.update(access_token_dict)
+        return self.access_token
 
-    @classmethod
-    def download_list_of_recorder_data_items(cls, parcel_number):
+    def download_list_of_recorder_data_items(self, parcel_number, **kwargs):
         """
-        This method is in charge of going out to download mortgage i
+        This method is in charge of going out to download mortgage information.
         :param parcel_number:
         :return:
         """
 
         payload = json.dumps({"lastBusinessName":"","firstName":"","startDate":"","endDate":"","documentName":"",
-                              "documentType":"","documentTypeName":"","book":"","page":"","subdivisionName":"",
-                              "subdivisionLot":"","subdivisionBlock":"","municipalityName":"","tractSection":"",
-                              "tractTownship":"","tractRange":"","tractQuarter":"","tractQuarterQuarter":"",
-                              "addressHouseNo":"","addressStreet":"","addressCity":"","addressZip":"","parcelNumber":
-                                  parcel_number,"referenceNumber":""})
+                              "documentType": "","documentTypeName":"","book":"","page":"","subdivisionName":"",
+                              "subdivisionLot": "","subdivisionBlock":"","municipalityName":"","tractSection":"",
+                              "tractTownship": "","tractRange":"","tractQuarter":"","tractQuarterQuarter":"",
+                              "addressHouseNo": "","addressStreet":"","addressCity":"","addressZip": "", "parcelNumber":
+                                  parcel_number, "referenceNumber": ""})
 
-        response = requests.request("POST", cls.WARREN_INITIAL_SEARCH, data=payload, headers=cls.HEADERS)
+        response = requests.request("POST", self.WARREN_INITIAL_SEARCH, data=payload, headers=self.HEADERS)
         response_json = response.json()
+
+        if response_json.get('Msg', '') == 'Session is invalid':
+            if kwargs.get('second_attempt', ''):
+                raise ConnectionError()
+            else:
+                self.retrieve_access_token()
+                return self.download_list_of_recorder_data_items(parcel_number, second_attempt=True)
         return response_json
 
     def retrieve_document_details(self, property_id_item):
@@ -91,7 +89,7 @@ class WarrenMortgageInfo:
         """
         payload = json.dumps({'id': property_id_item})
 
-        response = requests.request("POST", self.WARREN_DOCUMENT_DETAIL, data=payload, headers=self.HEADERS )
+        response = requests.request("POST", self.WARREN_DOCUMENT_DETAIL, data=payload, headers=self.HEADERS)
         response_json = response.json()
 
         return response_json['DocumentDetail']['ConsiderationAmount']
@@ -108,9 +106,15 @@ class WarrenMortgageInfo:
         """
 
         for django_item, mortgage_info in property_dictionary.items():
-            mortgage_amount = self.retrieve_document_details(mortgage_info['Id'])
-            django_item.mortgage_amount = mortgage_amount
-            django_item.save()
+            try:
+                mortgage_amount = self.retrieve_document_details(mortgage_info['Id'])
+                django_item.mortgage_amount = mortgage_amount
+                print("Found mortgage date of $", mortgage_amount, " date ", django_item.date_of_mortgage,
+                      " on account number: ", django_item.account_number)
+                django_item.save()
+            except KeyError:
+                # For some reason, we couldn't return the details we wanted. Keep strong, and carry on .
+                pass
 
     def identify_most_recent_mortage_for_each(self):
         property_items = {}
@@ -125,6 +129,7 @@ class WarrenMortgageInfo:
                 mortgage_date = datetime.datetime.strptime(most_recent_item['RecordedDateTime'], self.DATE_FORMAT)
                 try:
                     if not prop_to_parse.date_sold <= datetime.datetime.date(mortgage_date):
+                        print("No mortgage identified on account number: ", prop_to_parse.account_number)
                         pass
                     else:
                         property_items[prop_to_parse] = most_recent_item
@@ -133,8 +138,13 @@ class WarrenMortgageInfo:
                         self.download_mortgage_detail({prop_to_parse: most_recent_item})
 
                 except TypeError:
-                    # In the case of us not having any date sold in our system, we shouldn't store mortgage.
-                    pass
+                    # In the case of us not having any date sold in our system, we should store the data. The first owners
+                    # would have a mortgage.
+                    property_items[prop_to_parse] = most_recent_item
+                    prop_to_parse.date_of_mortgage = mortgage_date
+                    prop_to_parse.save()
+                    self.download_mortgage_detail({prop_to_parse: most_recent_item})
+
         return property_items
 
     def download_mortgage_info(self):
@@ -147,3 +157,4 @@ class WarrenMortgageInfo:
         """
         self.retrieve_access_token()
         self.identify_most_recent_mortage_for_each()
+        print("The script has finished successfully.")
