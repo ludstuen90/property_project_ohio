@@ -35,7 +35,6 @@ class WarrenMortgageInfo:
         self.warren_county_object = models.County.objects.get(name='Warren')
 
         self.warren_county_items = models.Property.objects.filter(county=self.warren_county_object).order_by('?')
-        # self.warren_county_items = models.Property.objects.filter(id=257453)
 
     def retrieve_access_token(self):
         """
@@ -111,6 +110,8 @@ class WarrenMortgageInfo:
             try:
                 mortgage_amount = self.retrieve_document_details(mortgage_info['Id'])
                 django_item.mortgage_amount = mortgage_amount
+                print("Found mortgage date of $", mortgage_amount, " date ", django_item.date_of_mortgage,
+                      " on account number: ", django_item.account_number)
                 django_item.save()
             except KeyError:
                 # For some reason, we couldn't return the details we wanted. Keep strong, and carry on .
@@ -122,23 +123,19 @@ class WarrenMortgageInfo:
         for prop_to_parse in self.warren_county_items:
             trimmed_parcel_number = utils.convert_to_string_and_drop_final_zero(prop_to_parse.parcel_number)
             recorder_data = self.download_list_of_recorder_data_items(trimmed_parcel_number)
-            # print("LOOKING AT PARCEL NUMBER: ", trimmed_parcel_number, prop_to_parse.mortgage_amount)
             # Select the most recent mortgage item, and return it
             most_recent_item = utils.select_most_recent_mtg_item(recorder_data, self.DATE_FORMAT)
-            # print("MOST RECENT ITEM: ", most_recent_item)
-            # print("!!!!", prop_to_parse.date_sold)
             if most_recent_item:
                 # If no mortgage detected, do nothing.
                 mortgage_date = datetime.datetime.strptime(most_recent_item['RecordedDateTime'], self.DATE_FORMAT)
                 try:
                     if not prop_to_parse.date_sold <= datetime.datetime.date(mortgage_date):
-                        # print("NO MORTGAGE SAVED")
+                        print("No mortgage identified on account number: ", prop_to_parse.account_number)
                         pass
                     else:
                         property_items[prop_to_parse] = most_recent_item
                         prop_to_parse.date_of_mortgage = mortgage_date
                         prop_to_parse.save()
-                        # print("MORTGAGE SAVED: ", mortgage_date)
                         self.download_mortgage_detail({prop_to_parse: most_recent_item})
 
                 except TypeError:
@@ -147,7 +144,6 @@ class WarrenMortgageInfo:
                     property_items[prop_to_parse] = most_recent_item
                     prop_to_parse.date_of_mortgage = mortgage_date
                     prop_to_parse.save()
-                    # print("MORTGAGE SAVED: ", mortgage_date)
                     self.download_mortgage_detail({prop_to_parse: most_recent_item})
 
         return property_items
