@@ -37,32 +37,27 @@ class WarrenMortgageInfo:
         self.warren_county_items = models.Property.objects.filter(county=self.warren_county_object).order_by('?')
         # self.warren_county_items = models.Property.objects.filter(id=257453)
 
-    @classmethod
-    def retrieve_access_token(cls, explicit_request=False):
+    def retrieve_access_token(self):
         """
         This method is responsible for going out to retrieve an access token
         from the mortgage site and returns it.
         :return: A token with which to query the mortgage site
         """
-        if len(cls.access_token) == 0 or explicit_request:
-            payload = "grant_type=password&username=anonymous&password=&undefined="
-            headers = {
-                'Content-Type': "application/x-www-form-urlencoded",
-                'cache-control': "no-cache",
-            }
+        payload = "grant_type=password&username=anonymous&password=&undefined="
+        headers = {
+            'Content-Type': "application/x-www-form-urlencoded",
+            'cache-control': "no-cache",
+        }
 
-            response = requests.request("POST", cls.WARREN_TOKEN_SITE, data=payload, headers=headers)
+        response = requests.request("POST", self.WARREN_TOKEN_SITE, data=payload, headers=headers)
 
-            response_json = response.json()
-            print('retrieve_req_response is ', response_json)
-            cls.access_token = response_json['access_token']
-            print('access token is: ', cls.access_token)
-            access_token_dict = {'Authorization': f'''Bearer {cls.access_token}''', }
-            cls.HEADERS.update(access_token_dict)
-            return cls.access_token
+        response_json = response.json()
+        self.access_token = response_json['access_token']
+        access_token_dict = {'Authorization': f'''Bearer {self.access_token}''', }
+        self.HEADERS.update(access_token_dict)
+        return self.access_token
 
-    @classmethod
-    def download_list_of_recorder_data_items(cls, parcel_number, **kwargs):
+    def download_list_of_recorder_data_items(self, parcel_number, **kwargs):
         """
         This method is in charge of going out to download mortgage information.
         we
@@ -77,22 +72,15 @@ class WarrenMortgageInfo:
                               "addressHouseNo": "","addressStreet":"","addressCity":"","addressZip": "", "parcelNumber":
                                   parcel_number, "referenceNumber": ""})
 
-        response = requests.request("POST", cls.WARREN_INITIAL_SEARCH, data=payload, headers=cls.HEADERS)
+        response = requests.request("POST", self.WARREN_INITIAL_SEARCH, data=payload, headers=self.HEADERS)
         response_json = response.json()
 
         if response_json.get('Msg', '') == 'Session is invalid':
             if kwargs.get('second_attempt', ''):
-                print("FINAL ERROR HEADERS: ", cls.HEADERS)
-                print("RESPONSE JSON BEFORE ERROR IS: ", response_json)
                 raise ConnectionError()
             else:
-                print("BEFORE ERROR, HEADERS: ", cls.HEADERS)
-                output = cls.retrieve_access_token()
-                print("What access token is returned?: ", output)
-                print("WE HAVE RENEWED THE TOKEN, ARE WE STILL RETRIEVING THINGS? ")
-                return cls.download_list_of_recorder_data_items(parcel_number, second_attempt=True)
-            # RESPONSE.JSON:  {'OriginalRequest': None, 'Success': False, 'Msg': 'Session is invalid', 'ResultAction': 1}
-        # print("RESPONSE.JSON: ", response_json)
+                self.retrieve_access_token()
+                return self.download_list_of_recorder_data_items(parcel_number, second_attempt=True)
         return response_json
 
     def retrieve_document_details(self, property_id_item):
@@ -103,7 +91,7 @@ class WarrenMortgageInfo:
         """
         payload = json.dumps({'id': property_id_item})
 
-        response = requests.request("POST", self.WARREN_DOCUMENT_DETAIL, data=payload, headers=self.HEADERS )
+        response = requests.request("POST", self.WARREN_DOCUMENT_DETAIL, data=payload, headers=self.HEADERS)
         response_json = response.json()
 
         return response_json['DocumentDetail']['ConsiderationAmount']
