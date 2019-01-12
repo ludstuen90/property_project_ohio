@@ -59,7 +59,6 @@ class WarrenMortgageInfo:
     def download_list_of_recorder_data_items(self, parcel_number, **kwargs):
         """
         This method is in charge of going out to download mortgage information.
-        we
         :param parcel_number:
         :return:
         """
