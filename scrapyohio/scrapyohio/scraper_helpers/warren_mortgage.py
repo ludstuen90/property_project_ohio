@@ -1,9 +1,5 @@
 import datetime
 import json
-import os
-import sys
-
-import django
 import requests
 
 from ohio import settings
@@ -38,9 +34,8 @@ class WarrenMortgageInfo:
         # warren.py
         self.warren_county_object = models.County.objects.get(name='Warren')
 
-        self.warren_county_items = models.Property.objects.filter(county=self.warren_county_object)
+        self.warren_county_items = models.Property.objects.filter(county=self.warren_county_object).order_by('?')
         # self.warren_county_items = models.Property.objects.filter(id=257453)
-        self.access_token = ''
 
     @classmethod
     def retrieve_access_token(cls, explicit_request=False):
@@ -59,28 +54,45 @@ class WarrenMortgageInfo:
             response = requests.request("POST", cls.WARREN_TOKEN_SITE, data=payload, headers=headers)
 
             response_json = response.json()
+            print('retrieve_req_response is ', response_json)
             cls.access_token = response_json['access_token']
+            print('access token is: ', cls.access_token)
             access_token_dict = {'Authorization': f'''Bearer {cls.access_token}''', }
             cls.HEADERS.update(access_token_dict)
             return cls.access_token
 
     @classmethod
-    def download_list_of_recorder_data_items(cls, parcel_number):
+    def download_list_of_recorder_data_items(cls, parcel_number, **kwargs):
         """
-        This method is in charge of going out to download mortgage i
+        This method is in charge of going out to download mortgage information.
+        we
         :param parcel_number:
         :return:
         """
 
         payload = json.dumps({"lastBusinessName":"","firstName":"","startDate":"","endDate":"","documentName":"",
-                              "documentType":"","documentTypeName":"","book":"","page":"","subdivisionName":"",
-                              "subdivisionLot":"","subdivisionBlock":"","municipalityName":"","tractSection":"",
-                              "tractTownship":"","tractRange":"","tractQuarter":"","tractQuarterQuarter":"",
-                              "addressHouseNo":"","addressStreet":"","addressCity":"","addressZip":"","parcelNumber":
-                                  parcel_number,"referenceNumber":""})
+                              "documentType": "","documentTypeName":"","book":"","page":"","subdivisionName":"",
+                              "subdivisionLot": "","subdivisionBlock":"","municipalityName":"","tractSection":"",
+                              "tractTownship": "","tractRange":"","tractQuarter":"","tractQuarterQuarter":"",
+                              "addressHouseNo": "","addressStreet":"","addressCity":"","addressZip": "", "parcelNumber":
+                                  parcel_number, "referenceNumber": ""})
 
         response = requests.request("POST", cls.WARREN_INITIAL_SEARCH, data=payload, headers=cls.HEADERS)
         response_json = response.json()
+
+        if response_json.get('Msg', '') == 'Session is invalid':
+            if kwargs.get('second_attempt', ''):
+                print("FINAL ERROR HEADERS: ", cls.HEADERS)
+                print("RESPONSE JSON BEFORE ERROR IS: ", response_json)
+                raise ConnectionError()
+            else:
+                print("BEFORE ERROR, HEADERS: ", cls.HEADERS)
+                output = cls.retrieve_access_token()
+                print("What access token is returned?: ", output)
+                print("WE HAVE RENEWED THE TOKEN, ARE WE STILL RETRIEVING THINGS? ")
+                return cls.download_list_of_recorder_data_items(parcel_number, second_attempt=True)
+            # RESPONSE.JSON:  {'OriginalRequest': None, 'Success': False, 'Msg': 'Session is invalid', 'ResultAction': 1}
+        # print("RESPONSE.JSON: ", response_json)
         return response_json
 
     def retrieve_document_details(self, property_id_item):
@@ -108,9 +120,13 @@ class WarrenMortgageInfo:
         """
 
         for django_item, mortgage_info in property_dictionary.items():
-            mortgage_amount = self.retrieve_document_details(mortgage_info['Id'])
-            django_item.mortgage_amount = mortgage_amount
-            django_item.save()
+            try:
+                mortgage_amount = self.retrieve_document_details(mortgage_info['Id'])
+                django_item.mortgage_amount = mortgage_amount
+                django_item.save()
+            except KeyError:
+                # For some reason, we couldn't return the details we wanted. Keep strong, and carry on .
+                pass
 
     def identify_most_recent_mortage_for_each(self):
         property_items = {}
@@ -118,23 +134,34 @@ class WarrenMortgageInfo:
         for prop_to_parse in self.warren_county_items:
             trimmed_parcel_number = utils.convert_to_string_and_drop_final_zero(prop_to_parse.parcel_number)
             recorder_data = self.download_list_of_recorder_data_items(trimmed_parcel_number)
+            # print("LOOKING AT PARCEL NUMBER: ", trimmed_parcel_number, prop_to_parse.mortgage_amount)
             # Select the most recent mortgage item, and return it
             most_recent_item = utils.select_most_recent_mtg_item(recorder_data, self.DATE_FORMAT)
+            # print("MOST RECENT ITEM: ", most_recent_item)
+            # print("!!!!", prop_to_parse.date_sold)
             if most_recent_item:
                 # If no mortgage detected, do nothing.
                 mortgage_date = datetime.datetime.strptime(most_recent_item['RecordedDateTime'], self.DATE_FORMAT)
                 try:
                     if not prop_to_parse.date_sold <= datetime.datetime.date(mortgage_date):
+                        # print("NO MORTGAGE SAVED")
                         pass
                     else:
                         property_items[prop_to_parse] = most_recent_item
                         prop_to_parse.date_of_mortgage = mortgage_date
                         prop_to_parse.save()
+                        # print("MORTGAGE SAVED: ", mortgage_date)
                         self.download_mortgage_detail({prop_to_parse: most_recent_item})
 
                 except TypeError:
-                    # In the case of us not having any date sold in our system, we shouldn't store mortgage.
-                    pass
+                    # In the case of us not having any date sold in our system, we should store the data. The first owners
+                    # would have a mortgage.
+                    property_items[prop_to_parse] = most_recent_item
+                    prop_to_parse.date_of_mortgage = mortgage_date
+                    prop_to_parse.save()
+                    # print("MORTGAGE SAVED: ", mortgage_date)
+                    self.download_mortgage_detail({prop_to_parse: most_recent_item})
+
         return property_items
 
     def download_mortgage_info(self):
@@ -147,3 +174,4 @@ class WarrenMortgageInfo:
         """
         self.retrieve_access_token()
         self.identify_most_recent_mortage_for_each()
+        print("The script has finished successfully.")
