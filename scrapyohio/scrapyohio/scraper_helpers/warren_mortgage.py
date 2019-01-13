@@ -39,7 +39,7 @@ class WarrenMortgageInfo:
                                                                   date_of_mortgage__isnull=True
                                                                   ).order_by('?')
 
-        self.per_ticket_logging = False
+        self.per_ticket_logging = True
 
 
     def retrieve_access_token(self):
