@@ -34,7 +34,10 @@ class WarrenMortgageInfo:
         # warren.py
         self.warren_county_object = models.County.objects.get(name='Warren')
 
-        self.warren_county_items = models.Property.objects.filter(county=self.warren_county_object).order_by('?')
+        self.warren_county_items = models.Property.objects.filter(county=self.warren_county_object,
+                                                                  # Temporarily add in filter to scan only null objects
+                                                                  date_of_mortgage__isnull=True
+                                                                  ).order_by('?')
 
         self.per_ticket_logging = False
 
