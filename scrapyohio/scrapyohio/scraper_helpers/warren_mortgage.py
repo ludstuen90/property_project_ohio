@@ -34,7 +34,13 @@ class WarrenMortgageInfo:
         # warren.py
         self.warren_county_object = models.County.objects.get(name='Warren')
 
-        self.warren_county_items = models.Property.objects.filter(county=self.warren_county_object).order_by('?')
+        self.warren_county_items = models.Property.objects.filter(county=self.warren_county_object,
+                                                                  # Temporarily add in filter to scan only null objects
+                                                                  date_of_mortgage__isnull=True
+                                                                  ).order_by('?')
+
+        self.per_ticket_logging = True
+
 
     def retrieve_access_token(self):
         """
@@ -70,8 +76,13 @@ class WarrenMortgageInfo:
                               "addressHouseNo": "","addressStreet":"","addressCity":"","addressZip": "", "parcelNumber":
                                   parcel_number, "referenceNumber": ""})
 
-        response = requests.request("POST", self.WARREN_INITIAL_SEARCH, data=payload, headers=self.HEADERS)
-        response_json = response.json()
+        try:
+            response = requests.request("POST", self.WARREN_INITIAL_SEARCH, data=payload, headers=self.HEADERS)
+            response_json = response.json()
+        except requests.exceptions.ConnectionError:
+            print("ConnectionError exception raised. Payload: ", payload, " headers: ", self.headers)
+            response_json = {}
+            pass
 
         if response_json.get('Msg', '') == 'Session is invalid':
             if kwargs.get('second_attempt', ''):
@@ -109,7 +120,8 @@ class WarrenMortgageInfo:
             try:
                 mortgage_amount = self.retrieve_document_details(mortgage_info['Id'])
                 django_item.mortgage_amount = mortgage_amount
-                print("Found mortgage date of $", mortgage_amount, " date ", django_item.date_of_mortgage,
+                if self.per_ticket_logging:
+                    print("Found mortgage date of $", mortgage_amount, " date ", django_item.date_of_mortgage,
                       " on account number: ", django_item.account_number)
                 django_item.save()
             except KeyError:
@@ -129,7 +141,8 @@ class WarrenMortgageInfo:
                 mortgage_date = datetime.datetime.strptime(most_recent_item['RecordedDateTime'], self.DATE_FORMAT)
                 try:
                     if not prop_to_parse.date_sold <= datetime.datetime.date(mortgage_date):
-                        print("No mortgage identified on account number: ", prop_to_parse.account_number)
+                        if self.per_ticket_logging:
+                            print("No mortgage identified on account number: ", prop_to_parse.account_number)
                         pass
                     else:
                         property_items[prop_to_parse] = most_recent_item
