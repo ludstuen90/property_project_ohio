@@ -87,7 +87,8 @@ class WarrenSpider(scrapy.Spider):
         deed_date = utils.parse_recorder_items(soup, primary_owner, 'DEED')
         if deed_date:
             mortgage_date = utils.parse_recorder_items(soup, primary_owner, 'MORT')
-            print("Searched: ", response.meta['parcel_id'], "we found mortgage date of: ", mortgage_date, " and deed date of ", deed_date)
+            print("Searched: ", response.meta['parcel_id'], "we found mortgage date of: ", mortgage_date,
+                  " and deed date of ", deed_date)
             try:
                 property_object.date_sold = datetime.datetime.strptime(deed_date, '%m/%d/%Y')
             except TypeError:
@@ -100,7 +101,8 @@ class WarrenSpider(scrapy.Spider):
                 pass
 
             property_object.save()
-
+        else:
+            print('no deed')
 
 
 
