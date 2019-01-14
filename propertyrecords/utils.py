@@ -421,31 +421,35 @@ def parse_recorder_items(soup, primary_owner_name, type_of_parse):
     else:
         raise TypeError("Unrecognized input passed into parse_recorder_items")
 
-    # Find the last transfer of the appropraite type (MORT or DEED)
+    # Find the last transfer of the appropriate type (MORT or DEED)
     # Confirm doc type is still at column 2
     cols = [header.string for header in soup.find_all('th')]
 
-    cols.index('Doc. Type')
-    rows = soup.find('table', id='ctl00_ContentPlaceHolder1_GridView1').find_all('tr')
-    rows_length = len(rows) - 1
+    try:
 
-    # Here, we loop through all of the table rows starting from the bottom. As soon as we find
-    # a document type matching the type of search we're doing, we'll analyze it.
-    # If it matches, we return the date it was filed; if not, we return None.
-    for i in range(rows_length, 0, -1):
-        if rows[i].find_all('td')[2].contents[0] in search_terms:
-            if type_of_parse == 'DEED':
-                if name_cleaner(rows[i].find_all('td')[4].contents[0]).upper() in name_cleaner(primary_owner_name):
-                    return rows[i].find_all('td')[5].contents[0]
-                else:
-                    return None
+        cols.index('Doc. Type')
+        rows = soup.find('table', id='ctl00_ContentPlaceHolder1_GridView1').find_all('tr')
+        rows_length = len(rows) - 1
 
-            elif type_of_parse == 'MORT':
-                if name_cleaner(rows[i].find_all('td')[3].contents[0]) in name_cleaner(primary_owner_name):
-                    return rows[i].find_all('td')[5].contents[0]
-                else:
-                    return None
+        # Here, we loop through all of the table rows starting from the bottom. As soon as we find
+        # a document type matching the type of search we're doing, we'll analyze it.
+        # If it matches, we return the date it was filed; if not, we return None.
+        for i in range(rows_length, 0, -1):
+            if rows[i].find_all('td')[2].contents[0] in search_terms:
+                if type_of_parse == 'DEED':
+                    if name_cleaner(rows[i].find_all('td')[4].contents[0]).upper() in name_cleaner(primary_owner_name):
+                        return rows[i].find_all('td')[5].contents[0]
+                    else:
+                        return None
 
+                elif type_of_parse == 'MORT':
+                    if name_cleaner(rows[i].find_all('td')[3].contents[0]) in name_cleaner(primary_owner_name):
+                        return rows[i].find_all('td')[5].contents[0]
+                    else:
+                        return None
+    except ValueError:
+        # We found no reuslts in our search of the recorder site
+        return None
 
 def convert_to_string_and_drop_final_zero(integer):
     return str(integer)[:-1]
