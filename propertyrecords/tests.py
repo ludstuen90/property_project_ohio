@@ -202,24 +202,33 @@ def test_cuyahoga_tax_address_storer():
 
 def test_cuyahoga_recorder_parser():
     dirname, filename = os.path.split(os.path.abspath(__file__))
-    pickle_path1 = os.path.join(dirname, 'test_data/cuyahoga_mort_deed_data.p')
+    pickle_path1 = os.path.join(dirname, 'test_data/cuyahoga_mort_deed_data1.p')
+    pickle_path2 = os.path.join(dirname, 'test_data/cuyahoga_mort_deed_data2.p')
 
-    html_response = pickle.load(open(pickle_path1, "rb"))
-    soup = BeautifulSoup(html_response, 'html.parser')
-    deed_search_result = utils.parse_recorder_items(soup, '2015 WEST 53RD LLC', 'DEED')
-    mortgage_search_result = utils.parse_recorder_items(soup, '2015 WEST 53RD LLC', 'MORT')
-    lowercase_search_result = utils.parse_recorder_items(soup, '2015 west 53rd llc', 'MORT')
-    period_search_result = utils.parse_recorder_items(soup, '2015 WEST, 53RD LLC.', 'MORT')
-    extra_space_search_result = utils.parse_recorder_items(soup, '2015 WEST, 53RD            LLC.', 'MORT')
+    html_response1 = pickle.load(open(pickle_path1, "rb"))
+    soup1 = BeautifulSoup(html_response1, 'html.parser')
+
+    html_response2 = pickle.load(open(pickle_path2, "rb"))
+    html_response2 = html_response2.replace('\n', '')
+    print("html", html_response2)
+    soup2 = BeautifulSoup(html_response2, 'html.parser')
+
+    deed_search_result = utils.parse_recorder_items(soup1, '2015 WEST 53RD LLC', 'DEED')
+    mortgage_search_result = utils.parse_recorder_items(soup1, '2015 WEST 53RD LLC', 'MORT')
+    lowercase_search_result = utils.parse_recorder_items(soup1, '2015 west 53rd llc', 'MORT')
+    period_search_result = utils.parse_recorder_items(soup1, '2015 WEST, 53RD LLC.', 'MORT')
+    extra_space_search_result = utils.parse_recorder_items(soup1, '2015 WEST, 53RD            LLC.', 'MORT')
+    no_results_result = utils.parse_recorder_items(soup2, 'CASE # CV#16861346', 'DEED')
 
     assert deed_search_result == '3/26/2013'
     assert mortgage_search_result == '10/23/2013'
     assert lowercase_search_result == '10/23/2013'
     assert period_search_result == '10/23/2013'
     assert extra_space_search_result == '10/23/2013'
+    assert no_results_result is None
 
     with pytest.raises(TypeError):
-        utils.parse_recorder_items(soup, '2015 WEST 53RD LLC', 'COFFEE')
+        utils.parse_recorder_items(soup1, '2015 WEST 53RD LLC', 'COFFEE')
 
 
 def test_convert_to_string_and_drop_final_zero():

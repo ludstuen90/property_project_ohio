@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 import datetime
+import pickle
 
 import scrapy
 from scrapy import FormRequest
@@ -36,7 +37,8 @@ form_data = {'__EVENTTARGET': '',
              'txtRecEnd': '12/4/2018',
              'lstQuery': '1',
              'ValidateButton': 'Begin Search',
-             }
+    }
+
 
 class WarrenSpider(scrapy.Spider):
     name = 'cuyahoga-real'
@@ -44,14 +46,15 @@ class WarrenSpider(scrapy.Spider):
 
     def retrieve_all_warren_county_urls(self):
         self.cuyahoga_county_object, created = models.County.objects.get_or_create(name="Cuyahoga")
-        self.all_cuyahoga_properties = models.Property.objects.filter(county=self.cuyahoga_county_object)
+        self.all_cuyahoga_properties = models.Property.objects.filter(county=self.cuyahoga_county_object,
+                                                                      ).order_by('?')
 
         for item in self.all_cuyahoga_properties:
-            yield {'url': "https://recorder.cuyahogacounty.us/searchs/parcelsearchs.aspx", 'parcel_id': item.parcel_number}
+            yield {'url': "https://recorder.cuyahogacounty.us/searchs/parcelsearchs.aspx", 'parcel_id':
+                item.parcel_number}
 
     def __init__(self, *args, **kwargs):
         self.logged_out = False
-
 
     def start_requests(self):
        # Ensure we have a county in the database
@@ -81,21 +84,22 @@ class WarrenSpider(scrapy.Spider):
 
         property_object = models.Property.objects.get(parcel_number=response.meta['parcel_id'])
         primary_owner = property_object.owner
-
         deed_date = utils.parse_recorder_items(soup, primary_owner, 'DEED')
-        mortgage_date = utils.parse_recorder_items(soup, primary_owner, 'MORT')
-        try:
-            property_object.date_sold = datetime.datetime.strptime(deed_date, '%m/%d/%Y')
-        except TypeError:
-            # No Deed found
-            pass
-        try:
-            property_object.date_of_mortgage = datetime.datetime.strptime(mortgage_date, '%m/%d/%Y')
-        except TypeError:
-            # No mortgage found
-            pass
+        if deed_date:
+            mortgage_date = utils.parse_recorder_items(soup, primary_owner, 'MORT')
+            print("Searched: ", response.meta['parcel_id'], "we found mortgage date of: ", mortgage_date, " and deed date of ", deed_date)
+            try:
+                property_object.date_sold = datetime.datetime.strptime(deed_date, '%m/%d/%Y')
+            except TypeError:
+                # No Deed found
+                pass
+            try:
+                property_object.date_of_mortgage = datetime.datetime.strptime(mortgage_date, '%m/%d/%Y')
+            except TypeError:
+                # No mortgage found
+                pass
 
-        property_object.save()
+            property_object.save()
 
 
 
