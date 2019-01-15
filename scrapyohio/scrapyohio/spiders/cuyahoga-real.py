@@ -4,6 +4,7 @@ import pickle
 
 import scrapy
 from scrapy import FormRequest
+from scrapy.exceptions import CloseSpider
 
 from ohio import settings
 from propertyrecords import models, utils
@@ -80,8 +81,13 @@ class WarrenSpider(scrapy.Spider):
         :param response:
         :return:
         """
-        soup = BeautifulSoup(response.text, 'html.parser')
+        if response.url == 'https://recorder.cuyahogacounty.us/LockedOut.aspx':
+            # If we recive this page, it's because our IP address has been blocked!
+            raise CloseSpider('ip_address_blocked')
 
+        print("RESPONSE URL: ", response.url)
+
+        soup = BeautifulSoup(response.text, 'html.parser')
         property_object = models.Property.objects.get(parcel_number=response.meta['parcel_id'])
         primary_owner = property_object.owner
         deed_date = utils.parse_recorder_items(soup, primary_owner, 'DEED')
