@@ -32,12 +32,21 @@ class WarrenMortgageInfo:
     def __init__(self):
         # Warren county should exist here because it would have been created earlier in
         # warren.py
+
+        continue_where_last_scrape_left_off = True
+        seven_days_ago = datetime.datetime.today() - datetime.timedelta(days=7)
+
         self.warren_county_object = models.County.objects.get(name='Warren')
 
-        self.warren_county_items = models.Property.objects.filter(county=self.warren_county_object,
-                                                                  # Temporarily add in filter to scan only null objects
-                                                                  date_of_mortgage__isnull=True
-                                                                  ).order_by('?')
+        if continue_where_last_scrape_left_off:
+            self.warren_county_items = models.Property.objects.filter(county=self.warren_county_object,
+                                                                      ).exclude(
+                                                                    last_scraped_one__gte=seven_days_ago
+                                                                    ).order_by('?')
+        else:
+            self.warren_county_items = models.Property.objects.filter(county=self.warren_county_object,
+                                                                      ).order_by('?')
+
 
         self.per_ticket_logging = True
 
@@ -136,6 +145,7 @@ class WarrenMortgageInfo:
             recorder_data = self.download_list_of_recorder_data_items(trimmed_parcel_number)
             # Select the most recent mortgage item, and return it
             most_recent_item = utils.select_most_recent_mtg_item(recorder_data, self.DATE_FORMAT)
+            prop_to_parse.last_scraped_one = datetime.datetime.now()
             if most_recent_item:
                 # If no mortgage detected, do nothing.
                 mortgage_date = datetime.datetime.strptime(most_recent_item['RecordedDateTime'], self.DATE_FORMAT)

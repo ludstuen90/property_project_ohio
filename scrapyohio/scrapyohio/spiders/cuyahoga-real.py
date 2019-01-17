@@ -40,15 +40,25 @@ form_data = {'__EVENTTARGET': '',
              'ValidateButton': 'Begin Search',
     }
 
-
 class WarrenSpider(scrapy.Spider):
     name = 'cuyahoga-real'
     allowed_domains = ['recorder.cuyahogacounty.us']
 
     def retrieve_all_warren_county_urls(self):
+
+        continue_where_last_scrape_left_off = False
+        seven_days_ago = datetime.datetime.today() - datetime.timedelta(days=7)
+
         self.cuyahoga_county_object, created = models.County.objects.get_or_create(name="Cuyahoga")
-        self.all_cuyahoga_properties = models.Property.objects.filter(county=self.cuyahoga_county_object,
-                                                                      ).order_by('?')
+
+        if continue_where_last_scrape_left_off:
+            self.all_cuyahoga_properties = models.Property.objects.filter(county=self.cuyahoga_county_object,
+                                                                        ).exclude(
+                                                                    last_scraped_one__gte=seven_days_ago
+                                                                    ).order_by('?')
+        else:
+            self.all_cuyahoga_properties = models.Property.objects.filter(county=self.cuyahoga_county_object,
+                                                                          ).order_by('?')
 
         for item in self.all_cuyahoga_properties:
             yield {'url': "https://recorder.cuyahogacounty.us/searchs/parcelsearchs.aspx", 'parcel_id':
@@ -91,6 +101,7 @@ class WarrenSpider(scrapy.Spider):
         property_object = models.Property.objects.get(parcel_number=response.meta['parcel_id'])
         primary_owner = property_object.owner
         deed_date = utils.parse_recorder_items(soup, primary_owner, 'DEED')
+        property_object.last_scraped_one = datetime.datetime.now()
         if deed_date:
             mortgage_date = utils.parse_recorder_items(soup, primary_owner, 'MORT')
             print("Searched: ", response.meta['parcel_id'], "we found mortgage date of: ", mortgage_date,
@@ -108,6 +119,7 @@ class WarrenSpider(scrapy.Spider):
 
             property_object.save()
         else:
+            property_object.save()
             print('no deed')
 
 

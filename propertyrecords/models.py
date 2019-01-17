@@ -32,6 +32,7 @@ class Property(models.Model):
                                                     help_text="Checked if an owner received an owner occupancy tax "
                                                               "credit or if owner occupancy has been indicated on the "
                                                               "record.")
+    last_scraped_one = models.DateTimeField(null=True, blank=True)
     county = models.ForeignKey(
         'County',
         on_delete=models.CASCADE,
@@ -59,6 +60,7 @@ class Property(models.Model):
     def display_address(self):
         address = PropertyAddress.objects.get(property=self.id)
         return address
+
 
 
 class PropertyTransfer(models.Model):
