@@ -40,15 +40,11 @@ class WarrenMortgageInfo:
 
         if continue_where_last_scrape_left_off:
             self.warren_county_items = models.Property.objects.filter(county=self.warren_county_object,
-                                                                      # Temporarily add in filter to scan only null objects
-                                                                      date_of_mortgage__isnull=True
                                                                       ).exclude(
                                                                     last_scraped_one__gte=seven_days_ago
                                                                     ).order_by('?')
         else:
             self.warren_county_items = models.Property.objects.filter(county=self.warren_county_object,
-                                                                      # Temporarily add in filter to scan only null objects
-                                                                      date_of_mortgage__isnull=True
                                                                       ).order_by('?')
 
 
