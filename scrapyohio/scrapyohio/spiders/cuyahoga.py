@@ -26,6 +26,7 @@ class WarrenSpider(scrapy.Spider):
         self.cuyahoga_county_object, created = models.County.objects.get_or_create(name="Cuyahoga")
 
         all_cuyahoga_properties = models.Property.objects.filter(county=self.cuyahoga_county_object,
+
                                                                  )
 
         for property in all_cuyahoga_properties:

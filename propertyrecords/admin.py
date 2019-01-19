@@ -20,7 +20,7 @@ class PropertyTransferInline(admin.TabularInline):
 
 class PropertyAdmin(admin.ModelAdmin):
     inlines = (AddressInline, TaxDataInline, PropertyTransferInline)
-    list_display = ('parcel_number', 'mortgage_amount', 'tax_lien', 'owner_occupancy_indicated',
+    list_display = ('parcel_number', 'mortgage_amount', 'tax_delinquent', 'owner_occupancy_indicated',
                     'display_address', 'last_scraped_one')
     readonly_fields = ['tax_address']
     list_filter = ['county']
