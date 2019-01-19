@@ -135,6 +135,13 @@ class WarrenSpider(scrapy.Spider):
 
         tax_values_object, created = models.TaxData.objects.get_or_create(property_record=our_property,
                                                                           tax_year=tax_year)
+        delq_balance = soup.find("table", {"class": "ChargeAndPaymentDetailTable"}).find(text=re.compile('DELQ BALANCE'))
+        year = soup.find( "div", {"class":"HeaderHighlight"}).getText()[0:4]
+
+        if delq_balance == 'DELQ BALANCE':
+            our_property.tax_delinquent = True
+            our_property.tax_delinquent_year = int(year)
+
         try:
             tax_values_object.market_value = utils.convert_taxable_value_string_to_integer(soup.body.find(text=re.compile('Market Values')).parent.parent.parent.findAll('tr')[3].findAll('td')[1].contents[0])
             tax_values_object.taxable_value = utils.convert_taxable_value_string_to_integer(soup.body.find(text=re.compile('Assessed Values')).parent.parent.parent.findAll('tr')[3].findAll('td')[1].contents[0])

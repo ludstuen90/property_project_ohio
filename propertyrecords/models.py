@@ -25,8 +25,8 @@ class Property(models.Model):
     tax_district = models.CharField(max_length=42, blank=True)
     school_district_name = models.CharField(max_length=52, blank=True)
     school_district = models.IntegerField(null=True, blank=True)
-    tax_lien = models.BooleanField(default=False)
-    tax_lien_information_source = models.CharField(blank=True, max_length=24)
+    tax_delinquent = models.BooleanField(default=False)
+    tax_delinquent_year = models.IntegerField(blank=True)
     cauv_property = models.BooleanField(default=False)
     owner_occupancy_indicated = models.BooleanField(default=False,
                                                     help_text="Checked if an owner received an owner occupancy tax "
