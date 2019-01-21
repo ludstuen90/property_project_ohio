@@ -1,9 +1,19 @@
 import datetime
 import json
+
+import pytz
 import requests
 
 from ohio import settings
 from propertyrecords import models, utils
+
+
+# Declare requests session information, which will allow us to
+# increase the number of times to retry a connection
+
+s = requests.Session()
+a = requests.adapters.HTTPAdapter(max_retries=9999)
+s.mount('http://', a)
 
 
 class WarrenMortgageInfo:
@@ -63,7 +73,7 @@ class WarrenMortgageInfo:
             'cache-control': "no-cache",
         }
 
-        response = requests.request("POST", self.WARREN_TOKEN_SITE, data=payload, headers=headers)
+        response = s.request("POST", self.WARREN_TOKEN_SITE, data=payload, headers=headers)
 
         response_json = response.json()
         self.access_token = response_json['access_token']
@@ -86,12 +96,16 @@ class WarrenMortgageInfo:
                                   parcel_number, "referenceNumber": ""})
 
         try:
-            response = requests.request("POST", self.WARREN_INITIAL_SEARCH, data=payload, headers=self.HEADERS)
+            response = s.request("POST", self.WARREN_INITIAL_SEARCH, data=payload, headers=self.HEADERS)
             response_json = response.json()
         except requests.exceptions.ConnectionError:
-            print("ConnectionError exception raised. Payload: ", payload, " headers: ", self.headers)
-            response_json = {}
-            pass
+            try:
+                print("ConnectionError exception raised. Payload: ", payload, " headers: ", self.headers)
+                response_json = {}
+                pass
+            except AttributeError:
+                print("ConnectionEror exception raised, unable to print all attributes")
+                pass
 
         if response_json.get('Msg', '') == 'Session is invalid':
             if kwargs.get('second_attempt', ''):
@@ -109,7 +123,7 @@ class WarrenMortgageInfo:
         """
         payload = json.dumps({'id': property_id_item})
 
-        response = requests.request("POST", self.WARREN_DOCUMENT_DETAIL, data=payload, headers=self.HEADERS)
+        response = s.request("POST", self.WARREN_DOCUMENT_DETAIL, data=payload, headers=self.HEADERS)
         response_json = response.json()
 
         return response_json['DocumentDetail']['ConsiderationAmount']
@@ -145,7 +159,7 @@ class WarrenMortgageInfo:
             recorder_data = self.download_list_of_recorder_data_items(trimmed_parcel_number)
             # Select the most recent mortgage item, and return it
             most_recent_item = utils.select_most_recent_mtg_item(recorder_data, self.DATE_FORMAT)
-            prop_to_parse.last_scraped_one = datetime.datetime.now()
+            prop_to_parse.last_scraped_one = datetime.datetime.now(pytz.utc)
             if most_recent_item:
                 # If no mortgage detected, do nothing.
                 mortgage_date = datetime.datetime.strptime(most_recent_item['RecordedDateTime'], self.DATE_FORMAT)
