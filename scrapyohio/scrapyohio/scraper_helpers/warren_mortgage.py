@@ -163,24 +163,10 @@ class WarrenMortgageInfo:
             if most_recent_item:
                 # If no mortgage detected, do nothing.
                 mortgage_date = datetime.datetime.strptime(most_recent_item['RecordedDateTime'], self.DATE_FORMAT)
-                try:
-                    if not prop_to_parse.date_sold <= datetime.datetime.date(mortgage_date):
-                        if self.per_ticket_logging:
-                            print("No mortgage identified on account number: ", prop_to_parse.account_number)
-                        pass
-                    else:
-                        property_items[prop_to_parse] = most_recent_item
-                        prop_to_parse.date_of_mortgage = mortgage_date
-                        prop_to_parse.save()
-                        self.download_mortgage_detail({prop_to_parse: most_recent_item})
-
-                except TypeError:
-                    # In the case of us not having any date sold in our system, we should store the data. The first owners
-                    # would have a mortgage.
-                    property_items[prop_to_parse] = most_recent_item
-                    prop_to_parse.date_of_mortgage = mortgage_date
-                    prop_to_parse.save()
-                    self.download_mortgage_detail({prop_to_parse: most_recent_item})
+                property_items[prop_to_parse] = most_recent_item
+                prop_to_parse.date_of_mortgage = mortgage_date
+                prop_to_parse.save()
+                self.download_mortgage_detail({prop_to_parse: most_recent_item})
 
         return property_items
 

@@ -110,14 +110,17 @@ class WarrenSpider(scrapy.Spider):
         # End tax values
 
         # Parse pay next year tentative values
-        next_year = response.xpath("//p[contains(text(),'TENTATIVE VALUE AS OF 01-01-2018')]/text()").extract()[0][-4:]
-        self.next_year_tax_values, created = models.TaxData.objects.update_or_create(
-                                                                    tax_year=next_year,
-                                                                    property_record_id = self.parsed_prop.id
-        )
-        self.next_year_tax_values.market_value = utils.convert_taxable_value_string_to_integer(response.xpath("//span[@id='ContentPlaceHolderContent_lblTentValSumTotalTrue']/text()").extract()[0])
-        self.next_year_tax_values.taxable_value = utils.convert_taxable_value_string_to_integer(response.xpath("//span[@id='ContentPlaceHolderContent_lblTentValSumTotalAssessed']/text()").extract()[0])
-        self.next_year_tax_values.save()
+        try:
+            next_year = response.xpath("//p[contains(text(),'TENTATIVE VALUE AS OF 01-01-2018')]/text()").extract()[0][-4:]
+            self.next_year_tax_values, created = models.TaxData.objects.update_or_create(
+                                                                        tax_year=next_year,
+                                                                        property_record_id = self.parsed_prop.id
+            )
+            self.next_year_tax_values.market_value = utils.convert_taxable_value_string_to_integer(response.xpath("//span[@id='ContentPlaceHolderContent_lblTentValSumTotalTrue']/text()").extract()[0])
+            self.next_year_tax_values.taxable_value = utils.convert_taxable_value_string_to_integer(response.xpath("//span[@id='ContentPlaceHolderContent_lblTentValSumTotalAssessed']/text()").extract()[0])
+            self.next_year_tax_values.save()
+        except IndexError:
+            pass
         # End next year
 
         # Declare screen values so that we can parse other views if needed.
