@@ -272,7 +272,9 @@ def select_most_recent_mtg_item(recorder_data_dict, date_format):
     most_recent_result_found = {}
 
     try:
-        mtg_items = [item for item in recorder_data_dict['DocResults'] if item['DocumentType'] == 'MTG']
+        mtg_items = [item for item in recorder_data_dict['DocResults']
+                     if item['DocumentType'] == 'MTG' or
+                     item['DocumentType'] == 'LC']
 
     except KeyError:
         # This indicates we have not found any meeting type documents in this record.
