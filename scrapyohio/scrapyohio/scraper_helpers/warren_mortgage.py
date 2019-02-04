@@ -57,7 +57,6 @@ class WarrenMortgageInfo:
             self.warren_county_items = models.Property.objects.filter(county=self.warren_county_object,
                                                                       ).order_by('?')
 
-
         self.per_ticket_logging = True
 
 
@@ -167,6 +166,10 @@ class WarrenMortgageInfo:
                 prop_to_parse.date_of_mortgage = mortgage_date
                 prop_to_parse.save()
                 self.download_mortgage_detail({prop_to_parse: most_recent_item})
+            else:
+                print("FOUND A PROP", prop_to_parse)
+                prop_to_parse.mortgage_amount = -999.99
+                prop_to_parse.save()
 
         return property_items
 
