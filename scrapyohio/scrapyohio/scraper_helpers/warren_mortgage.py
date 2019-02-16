@@ -103,7 +103,8 @@ class WarrenMortgageInfo:
                 response_json = {}
                 pass
             except AttributeError:
-                print("ConnectionEror exception raised, unable to print all attributes")
+                print("ConnectionError exception raised, unable to print all attributes")
+                response_json = {}
                 pass
 
         if response_json.get('Msg', '') == 'Session is invalid':
