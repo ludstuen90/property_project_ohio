@@ -469,3 +469,19 @@ def datetime_to_date_string_parser(datetime_string, format):
     date_string = datetime_string.split(' ')[0]
     dt_object = datetime.datetime.strptime(date_string, format)
     return dt_object
+
+
+def calculate_total_number_of_acres(rows):
+    array_of_acres = []
+    for counter, row in enumerate(rows):
+        if counter != 0:
+            try:
+                contents = row.findAll('td')[4].contents
+                array_of_acres.append(contents[0])
+            except IndexError:
+                pass
+    converted_to_num = [float(x) for x in array_of_acres]
+    total_acreage = 0
+    for num in converted_to_num:
+        total_acreage += num
+    return total_acreage

@@ -249,3 +249,14 @@ def test_datetime_to_date_string_parser():
 
     assert result_two == datetime(1999, 10, 7, 0, 0)
 
+def test_acreage_adder():
+    script_dir = os.path.dirname(__file__)
+    relative_path_to_file = "test_data/franklin_acre_data.pickle"
+    abs_file_path = os.path.join(script_dir, relative_path_to_file)
+    pickle_in = open(abs_file_path, "rb")
+    dummy_response = pickle.load(pickle_in)
+    soup = BeautifulSoup(dummy_response, 'html.parser')
+    table = soup.find('table', id="Land Characteristics")
+    rows = table.find_all('tr', recursive=False)
+    result_one = utils.calculate_total_number_of_acres(rows)
+    assert result_one == 2.02
