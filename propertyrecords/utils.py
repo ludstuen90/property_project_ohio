@@ -496,6 +496,20 @@ def name_parser_and_joiner(name_one, name_two):
     """
     if len(name_two) > 0:
         return f'''{name_one} & {name_two}'''
-
     else:
         return name_one
+
+
+def franklin_row_name_returner(soup, table_id, row_term):
+    table = soup.find('table', id=table_id)
+    rows = table.find_all('tr', recursive=False)
+
+    # FIND ACRES
+    for row in rows:
+        if (row.text.find(row_term) > -1):
+            cell = row.findAll('td')[1]
+            found_value = cell.get_text()
+            return found_value
+
+
+

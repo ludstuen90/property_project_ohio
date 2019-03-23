@@ -273,7 +273,21 @@ def test_name_parser_and_joiner():
     result_one = utils.name_parser_and_joiner(test_one_name_one, blank_string)
 
     result_two = utils.name_parser_and_joiner(test_two_name_one, test_two_name_two)
-
     assert result_one == "CITY OF NEW ALBANY"
-
     assert result_two == "VERST ROBERT E JR & VERST ROSEANNE I"
+
+
+
+def test_row_value_getter_franklin():
+    script_dir = os.path.dirname(__file__)
+    relative_path_to_file = "test_data/franklin_verst.pickle"
+    abs_file_path = os.path.join(script_dir, relative_path_to_file)
+    pickle_in = open(abs_file_path, "rb")
+    dummy_response = pickle.load(pickle_in)
+    soup = BeautifulSoup(dummy_response, 'html.parser')
+
+    most_recent_transfer_date = utils.franklin_row_name_returner(soup, "Most Recent Transfer", "Transfer Date")
+    calculated_acres = utils.franklin_row_name_returner(soup, "Owner", "Calculated Acres")
+
+    assert 'SEP-27-2011' == most_recent_transfer_date
+    assert '2.02' == calculated_acres
