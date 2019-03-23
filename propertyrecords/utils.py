@@ -250,7 +250,7 @@ def convert_y_n_to_boolean(response_string):
     :param response_string:
     :return:
     """
-    if response_string.upper() == 'Y':
+    if response_string.upper() == 'Y' or response_string.upper() == 'YES':
         return True
     else:
         return False
@@ -511,5 +511,16 @@ def franklin_row_name_returner(soup, table_id, row_term):
             found_value = cell.get_text()
             return found_value
 
-
-
+def franklin_county_credit_parser(parsed_value):
+    """
+    This method is coded to handle string values in the form of "2018: Yes 2019: Yes", which is how
+    the system was returning values at the time of parsing. Unknown if values will change to "Yes" at some point
+    in the middle of the year, though ideally this method is built to handle such a change.
+    :param parsed_value:
+    :return: The true-false value of whether the property received a credit at the closest-to-present timeframe.
+    """
+    final_value = parsed_value[-3:]
+    if final_value.upper() == 'YES':
+        return convert_y_n_to_boolean(final_value)
+    elif final_value[-2:].upper() == 'NO':
+        return convert_y_n_to_boolean(final_value[-2:])

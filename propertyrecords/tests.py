@@ -1,5 +1,6 @@
 # from django.test import TestCase
 import os
+import re
 from datetime import datetime
 from decimal import Decimal
 import pytest
@@ -97,10 +98,14 @@ def test_parse_ohio_state_use_code():
 def test_convert_y_n_to_boolean():
 
     result_y = utils.convert_y_n_to_boolean('Y')
+    result_yes = utils.convert_y_n_to_boolean('yes')
     result_n = utils.convert_y_n_to_boolean('N')
+    result_no = utils.convert_y_n_to_boolean('no')
 
     assert result_y is True
+    assert result_yes is True
     assert result_n is False
+    assert result_no is False
 
 
 def test_cauv_parser():
@@ -288,6 +293,17 @@ def test_row_value_getter_franklin():
 
     most_recent_transfer_date = utils.franklin_row_name_returner(soup, "Most Recent Transfer", "Transfer Date")
     calculated_acres = utils.franklin_row_name_returner(soup, "Owner", "Calculated Acres")
+    prop_status = utils.franklin_row_name_returner(soup, re.compile("Tax Status"), "Property Class")
 
     assert 'SEP-27-2011' == most_recent_transfer_date
     assert '2.02' == calculated_acres
+    assert 'R - Residential' == prop_status
+
+
+def test_franklin_county_credit_parser():
+
+    occ = "2018: Yes 2019: Yes"
+    hcc = "2018: No 2019: No"
+
+    assert utils.franklin_county_credit_parser(occ) is True
+    assert utils.franklin_county_credit_parser(hcc) is False
