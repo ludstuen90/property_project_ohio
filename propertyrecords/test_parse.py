@@ -20,11 +20,13 @@ print("ACRES: ", utils.franklin_row_name_returner(soup, "Owner", "Calculated Acr
 # FIND ADDRESS
 tds = soup.find_all('td', class_="DataletHeaderBottom")
 address = tds[1].get_text()
+city = utils.franklin_row_name_returner(soup, re.compile("Tax Status"), "City/Village")
+zip = utils.franklin_row_name_returner(soup, re.compile("Tax Status"), "Zip Code")
+print(address, city, zip)
 
 #LEGAL DESCRIPTION
 land_use = soup.find('td', text="Land Use")
 use = land_use.next_sibling.get_text()
-# print("USE: ", use)
 
 #OWNER
 table = soup.find('table', id='Owner')
@@ -36,10 +38,9 @@ next_row = owner_cell.parent.next_sibling
 cells = next_row.find_all('td')
 secondary_owner_attempt = cells[1].get_text()
 names = utils.name_parser_and_joiner(owner_name, secondary_owner_attempt)
-print(names)
 
 # LAST SALE DATE
-print("LAST SALE DATE: ", utils.franklin_row_name_returner(soup, "Most Recent Transfer", "Transfer Date"))
+utils.franklin_row_name_returner(soup, "Most Recent Transfer", "Transfer Date")
 
 #CAUV PROPERTY
 cauv_yn = utils.franklin_row_name_returner(soup, re.compile("Tax Status"), "CAUV Property")
@@ -55,34 +56,44 @@ property_class = utils.franklin_row_name_returner(soup, re.compile("Tax Status")
 
 # OWNER OCC CREDIT
 occ = utils.franklin_row_name_returner(soup, re.compile("Tax Status"), "Owner Occ. Credit")
-print("OCC: ", occ)
 
 # Homestead Credit
 hcc = utils.franklin_row_name_returner(soup, re.compile("Tax Status"), "Homestead Credit")
-print("HCC: ", hcc)
+
+#Land Use:
+lu = utils.franklin_row_name_returner(soup, re.compile("Tax Status"), "Land Use")
+
+#Tax District:
+td = utils.franklin_row_name_returner(soup, re.compile("Tax Status"), "Tax District")
+
+
+#school_district
+sd = utils.franklin_row_name_returner(soup, re.compile("Tax Status"), "School District")
+try:
+    # Remove extra spaces, just to be nice
+    if sd.split('-', 1)[0][-1:] == " ":
+        school_district_number =sd.split('-', 1)[0][:-1]
+    else:
+        school_district_number = sd.split('-', 1)[0]
+
+    if sd.split('-', 1)[1][:1] == " ":
+        school_district_name = sd.split('-', 1)[1][1:]
+    else:
+        school_district_name = sd.split('-', 1)[1]
+
+except IndexError:
+    pass
+
 
 
 
 # next_row = owner_cell.parent.next_sibling.encode('utf-8').strip()
 # print("NEXT ROW: ", next_row)
-        #PropertyAddress
-        # legal_acres - DOWNLAODED
-        # legal_description
-        # owner - PARSED
-        # date_sold -- DONE
         # date_of_LLC_name_change
         # date_of_mortgage
         # mortgage_amount
         # property_class
         # property_rating
-        # land_use
-        # tax_district
-        # school_district_name
-        # school_district
-        # tax_lien - DONE
-        # cauv_property - DONE
-        # owner_occupancy_indicated
-        # county
         # tax_address
         # TaxData
         # PropertyTransfer
