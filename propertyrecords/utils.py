@@ -485,3 +485,17 @@ def calculate_total_number_of_acres(rows):
     for num in converted_to_num:
         total_acreage += num
     return total_acreage
+
+
+def name_parser_and_joiner(name_one, name_two):
+    """
+    Given two names, this method returns the two names with an & sign in the middle, if a secondary owner exists
+    :param name_one: Primary Owner Name
+    :param name_two: Secondary Owner Name (or empty string if not possible)
+    :return: Primary owner name, or - if two names, names joined by & symbol
+    """
+    if len(name_two) > 0:
+        return f'''{name_one} & {name_two}'''
+
+    else:
+        return name_one

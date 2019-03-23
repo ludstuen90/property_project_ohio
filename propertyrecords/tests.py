@@ -260,3 +260,20 @@ def test_acreage_adder():
     rows = table.find_all('tr', recursive=False)
     result_one = utils.calculate_total_number_of_acres(rows)
     assert result_one == 2.02
+
+
+def test_name_parser_and_joiner():
+
+    test_one_name_one = "CITY OF NEW ALBANY"
+    blank_string = ""
+
+    test_two_name_one = 'VERST ROBERT E JR'
+    test_two_name_two = 'VERST ROSEANNE I'
+
+    result_one = utils.name_parser_and_joiner(test_one_name_one, blank_string)
+
+    result_two = utils.name_parser_and_joiner(test_two_name_one, test_two_name_two)
+
+    assert result_one == "CITY OF NEW ALBANY"
+
+    assert result_two == "VERST ROBERT E JR & VERST ROSEANNE I"

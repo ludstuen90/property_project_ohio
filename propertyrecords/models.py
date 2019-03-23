@@ -14,7 +14,7 @@ class Property(models.Model):
     account_number = models.CharField(max_length=10, blank=True)
     legal_acres = models.DecimalField(max_digits=6, decimal_places=3, null=True, blank=True)
     legal_description = models.CharField(max_length=250, blank=True)
-    owner = models.CharField(max_length=84, blank=True)
+    owner = models.CharField(max_length=120, blank=True)
     date_sold = models.DateField(null=True, blank=True, help_text="Date a property transfer was recorded. Might not have actually meant property sold for money, in the case of inheriting a property. ")
     date_of_LLC_name_change = models.DateField(null=True, blank=True)
     date_of_mortgage = models.DateField(null=True, blank=True, verbose_name="Estimated Market Value",
