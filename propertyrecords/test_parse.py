@@ -7,22 +7,26 @@ import utils
 from bs4 import BeautifulSoup
 
 script_dir = os.path.dirname(__file__)
-relative_path_to_file = "dict.pickle"
+# relative_path_to_file = "dict.pickle"
 # relative_path_to_file = "no2own.pickle"
+relative_path_to_file = "vaugn2tax.pickle"
 abs_file_path = os.path.join(script_dir, relative_path_to_file)
 pickle_in = open(abs_file_path, "rb")
 dummy_response = pickle.load(pickle_in)
 
 soup = BeautifulSoup(dummy_response, 'html.parser')
 #ACRES
-print("ACRES: ", utils.franklin_row_name_returner(soup, "Owner", "Calculated Acres"))
+# print("ACRES: ", utils.franklin_row_name_returner(soup, "Owner", "Calculated Acres"))
 
 # FIND ADDRESS
-tds = soup.find_all('td', class_="DataletHeaderBottom")
-address = tds[1].get_text()
-city = utils.franklin_row_name_returner(soup, re.compile("Tax Status"), "City/Village")
-zip = utils.franklin_row_name_returner(soup, re.compile("Tax Status"), "Zip Code")
-print(address, city, zip)
+try:
+    tds = soup.find_all('td', class_="DataletHeaderBottom")
+    address = tds[1].get_text()
+    city = utils.franklin_row_name_returner(soup, re.compile("Tax Status"), "City/Village")
+    zip = utils.franklin_row_name_returner(soup, re.compile("Tax Status"), "Zip Code")
+    # print(address, city, zip)
+except UnicodeEncodeError:
+    pass
 
 #LEGAL DESCRIPTION
 land_use = soup.find('td', text="Land Use")
@@ -66,7 +70,6 @@ lu = utils.franklin_row_name_returner(soup, re.compile("Tax Status"), "Land Use"
 #Tax District:
 td = utils.franklin_row_name_returner(soup, re.compile("Tax Status"), "Tax District")
 
-
 #school_district
 sd = utils.franklin_row_name_returner(soup, re.compile("Tax Status"), "School District")
 try:
@@ -85,16 +88,31 @@ except IndexError:
     pass
 
 
+# FIND TAX ADDRESS
+
+table = soup.find('table', id="Owner")
+rows = table.find_all('tr', recursive=False)
+
+# FIND ACRES
+for row in rows:
+    if (row.text.find("Tax Bill Mailing") > -1):
+        cell = row.findAll('td')[1]
+
+# print(utils.franklin_row_name_returner(soup, "Owner", "Tax Bill Mailing"))
+# owner_cell = utils.franklin_row_name_returner(soup, "Owner", "Tax Bill Mailing")
+next_row = cell.parent.next_sibling
+cells = next_row.find_all('td')
+secondary_owner_attempt = cells[1].get_text()
+print("Secondary: ", secondary_owner_attempt)
 
 
-# next_row = owner_cell.parent.next_sibling.encode('utf-8').strip()
-# print("NEXT ROW: ", next_row)
-        # date_of_LLC_name_change
-        # date_of_mortgage
-        # mortgage_amount
-        # property_class
-        # property_rating
-        # tax_address
-        # TaxData
-        # PropertyTransfer
-        # PROPERTY ADDRESS = DOWNLAODED
+# --------------------- PROPERTY TRANSFER PAGE ------------------------
+# PropertyTransfer
+#
+# script_dir = os.path.dirname(__file__)
+# # relative_path_to_file = "dict.pickle"
+# relative_path_to_file = "transferdata.pickle"
+# abs_file_path = os.path.join(script_dir, relative_path_to_file)
+# pickle_in = open(abs_file_path, "rb")
+# dummy_response = pickle.load(pickle_in)
+#

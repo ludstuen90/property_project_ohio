@@ -25,7 +25,7 @@ class FranklinSpider(scrapy.Spider):
 
     def retrieve_all_franklin_county_urls(self):
         # self.please_parse_these_items = models.Property.objects.filter(county=self.franklin_county_object).all()
-        self.please_parse_these_items = models.Property.objects.filter(id__in=[3354423]).all()
+        self.please_parse_these_items = models.Property.objects.filter(id__in=[3354424]).all()
         for item in self.please_parse_these_items:
             property_parameters = {'url': "http://property.franklincountyauditor.com/_web/search/CommonSearch.aspx?mode=PARID"}
             property_parameters['ScriptManager1_TSM'] = " ;;AjaxControlToolkit, Version=4.1.50731.0, Culture=neutral, PublicKeyToken=28f01b0e84b6d53e:en-US:f8fb2a65-e23a-483b-b20e-6db6ef539a22:ea597d4b:b25378d2;Telerik.Web.UI, Version=2013.1.403.45, Culture=neutral, PublicKeyToken=121fae78165ba3d4:en-US:66639117-cae4-4d6c-a3d7-81eea986263a:16e4e7cd:f7645509:24ee1bba:874f8ea2:19620875:f46195d3:490a9d4e"
@@ -83,55 +83,68 @@ class FranklinSpider(scrapy.Spider):
                     )
 
     def retrieve_info_to_parse(self, response):
+        print("HI")
         # open_in_browser(response)
 
-        pickle_out = open("no2own.pickle", "wb")
-        pickle.dump(response.body, pickle_out)
-        pickle_out.close()
-
-        soup = BeautifulSoup(response.body, 'html.parser')
-        table = soup.find('table', id="Owner")
-        rows = table.find_all('tr', recursive=False)
-        for row in rows:
-            if (row.text.find("Calculated Acres") > -1):
-                cell = row.findAll('td')[1]
-                property_acres =  cell.get_text()
-
-
-        print("Looking at: ", response.xpath("//td[contains(text(),'ParcelID')]/text()"), " and expected: ", response.meta['parc_id'])
-
-        # parcel_number
-        # account_number
-        # legal_acres - DOWNLAODED
-        # legal_description
-        # owner
-        # date_sold
+        # pickle_out = open("vaugn2tax.pickle", "wb")
+        # pickle.dump(response.body, pickle_out)
+        # pickle_out.close()
+        #
+        # soup = BeautifulSoup(response.body, 'html.parser')
+        # table = soup.find('table', id="Owner")
+        # rows = table.find_all('tr', recursive=False)
+        # for row in rows:
+        #     if (row.text.find("Calculated Acres") > -1):
+        #         cell = row.findAll('td')[1]
+        #         property_acres =  cell.get_text()
+        #
+        #
+        # print("Looking at: ", response.xpath("//td[contains(text(),'ParcelID')]/text()"), " and expected: ", response.meta['parc_id'])
+        # ITEMS THAT REMAIN!!!!
         # date_of_LLC_name_change
         # date_of_mortgage
         # mortgage_amount
-        # property_class
         # property_rating
-        # land_use
-        # tax_district
-        # school_district_name
-        # school_district
-        # tax_lien
-        # tax_lien_information_source
-        # cauv_property
-        # owner_occupancy_indicated
-        # county
         # tax_address
-        # TaxData
-        # PropertyTransfer
 
-    def land_parse(self, response):
+    # def land_parse(self, response):
+    #     soup = BeautifulSoup(response.body, 'html.parser')
+    #     table = soup.find('table', id="Land Characteristics")
+    #     rows = table.find_all('tr', recursive=False)
+    #     print("ROWS: ", type(rows))
+    #     total_acreage = utils.calculate_total_number_of_acres(rows)
+    #     print("ARRAY OF ACRES AL FINAL: ", total_acreage)
+
+    def parse_transfer_data(self, response):
+        # open_in_browser(response)
+        # print("HI")
+        parcel_number = response.meta['parcel_number']
+        property_object = models.Property.objects.get(parcel_number=parcel_number)
+
+        # Delete existing property transfer records so that we can be sure our database reflects information
+        # on the site.
+        models.PropertyTransfer.objects.filter(property=property_object).delete()
 
         soup = BeautifulSoup(response.body, 'html.parser')
-        table = soup.find('table', id="Land Characteristics")
+
+        table = soup.find('table', id="Sales Summary")
         rows = table.find_all('tr', recursive=False)
-        print("ROWS: ", type(rows))
-        total_acreage = utils.calculate_total_number_of_acres(rows)
-        print("ARRAY OF ACRES AL FINAL: ", total_acreage)
+
+        for iteration, row in enumerate(rows):
+            if iteration == 0:
+                pass
+            else:
+                try:
+                    row_array = [x.get_text() for x in row.children]
+                    print("Transfer Date: ", row_array[0], "Grantee: ", row_array[1], "conveyance_number", row_array[2],
+                          "sale amount: ", row_array[5])
+                except IndexError:
+                    pass
+
+        # pickle_out = open("transferdata.pickle", "wb")
+        # pickle.dump(response.body, pickle_out)
+        # pickle_out.close()
+
 
     def parse(self, response):
         """
@@ -145,6 +158,14 @@ class FranklinSpider(scrapy.Spider):
                       meta={"parc_id": response.meta['parc_id']
                             },
                       callback=self.retrieve_info_to_parse,
+                      )
+
+        yield Request("http://property.franklincountyauditor.com/_web/datalets/datalet.aspx?mode=sales_summary&sIndex=1&idx=1&LMparent=20",
+                      dont_filter=True,
+                      headers=self.HEADERS,
+                      meta={"parc_id": response.meta['parc_id']
+                            },
+                      callback=self.parse_transfer_data,
                       )
 
         # yield Request("http://property.franklincountyauditor.com/_web/datalets/datalet.aspx?mode=land_summary&sIndex=0&idx=1&LMparent=20", dont_filter=True,

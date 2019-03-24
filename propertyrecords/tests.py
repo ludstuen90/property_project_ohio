@@ -3,6 +3,8 @@ import os
 import re
 from datetime import datetime
 from decimal import Decimal
+
+import bs4
 import pytest
 
 import pickle
@@ -282,7 +284,6 @@ def test_name_parser_and_joiner():
     assert result_two == "VERST ROBERT E JR & VERST ROSEANNE I"
 
 
-
 def test_row_value_getter_franklin():
     script_dir = os.path.dirname(__file__)
     relative_path_to_file = "test_data/franklin_verst.pickle"
@@ -294,10 +295,12 @@ def test_row_value_getter_franklin():
     most_recent_transfer_date = utils.franklin_row_name_returner(soup, "Most Recent Transfer", "Transfer Date")
     calculated_acres = utils.franklin_row_name_returner(soup, "Owner", "Calculated Acres")
     prop_status = utils.franklin_row_name_returner(soup, re.compile("Tax Status"), "Property Class")
+    raw_value = utils.franklin_row_name_returner(soup, re.compile("Tax Status"), "Property Class", True)
 
     assert 'SEP-27-2011' == most_recent_transfer_date
     assert '2.02' == calculated_acres
     assert 'R - Residential' == prop_status
+    assert type(raw_value) == bs4.element.Tag
 
 
 def test_franklin_county_credit_parser():

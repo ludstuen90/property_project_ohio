@@ -500,7 +500,7 @@ def name_parser_and_joiner(name_one, name_two):
         return name_one
 
 
-def franklin_row_name_returner(soup, table_id, row_term):
+def franklin_row_name_returner(soup, table_id, row_term, *args):
     table = soup.find('table', id=table_id)
     rows = table.find_all('tr', recursive=False)
 
@@ -508,8 +508,12 @@ def franklin_row_name_returner(soup, table_id, row_term):
     for row in rows:
         if (row.text.find(row_term) > -1):
             cell = row.findAll('td')[1]
-            found_value = cell.get_text()
-            return found_value
+            if len(args) == 1:
+                return cell
+            else:
+                found_value = cell.get_text()
+                return found_value
+
 
 def franklin_county_credit_parser(parsed_value):
     """
