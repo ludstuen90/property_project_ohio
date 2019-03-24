@@ -509,11 +509,22 @@ def franklin_row_name_returner(soup, table_id, row_term, *args):
         if (row.text.find(row_term) > -1):
             cell = row.findAll('td')[1]
             if len(args) == 1:
+                # If args passed, return the value of the cell, rather than the text
+                # so that we can continue to perform other data manipulation
                 return cell
             else:
                 found_value = cell.get_text()
                 return found_value
 
+
+def find_td_cell_value_beneath_current_bssoup(cell, *args):
+    next_row = cell.parent.next_sibling
+    cells = next_row.find_all('td')
+    if len(args) == 1:
+        return cells[1]
+    else:
+        underneath_td_cell = cells[1].get_text()
+        return underneath_td_cell
 
 def franklin_county_credit_parser(parsed_value):
     """

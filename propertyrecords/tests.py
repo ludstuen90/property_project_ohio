@@ -302,6 +302,20 @@ def test_row_value_getter_franklin():
     assert 'R - Residential' == prop_status
     assert type(raw_value) == bs4.element.Tag
 
+def test_find_td_cell_value_beneath_current_bssoup():
+    script_dir = os.path.dirname(__file__)
+    relative_path_to_file = "test_data/franklin_verst.pickle"
+    abs_file_path = os.path.join(script_dir, relative_path_to_file)
+    pickle_in = open(abs_file_path, "rb")
+    dummy_response = pickle.load(pickle_in)
+    soup = BeautifulSoup(dummy_response, 'html.parser')
+
+    owner_cell = utils.franklin_row_name_returner(soup, "Owner", "Owner", True)
+    secondary_owner_attempt = utils.find_td_cell_value_beneath_current_bssoup(owner_cell)
+
+    assert "VERST ROSEANNE I" == secondary_owner_attempt
+
+
 
 def test_franklin_county_credit_parser():
 

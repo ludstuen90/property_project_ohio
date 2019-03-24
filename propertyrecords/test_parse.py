@@ -33,15 +33,18 @@ land_use = soup.find('td', text="Land Use")
 use = land_use.next_sibling.get_text()
 
 #OWNER
-table = soup.find('table', id='Owner')
-owner_cell = table.find('td', text="Owner")
-next_cell = owner_cell.next_sibling
-owner_name = next_cell.get_text()
 
-next_row = owner_cell.parent.next_sibling
-cells = next_row.find_all('td')
-secondary_owner_attempt = cells[1].get_text()
+#
+# table = soup.find('table', id='Owner')
+# owner_cell = table.find('td', text="Owner")
+# next_cell = owner_cell.next_sibling
+# owner_name = next_cell.get_text()
+
+owner_name = utils.franklin_row_name_returner(soup, "Owner", "Owner")
+owner_cell = utils.franklin_row_name_returner(soup, "Owner", "Owner", True)
+secondary_owner_attempt = utils.find_td_cell_value_beneath_current_bssoup(owner_cell)
 names = utils.name_parser_and_joiner(owner_name, secondary_owner_attempt)
+
 
 # LAST SALE DATE
 utils.franklin_row_name_returner(soup, "Most Recent Transfer", "Transfer Date")
@@ -103,7 +106,7 @@ for row in rows:
 next_row = cell.parent.next_sibling
 cells = next_row.find_all('td')
 secondary_owner_attempt = cells[1].get_text()
-print("Secondary: ", secondary_owner_attempt)
+# print("Secondary: ", secondary_owner_attempt)
 
 
 # --------------------- PROPERTY TRANSFER PAGE ------------------------
