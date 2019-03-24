@@ -520,11 +520,30 @@ def franklin_row_name_returner(soup, table_id, row_term, *args):
 def find_td_cell_value_beneath_current_bssoup(cell, *args):
     next_row = cell.parent.next_sibling
     cells = next_row.find_all('td')
-    if len(args) == 1:
+    if len(args) >= 1:
         return cells[1]
     else:
         underneath_td_cell = cells[1].get_text()
         return underneath_td_cell
+
+
+
+def franklin_county_tax_address_getter(soup):
+    primary_owner_text = franklin_row_name_returner(soup, "Owner", "Tax Bill Mailing")
+    primary_owner_text_cell = franklin_row_name_returner(soup, "Owner", "Tax Bill Mailing", True)
+
+    secondary_owner_text = find_td_cell_value_beneath_current_bssoup(primary_owner_text_cell)
+    secondary_owner_cell = find_td_cell_value_beneath_current_bssoup(primary_owner_text_cell, True)
+
+
+    first_address_line_text = find_td_cell_value_beneath_current_bssoup(secondary_owner_cell)
+    first_address_line_cell = find_td_cell_value_beneath_current_bssoup(secondary_owner_cell, True)
+
+    secondary_address_line_text = find_td_cell_value_beneath_current_bssoup(first_address_line_cell)
+
+    names_with_white_space = [primary_owner_text, secondary_owner_text, first_address_line_text, secondary_address_line_text]
+    names_without_white_space = parse_white_space_from_each_line_of_address(names_with_white_space)
+    return names_without_white_space
 
 def franklin_county_credit_parser(parsed_value):
     """

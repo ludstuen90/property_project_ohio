@@ -316,6 +316,29 @@ def test_find_td_cell_value_beneath_current_bssoup():
     assert "VERST ROSEANNE I" == secondary_owner_attempt
 
 
+def test_tax_address_parser_franklin_county():
+    script_dir = os.path.dirname(__file__)
+    relative_path_to_file = "test_data/franklin_vaughters.pickle"
+    abs_file_path = os.path.join(script_dir, relative_path_to_file)
+    pickle_in = open(abs_file_path, "rb")
+    dummy_response = pickle.load(pickle_in)
+    soup = BeautifulSoup(dummy_response, 'html.parser')
+
+    two_tax_addr_return = utils.franklin_county_tax_address_getter(soup)
+
+    assert ['JOHN D VAUGHTERS', 'CAROL M VAUGHTERS', '7296 MORSE RD', 'NEW ALBANY OH 43054-9515'] == two_tax_addr_return
+
+
+    relative_path_to_file = "test_data/franklin_verst.pickle"
+    abs_file_path = os.path.join(script_dir, relative_path_to_file)
+    pickle_in = open(abs_file_path, "rb")
+    dummy_response = pickle.load(pickle_in)
+    soup = BeautifulSoup(dummy_response, 'html.parser')
+
+    one_tax_addr_return = utils.franklin_county_tax_address_getter(soup)
+
+    assert ['ROBERT E VERST JR', '6747 CENTRAL COLLEGE RD', 'NEW ALBANY OH 43054-9307'] == one_tax_addr_return
+
 
 def test_franklin_county_credit_parser():
 

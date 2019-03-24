@@ -7,9 +7,9 @@ import utils
 from bs4 import BeautifulSoup
 
 script_dir = os.path.dirname(__file__)
-# relative_path_to_file = "dict.pickle"
+relative_path_to_file = "dict.pickle"
 # relative_path_to_file = "no2own.pickle"
-relative_path_to_file = "vaugn2tax.pickle"
+# relative_path_to_file = "vaugn2tax.pickle"
 abs_file_path = os.path.join(script_dir, relative_path_to_file)
 pickle_in = open(abs_file_path, "rb")
 dummy_response = pickle.load(pickle_in)
@@ -101,11 +101,13 @@ for row in rows:
     if (row.text.find("Tax Bill Mailing") > -1):
         cell = row.findAll('td')[1]
 
+
+print("TAX: ", utils.franklin_county_tax_address_getter(soup))
 # print(utils.franklin_row_name_returner(soup, "Owner", "Tax Bill Mailing"))
 # owner_cell = utils.franklin_row_name_returner(soup, "Owner", "Tax Bill Mailing")
-next_row = cell.parent.next_sibling
-cells = next_row.find_all('td')
-secondary_owner_attempt = cells[1].get_text()
+# next_row = cell.parent.next_sibling
+# cells = next_row.find_all('td')
+# secondary_owner_attempt = cells[1].get_text()
 # print("Secondary: ", secondary_owner_attempt)
 
 
