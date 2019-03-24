@@ -25,7 +25,7 @@ class FranklinSpider(scrapy.Spider):
 
     def retrieve_all_franklin_county_urls(self):
         # self.please_parse_these_items = models.Property.objects.filter(county=self.franklin_county_object).all()
-        self.please_parse_these_items = models.Property.objects.filter(id__in=[3354424]).all()
+        self.please_parse_these_items = models.Property.objects.filter(id__in=[3354426]).all()
         for item in self.please_parse_these_items:
             property_parameters = {'url': "http://property.franklincountyauditor.com/_web/search/CommonSearch.aspx?mode=PARID"}
             property_parameters['ScriptManager1_TSM'] = " ;;AjaxControlToolkit, Version=4.1.50731.0, Culture=neutral, PublicKeyToken=28f01b0e84b6d53e:en-US:f8fb2a65-e23a-483b-b20e-6db6ef539a22:ea597d4b:b25378d2;Telerik.Web.UI, Version=2013.1.403.45, Culture=neutral, PublicKeyToken=121fae78165ba3d4:en-US:66639117-cae4-4d6c-a3d7-81eea986263a:16e4e7cd:f7645509:24ee1bba:874f8ea2:19620875:f46195d3:490a9d4e"
@@ -82,6 +82,12 @@ class FranklinSpider(scrapy.Spider):
                         headers=self.HEADERS,
                     )
 
+    def commercial_check(self, response):
+
+        pickle_out = open("commercial.pickle", "wb")
+        pickle.dump(response.body, pickle_out)
+        pickle_out.close()
+
     def retrieve_info_to_parse(self, response):
         print("HI")
         # open_in_browser(response)
@@ -102,10 +108,9 @@ class FranklinSpider(scrapy.Spider):
         # print("Looking at: ", response.xpath("//td[contains(text(),'ParcelID')]/text()"), " and expected: ", response.meta['parc_id'])
         # ITEMS THAT REMAIN!!!!
         # date_of_LLC_name_change
-        # date_of_mortgage
-        # mortgage_amount
-        # property_rating
-        # tax_address
+        # date_of_mortgage - NOT EASILY PARSED
+        # mortgage_amount - NOT EASILY PARSED
+        # property_rating - AVAILABLE FOR SOME COMMERCIAL PROPS
 
     # def land_parse(self, response):
     #     soup = BeautifulSoup(response.body, 'html.parser')
@@ -167,6 +172,15 @@ class FranklinSpider(scrapy.Spider):
                             },
                       callback=self.parse_transfer_data,
                       )
+
+        yield Request(
+            "http://property.franklincountyauditor.com/_web/datalets/datalet.aspx?mode=commercial&sIndex=5&idx=18&LMparent=20",
+            dont_filter=True,
+            headers=self.HEADERS,
+            meta={"parc_id": response.meta['parc_id']
+                  },
+            callback=self.commercial_check,
+            )
 
         # yield Request("http://property.franklincountyauditor.com/_web/datalets/datalet.aspx?mode=land_summary&sIndex=0&idx=1&LMparent=20", dont_filter=True,
         #               headers=self.HEADERS,

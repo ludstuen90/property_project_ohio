@@ -126,15 +126,33 @@ def parse_city_state_and_zip_from_line(address_line, state):
     :return: {city: 'RANCHO CUCA MONGA', state: 'CA', zip: 98872}
     """
     last_line_length = len(address_line)
-    zip_code = address_line[(last_line_length - 5):last_line_length]
+    new_zip_format = False
+    space_before_zipcode = 6
 
-    if address_line[(last_line_length - 6)] != ' ':
+
+    if address_line[(last_line_length - 5)] == '-' and address_line[(last_line_length - 11)] == ' ':
+        new_zip_format = True
+
+    elif address_line[(last_line_length - 6)] != ' ':
         raise LookupError("Unable to parse address. Zip code not in expected format.")
+
+    # Logic to set out how to parse city/state and zipcode patterns from end of line, according to flags raised
+    if new_zip_format and state:
+        space_before_zipcode = 11
+        zip_code = address_line[(last_line_length - 10):last_line_length]
+    elif state:
+        # state yes, trad
+        zip_code = address_line[(last_line_length - 5):last_line_length]
+    elif new_zip_format:
+        zip_code = address_line[(last_line_length - 10):last_line_length]
+    else:
+        # state no, trad
+        zip_code = address_line[-5:]
 
     if state:
         # We count back from the zip code, and look for a pattern that looks like a state abbreviation.
         # We hope to find a pattern like: 'Space space space two letters space space'
-        for x in range(last_line_length - 6, 0, -1):
+        for x in range(last_line_length - space_before_zipcode, 0, -1):
             if (
                     address_line[x].isalpha() == False and
                     address_line[x + 1].isalpha() == True and
@@ -151,14 +169,14 @@ def parse_city_state_and_zip_from_line(address_line, state):
     else:
         # We count back from the zip code, and look for a pattern that looks like a state abbreviation.
         # We hope to find a pattern like: 'Space space space two letters space space'
-        zipcode = address_line[-5:]
-        for x in range(last_line_length - 6, 0, -1):
+
+        for x in range(last_line_length - space_before_zipcode, 0, -1):
             if address_line[x].isalpha():
                 city_name = address_line[:(x+1)]
                 break
         return {
             'city': str(city_name),
-            'zipcode': zipcode
+            'zipcode': zip_code
         }
 
 
