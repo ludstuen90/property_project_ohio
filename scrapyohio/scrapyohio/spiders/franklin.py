@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 import datetime
 import pickle
+import re
 
 import scrapy
 from bs4 import BeautifulSoup
@@ -25,7 +26,7 @@ class FranklinSpider(scrapy.Spider):
 
     def retrieve_all_franklin_county_urls(self):
         # self.please_parse_these_items = models.Property.objects.filter(county=self.franklin_county_object).all()
-        self.please_parse_these_items = models.Property.objects.filter(id__in=[3354426]).all()
+        self.please_parse_these_items = models.Property.objects.filter(id__in=[3786024]).all()
         for item in self.please_parse_these_items:
             property_parameters = {'url': "http://property.franklincountyauditor.com/_web/search/CommonSearch.aspx?mode=PARID"}
             property_parameters['ScriptManager1_TSM'] = " ;;AjaxControlToolkit, Version=4.1.50731.0, Culture=neutral, PublicKeyToken=28f01b0e84b6d53e:en-US:f8fb2a65-e23a-483b-b20e-6db6ef539a22:ea597d4b:b25378d2;Telerik.Web.UI, Version=2013.1.403.45, Culture=neutral, PublicKeyToken=121fae78165ba3d4:en-US:66639117-cae4-4d6c-a3d7-81eea986263a:16e4e7cd:f7645509:24ee1bba:874f8ea2:19620875:f46195d3:490a9d4e"
@@ -82,30 +83,180 @@ class FranklinSpider(scrapy.Spider):
                         headers=self.HEADERS,
                     )
 
-    def commercial_check(self, response):
+    # def commercial_check(self, response):
 
-        pickle_out = open("commercial.pickle", "wb")
-        pickle.dump(response.body, pickle_out)
-        pickle_out.close()
+        # pickle_out = open("commercial.pickle", "wb")
+        # pickle.dump(response.body, pickle_out)
+        # pickle_out.close()
 
     def retrieve_info_to_parse(self, response):
         print("HI")
         # open_in_browser(response)
+        parsed_parcel_number = response.meta['parc_id']
+        self.parsed_prop, created = models.Property.objects.get_or_create(parcel_number=parsed_parcel_number)
 
-        # pickle_out = open("vaugn2tax.pickle", "wb")
-        # pickle.dump(response.body, pickle_out)
-        # pickle_out.close()
+
+        soup = BeautifulSoup(response.body, 'html.parser')
+
+        # FIND ADDRESS
+        try:
+            tds = soup.find_all('td', class_="DataletHeaderBottom")
+            address = tds[1].get_text()
+            city = utils.franklin_row_name_returner(soup, re.compile("Tax Status"), "City/Village")
+            zip = utils.franklin_row_name_returner(soup, re.compile("Tax Status"), "Zip Code")
+
+            self.property_address, self.was_prp_address_created = models.PropertyAddress.objects.get_or_create(
+                property_id=self.parsed_prop.id)
+            self.property_address.primary_address_line = address
+            self.property_address.city = city
+            self.property_address.zipcode = zip
+            self.property_address.save()
+        except UnicodeEncodeError:
+            pass
+
+        # LEGAL DESCRIPTION
+        legal_desc_text_1 = utils.franklin_row_name_returner(soup, "Owner", "Legal Description")
+        legal_desc_cell_1 = utils.franklin_row_name_returner(soup, "Owner", "Legal Description", True)
+
+        legal_desc_text_2 = utils.find_td_cell_value_beneath_current_bssoup(legal_desc_cell_1)
+        legal_desc_cell_2 = utils.find_td_cell_value_beneath_current_bssoup(legal_desc_cell_1, True)
+
+        legal_desc_text_3 = utils.find_td_cell_value_beneath_current_bssoup(legal_desc_cell_2)
+
+        self.parsed_prop.legal_description = f'''{legal_desc_text_1} {legal_desc_text_2} {legal_desc_text_3}'''
+
+        # Land Use
+        self.parsed_prop.land_use = utils.franklin_row_name_returner(soup, re.compile("Tax Status"), "Land Use")
+        # land_use = soup.find('td', text="Land Use")
+        # use = land_use.next_sibling.get_text()
+
+        # OWNER
+
         #
-        # soup = BeautifulSoup(response.body, 'html.parser')
+        # table = soup.find('table', id='Owner')
+        # owner_cell = table.find('td', text="Owner")
+        # next_cell = owner_cell.next_sibling
+        # owner_name = next_cell.get_text()
+
+        owner_name = utils.franklin_row_name_returner(soup, "Owner", "Owner")
+        owner_cell = utils.franklin_row_name_returner(soup, "Owner", "Owner", True)
+        secondary_owner_attempt = utils.find_td_cell_value_beneath_current_bssoup(owner_cell)
+        names = utils.name_parser_and_joiner(owner_name, secondary_owner_attempt)
+        self.parsed_prop.owner = names
+        # LAST SALE DATE
+        string_date_sold = utils.franklin_row_name_returner(soup, "Most Recent Transfer", "Transfer Date")
+        self.parsed_prop.date_sold = utils.datetime_to_date_string_parser(string_date_sold, '%b-%d-%Y')
+
+        # CAUV PROPERTY
+        cauv_yn = utils.franklin_row_name_returner(soup, re.compile("Tax Status"), "CAUV Property")
+        self.parsed_prop.cauv_property = utils.convert_y_n_to_boolean(cauv_yn)
+
+        # TAX LIEN
+        tax_lien_yn = utils.franklin_row_name_returner(soup, re.compile("Tax Status"), "Tax Lien")
+        self.parsed_prop.tax_lien = utils.convert_y_n_to_boolean(tax_lien_yn)
+
+        # PROPERTY CLASS
+        self.parsed_prop.property_class = utils.franklin_row_name_returner(soup, re.compile("Tax Status"), "Property Class")
+        #
+
+        # OWNER OCC CREDIT
+        text_occ_indicated = utils.franklin_row_name_returner(soup, re.compile("Tax Status"), "Owner Occ. Credit")
+        self.parsed_prop.owner_occupancy_indicated = utils.franklin_county_credit_parser(text_occ_indicated)
+
+        # # Homestead Credit
+        # hcc = utils.franklin_row_name_returner(soup, re.compile("Tax Status"), "Homestead Credit")
+
+        # Land Use:
+        land_use_string = utils.franklin_row_name_returner(soup, re.compile("Tax Status"), "Land Use")
+        land_use_number = land_use_string.split(' ')[0]
+        self.parsed_prop.land_use = int(land_use_number)
+
+        # Tax District:
+        self.parsed_prop.tax_district = utils.franklin_row_name_returner(soup, re.compile("Tax Status"), "Tax District")
+
+        # school_district
+        sd = utils.franklin_row_name_returner(soup, re.compile("Tax Status"), "School District")
+        try:
+            # Remove extra spaces, just to be nice
+            if sd.split('-', 1)[0][-1:] == " ":
+                self.parsed_prop.school_district = sd.split('-', 1)[0][:-1]
+            else:
+                self.parsed_prop.school_district = sd.split('-', 1)[0]
+
+            if sd.split('-', 1)[1][:1] == " ":
+                self.parsed_prop.school_district_name = sd.split('-', 1)[1][1:]
+            else:
+                self.parsed_prop.school_district_name = sd.split('-', 1)[1]
+
+        except IndexError:
+            pass
+
+        # FIND TAX ADDRESS
+
         # table = soup.find('table', id="Owner")
         # rows = table.find_all('tr', recursive=False)
+        #
+        # # FIND ACRES
+        self.parsed_prop.legal_acres = utils.franklin_row_name_returner(soup, "Owner", "Calculated Acres")
         # for row in rows:
-        #     if (row.text.find("Calculated Acres") > -1):
+        #     if (row.text.find("Tax Bill Mailing") > -1):
         #         cell = row.findAll('td')[1]
-        #         property_acres =  cell.get_text()
+
+        print("TAX: ", utils.franklin_county_tax_address_getter(soup))
+        returned_tax_line = utils.franklin_county_tax_address_getter(soup)
+        length_tax_line = len(returned_tax_line)
+        parsed_tax_address = utils.parse_address(returned_tax_line, True)
+
+        print("!?!?!", parsed_tax_address)
+
+        # FIND IF TAX ADDRESS EXISTS, IF NOT CREATE
+        if len(returned_tax_line) >= 1:
+            try:
+
+                tax_record = models.TaxAddress.objects.get(name=returned_tax_line[0], primary_address_line=returned_tax_line[length_tax_line-2])
+                #IF NAME AND ADDRESS IS THE SAME, PULL EXISTING RECORD
+
+                print("FIRST: ", returned_tax_line[1], returned_tax_line[length_tax_line-2])
+                print("tax record: exists ", tax_record)
+            except models.TaxAddress.DoesNotExist:
+                print("FIRST: ", returned_tax_line[1], returned_tax_line[length_tax_line-2])
+                tax_record = models.TaxAddress(tax_address=returned_tax_line)
+                tax_record.save()
+                print("Tax record did not exist, created: ", tax_record)
+                self.parsed_prop.tax_address = tax_record
+        # else:
+        #     try:
+        #         # Pass the parsed address through our name parser (in Tax Address model), to see
+        #         # what it would look like. Then, compare with existing records to see if we have
+        #         # one that matches.
+        #         # If so, get the record. Otherwise, create it.
+        #         self.dummy_obj = models.TaxAddress(tax_address=parsed_address)
+        #         tax_record = models.TaxAddress.objects.get(primary_address_line=self.dummy_obj.primary_address_line)
+        #     except models.TaxAddress.DoesNotExist:
+        #         tax_record = models.TaxAddress(tax_address=parsed_address)
+        #         tax_record.save()
+        self.parsed_prop.tax_address = tax_record
+        self.parsed_prop.save()
+
+        # if len(parsed_address) == 1:
+        #     try:
+        #         tax_record = models.TaxAddress.objects.get(name=parsed_address[0])
+        #     except models.TaxAddress.DoesNotExist:
+        #         tax_record = models.TaxAddress(tax_address=parsed_address)
+        #         tax_record.save()
+        # else:
+        #     try:
+        #         # Pass the parsed address through our name parser (in Tax Address model), to see
+        #         # what it would look like. Then, compare with existing records to see if we have
+        #         # one that matches.
+        #         # If so, get the record. Otherwise, create it.
+        #         self.dummy_obj = models.TaxAddress(tax_address=parsed_address)
+        #         tax_record = models.TaxAddress.objects.get(primary_address_line=self.dummy_obj.primary_address_line)
+        #     except models.TaxAddress.DoesNotExist:
+        #         tax_record = models.TaxAddress(tax_address=parsed_address)
+        #         tax_record.save()
+
         #
-        #
-        # print("Looking at: ", response.xpath("//td[contains(text(),'ParcelID')]/text()"), " and expected: ", response.meta['parc_id'])
         # ITEMS THAT REMAIN!!!!
         # date_of_LLC_name_change
         # date_of_mortgage - NOT EASILY PARSED
@@ -165,22 +316,22 @@ class FranklinSpider(scrapy.Spider):
                       callback=self.retrieve_info_to_parse,
                       )
 
-        yield Request("http://property.franklincountyauditor.com/_web/datalets/datalet.aspx?mode=sales_summary&sIndex=1&idx=1&LMparent=20",
-                      dont_filter=True,
-                      headers=self.HEADERS,
-                      meta={"parc_id": response.meta['parc_id']
-                            },
-                      callback=self.parse_transfer_data,
-                      )
-
-        yield Request(
-            "http://property.franklincountyauditor.com/_web/datalets/datalet.aspx?mode=commercial&sIndex=5&idx=18&LMparent=20",
-            dont_filter=True,
-            headers=self.HEADERS,
-            meta={"parc_id": response.meta['parc_id']
-                  },
-            callback=self.commercial_check,
-            )
+        # yield Request("http://property.franklincountyauditor.com/_web/datalets/datalet.aspx?mode=sales_summary&sIndex=1&idx=1&LMparent=20",
+        #               dont_filter=True,
+        #               headers=self.HEADERS,
+        #               meta={"parc_id": response.meta['parc_id']
+        #                     },
+        #               callback=self.parse_transfer_data,
+        #               )
+        #
+        # yield Request(
+        #     "http://property.franklincountyauditor.com/_web/datalets/datalet.aspx?mode=commercial&sIndex=5&idx=18&LMparent=20",
+        #     dont_filter=True,
+        #     headers=self.HEADERS,
+        #     meta={"parc_id": response.meta['parc_id']
+        #           },
+        #     callback=self.commercial_check,
+        #     )
 
         # yield Request("http://property.franklincountyauditor.com/_web/datalets/datalet.aspx?mode=land_summary&sIndex=0&idx=1&LMparent=20", dont_filter=True,
         #               headers=self.HEADERS,

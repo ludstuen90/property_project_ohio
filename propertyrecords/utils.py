@@ -563,6 +563,7 @@ def franklin_county_tax_address_getter(soup):
     names_without_white_space = parse_white_space_from_each_line_of_address(names_with_white_space)
     return names_without_white_space
 
+
 def franklin_county_credit_parser(parsed_value):
     """
     This method is coded to handle string values in the form of "2018: Yes 2019: Yes", which is how
