@@ -249,7 +249,7 @@ class FranklinSpider(scrapy.Spider):
     #     print("ARRAY OF ACRES AL FINAL: ", total_acreage)
 
     def parse_transfer_data(self, response):
-        parcel_number = response.meta['parcel_number']
+        parcel_number = response.meta['parc_id']
         property_object = models.Property.objects.get(parcel_number=parcel_number)
 
         # Delete existing property transfer records so that we can be sure our database reflects information
@@ -267,8 +267,17 @@ class FranklinSpider(scrapy.Spider):
             else:
                 try:
                     row_array = [x.get_text() for x in row.children]
-                    print("Transfer Date: ", row_array[0], "Grantee: ", row_array[1], "conveyance_number", row_array[2],
-                          "sale amount: ", row_array[5])
+                    models.PropertyTransfer.objects.create(
+                        property=property_object,
+                        guarantor='',
+                        guarantee=row_array[1],
+                        sale_amount=utils.convert_taxable_value_string_to_integer(row_array[5]),
+                        conveyance_fee=decimal.Decimal('-999'),
+                        conveyance_number=row_array[2],
+                        transfer_date=utils.datetime_to_date_string_parser(row_array[0], '%b-%d-%Y')
+                    )
+                    # print("Transfer Date: ", row_array[0], "Grantee: ", row_array[1], "conveyance_number", row_array[2],
+                    #       "sale amount: ", row_array[5])
                 except IndexError:
                     pass
 
@@ -292,14 +301,14 @@ class FranklinSpider(scrapy.Spider):
                       callback=self.retrieve_info_to_parse,
                       )
 
-        # yield Request("http://property.franklincountyauditor.com/_web/datalets/datalet.aspx?mode=sales_summary&sIndex=1&idx=1&LMparent=20",
-        #               dont_filter=True,
-        #               headers=self.HEADERS,
-        #               meta={"parc_id": response.meta['parc_id']
-        #                     },
-        #               callback=self.parse_transfer_data,
-        #               )
-        #
+        yield Request("http://property.franklincountyauditor.com/_web/datalets/datalet.aspx?mode=sales_summary&sIndex=1&idx=1&LMparent=20",
+                      dont_filter=True,
+                      headers=self.HEADERS,
+                      meta={"parc_id": response.meta['parc_id']
+                            },
+                      callback=self.parse_transfer_data,
+                      )
+
         # yield Request(
         #     "http://property.franklincountyauditor.com/_web/datalets/datalet.aspx?mode=commercial&sIndex=5&idx=18&LMparent=20",
         #     dont_filter=True,

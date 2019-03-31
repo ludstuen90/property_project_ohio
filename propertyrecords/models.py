@@ -71,7 +71,7 @@ class PropertyTransfer(models.Model):
     guarantee = models.CharField(max_length=74)
     sale_amount = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
     conveyance_fee = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
-    conveyance_number = models.IntegerField(null=True, blank=True)
+    conveyance_number = models.CharField(max_length=35, blank=True)
     transfer_date = models.DateField(null=True, blank=True)
     property = models.ForeignKey(Property, on_delete=models.CASCADE)
 

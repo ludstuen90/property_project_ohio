@@ -210,6 +210,19 @@ def convert_taxable_value_string_to_integer(taxable_value_string):
     return Decimal(remove_currency_artifacts)
 
 
+def decimal_converter(input_number):
+    """
+    This method strips a string of its commas, and converts the resulting integer into a decimal object. This is used
+    in Franklin County
+    :param input_number: A string, in the form of something like "72,192.02"
+    :return: the same number, but in the format of a Decimal type
+    """
+
+    input_number_no_comma = input_number.replace(',', '')
+    return Decimal(input_number_no_comma)
+
+
+
 def parse_ohio_state_use_code(use_string):
     """
     Given a string, this method will return the numerical value of the Ohio State Use Code
@@ -582,13 +595,3 @@ def franklin_county_credit_parser(parsed_value):
         return convert_y_n_to_boolean(final_value[-2:])
 
 
-def decimal_converter(input_number):
-    """
-    This method strips a string of its commas, and converts the resulting integer into a decimal object. This is used
-    in Franklin County
-    :param input_number: A string, in the form of something like "72,192.02"
-    :return: the same number, but in the format of a Decimal type
-    """
-
-    input_number_no_comma = input_number.replace(',', '')
-    return Decimal(input_number_no_comma)
