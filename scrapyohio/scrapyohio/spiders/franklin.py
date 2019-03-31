@@ -1,12 +1,10 @@
 # -*- coding: utf-8 -*-
-import datetime
-import pickle
+import decimal
 import re
 
 import scrapy
 from bs4 import BeautifulSoup
 from scrapy import Request, FormRequest
-from scrapy.utils.response import open_in_browser
 
 from ohio import settings
 from propertyrecords import utils, models
@@ -26,7 +24,7 @@ class FranklinSpider(scrapy.Spider):
 
     def retrieve_all_franklin_county_urls(self):
         # self.please_parse_these_items = models.Property.objects.filter(county=self.franklin_county_object).all()
-        self.please_parse_these_items = models.Property.objects.filter(id__in=[3354597]).all()
+        self.please_parse_these_items = models.Property.objects.filter(id__in=[3786025]).all()
         for item in self.please_parse_these_items:
             property_parameters = {'url': "http://property.franklincountyauditor.com/_web/search/CommonSearch.aspx?mode=PARID"}
             property_parameters['ScriptManager1_TSM'] = " ;;AjaxControlToolkit, Version=4.1.50731.0, Culture=neutral, PublicKeyToken=28f01b0e84b6d53e:en-US:f8fb2a65-e23a-483b-b20e-6db6ef539a22:ea597d4b:b25378d2;Telerik.Web.UI, Version=2013.1.403.45, Culture=neutral, PublicKeyToken=121fae78165ba3d4:en-US:66639117-cae4-4d6c-a3d7-81eea986263a:16e4e7cd:f7645509:24ee1bba:874f8ea2:19620875:f46195d3:490a9d4e"
@@ -90,11 +88,8 @@ class FranklinSpider(scrapy.Spider):
         # pickle_out.close()
 
     def retrieve_info_to_parse(self, response):
-        print("HI")
-        # open_in_browser(response)
         parsed_parcel_number = response.meta['parc_id']
         self.parsed_prop, created = models.Property.objects.get_or_create(parcel_number=parsed_parcel_number)
-
 
         soup = BeautifulSoup(response.body, 'html.parser')
 
@@ -127,22 +122,15 @@ class FranklinSpider(scrapy.Spider):
 
         # Land Use
         self.parsed_prop.land_use = utils.franklin_row_name_returner(soup, re.compile("Tax Status"), "Land Use")
-        # land_use = soup.find('td', text="Land Use")
-        # use = land_use.next_sibling.get_text()
 
         # OWNER
-
-        #
-        # table = soup.find('table', id='Owner')
-        # owner_cell = table.find('td', text="Owner")
-        # next_cell = owner_cell.next_sibling
-        # owner_name = next_cell.get_text()
 
         owner_name = utils.franklin_row_name_returner(soup, "Owner", "Owner")
         owner_cell = utils.franklin_row_name_returner(soup, "Owner", "Owner", cell_value=True)
         secondary_owner_attempt = utils.find_td_cell_value_beneath_current_bssoup(owner_cell)
         names = utils.name_parser_and_joiner(owner_name, secondary_owner_attempt)
         self.parsed_prop.owner = names
+
         # LAST SALE DATE
         string_date_sold = utils.franklin_row_name_returner(soup, "Most Recent Transfer", "Transfer Date")
         self.parsed_prop.date_sold = utils.datetime_to_date_string_parser(string_date_sold, '%b-%d-%Y')
@@ -195,71 +183,57 @@ class FranklinSpider(scrapy.Spider):
         except IndexError:
             pass
 
-        # FIND TAX ADDRESS
-        # table = soup.find('table', id="Owner")
-        # rows = table.find_all('tr', recursive=False)
-        #
         # # FIND ACRES
         self.parsed_prop.legal_acres = utils.franklin_row_name_returner(soup, "Owner", "Calculated Acres")
         # for row in rows:
         #     if (row.text.find("Tax Bill Mailing") > -1):
         #         cell = row.findAll('td')[1]
 
-        print("TAX: ", utils.franklin_county_tax_address_getter(soup))
+
+        # FIND TAX ADDRESS
         returned_tax_line = utils.franklin_county_tax_address_getter(soup)
         length_tax_line = len(returned_tax_line)
         parsed_tax_address = utils.parse_address(returned_tax_line, True)
 
-        print("!?!?!", parsed_tax_address)
 
         # FIND IF TAX ADDRESS EXISTS, IF NOT CREATE
         if len(returned_tax_line) >= 1:
             try:
-
                 tax_record = models.TaxAddress.objects.get(name=returned_tax_line[0], primary_address_line=returned_tax_line[length_tax_line-2])
                 #IF NAME AND ADDRESS IS THE SAME, PULL EXISTING RECORD
 
-                print("FIRST: ", returned_tax_line[1], returned_tax_line[length_tax_line-2])
-                print("tax record: exists ", tax_record)
             except models.TaxAddress.DoesNotExist:
-                print("FIRST: ", returned_tax_line[1], returned_tax_line[length_tax_line-2])
                 tax_record = models.TaxAddress(tax_address=returned_tax_line)
                 tax_record.save()
-                print("Tax record did not exist, created: ", tax_record)
                 self.parsed_prop.tax_address = tax_record
-        # else:
-        #     try:
-        #         # Pass the parsed address through our name parser (in Tax Address model), to see
-        #         # what it would look like. Then, compare with existing records to see if we have
-        #         # one that matches.
-        #         # If so, get the record. Otherwise, create it.
-        #         self.dummy_obj = models.TaxAddress(tax_address=parsed_address)
-        #         tax_record = models.TaxAddress.objects.get(primary_address_line=self.dummy_obj.primary_address_line)
-        #     except models.TaxAddress.DoesNotExist:
-        #         tax_record = models.TaxAddress(tax_address=parsed_address)
-        #         tax_record.save()
+
         self.parsed_prop.tax_address = tax_record
         self.parsed_prop.save()
 
-        # if len(parsed_address) == 1:
-        #     try:
-        #         tax_record = models.TaxAddress.objects.get(name=parsed_address[0])
-        #     except models.TaxAddress.DoesNotExist:
-        #         tax_record = models.TaxAddress(tax_address=parsed_address)
-        #         tax_record.save()
-        # else:
-        #     try:
-        #         # Pass the parsed address through our name parser (in Tax Address model), to see
-        #         # what it would look like. Then, compare with existing records to see if we have
-        #         # one that matches.
-        #         # If so, get the record. Otherwise, create it.
-        #         self.dummy_obj = models.TaxAddress(tax_address=parsed_address)
-        #         tax_record = models.TaxAddress.objects.get(primary_address_line=self.dummy_obj.primary_address_line)
-        #     except models.TaxAddress.DoesNotExist:
-        #         tax_record = models.TaxAddress(tax_address=parsed_address)
-        #         tax_record.save()
+        # ---------- PARSE TAX DATA INFO
+        # Find property data if applicable
 
-        #
+
+        tax_year_row = soup.find('td', text=re.compile("Current Market Value")).get_text()
+        tax_year = tax_year_row.split(' ')[0]
+        market_value = utils.franklin_row_name_returner(soup, re.compile("Current Market Value"), "Total",
+                                                        cell_column_number=3)
+        taxable_value = utils.franklin_row_name_returner(soup, re.compile("Taxable Value"), "Total",
+                                                         cell_column_number=3)
+        table = soup.find('table', id=f'''{tax_year} Taxes''')
+        rows = table.find_all('tr', recursive=False)
+        specific_row = rows[1]
+        for iteration, cell in enumerate(specific_row):
+            # find the cell underneath "Total Paid," and grab its value
+            if iteration == 1:
+                taxes_paid = cell.get_text()
+        self.tax_record, created = models.TaxData.objects.get_or_create(property_record=self.parsed_prop, tax_year=tax_year)
+
+        self.tax_record.market_value = utils.decimal_converter(market_value)
+        self.tax_record.taxable_value = utils.decimal_converter(taxable_value)
+        self.tax_record.taxes_paid = utils.decimal_converter(taxes_paid)
+        self.tax_record.save()
+
         # ITEMS THAT REMAIN!!!!
         # date_of_LLC_name_change
         # date_of_mortgage - NOT EASILY PARSED
@@ -275,8 +249,6 @@ class FranklinSpider(scrapy.Spider):
     #     print("ARRAY OF ACRES AL FINAL: ", total_acreage)
 
     def parse_transfer_data(self, response):
-        # open_in_browser(response)
-        # print("HI")
         parcel_number = response.meta['parcel_number']
         property_object = models.Property.objects.get(parcel_number=parcel_number)
 
@@ -312,7 +284,8 @@ class FranklinSpider(scrapy.Spider):
         :return:
         """
 
-        yield Request("http://property.franklincountyauditor.com/_web/Datalets/Datalet.aspx?sIndex=0&idx=1", dont_filter=True,
+        yield Request("http://property.franklincountyauditor.com/_web/Datalets/Datalet.aspx?sIndex=0&idx=1",
+                      dont_filter=True,
                       headers=self.HEADERS,
                       meta={"parc_id": response.meta['parc_id']
                             },

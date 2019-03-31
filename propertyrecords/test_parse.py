@@ -111,8 +111,28 @@ for row in rows:
 returned_tax_line = utils.franklin_county_tax_address_getter(soup)
 tax_adress = utils.parse_address(returned_tax_line, True)
 
-soupchunk = utils.franklin_row_name_returner(soup, re.compile("Current Market Value"), "Total", cell_column_number=3)
-print("Here we are looking for the current market value: ", soupchunk)
+
+# TAX DATAS
+# tax_year = soup.find("2018 Current Market Value")
+
+try:
+    tax_year_row = soup.find('td', text=re.compile("Current Market Value")).get_text()
+    tax_year = tax_year_row.split(' ')[0]
+    market_value = utils.franklin_row_name_returner(soup, re.compile("Current Market Value"), "Total",
+                                                    cell_column_number=3)
+    taxable_value = utils.franklin_row_name_returner(soup, re.compile("Taxable Value"), "Total", cell_column_number=3)
+    table = soup.find('table', id=f'''{tax_year} Taxes''')
+    rows = table.find_all('tr', recursive=False)
+    specific_row = rows[1]
+    for iteration,  cell in enumerate(specific_row):
+        # find the cell underneath "Total Paid," and grab its value
+        if iteration == 1:
+            print("tax paid", cell.get_text())
+
+except IndexError:
+    pass
+
+print(tax_year, "Tx year val: ", "MKT: ", market_value, "taxable: ", taxable_value)
 
 
 # print(utils.franklin_row_name_returner(soup, "Owner", "Tax Bill Mailing"))

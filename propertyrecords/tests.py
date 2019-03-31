@@ -365,3 +365,12 @@ def test_franklin_county_credit_parser():
 
     assert utils.franklin_county_credit_parser(occ) is True
     assert utils.franklin_county_credit_parser(hcc) is False
+
+
+def test_decimal_converter():
+
+    string_to_test = "72,198.02"
+    result = utils.decimal_converter(string_to_test)
+
+    assert result == Decimal('72198.02')
+    assert type(result) == Decimal
