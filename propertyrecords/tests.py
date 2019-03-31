@@ -311,11 +311,14 @@ def test_row_value_getter_franklin():
     calculated_acres = utils.franklin_row_name_returner(soup, "Owner", "Calculated Acres")
     prop_status = utils.franklin_row_name_returner(soup, re.compile("Tax Status"), "Property Class")
     raw_value = utils.franklin_row_name_returner(soup, re.compile("Tax Status"), "Property Class", cell_value=True)
+    total_value = utils.franklin_row_name_returner(soup, re.compile("Current Market Value"), "Total", cell_column_number=3)
+
 
     assert 'SEP-27-2011' == most_recent_transfer_date
     assert '2.02' == calculated_acres
     assert 'R - Residential' == prop_status
     assert type(raw_value) == bs4.element.Tag
+    assert total_value == "752,400"
 
 def test_find_td_cell_value_beneath_current_bssoup():
     script_dir = os.path.dirname(__file__)
