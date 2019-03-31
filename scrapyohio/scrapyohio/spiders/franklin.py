@@ -26,7 +26,7 @@ class FranklinSpider(scrapy.Spider):
 
     def retrieve_all_franklin_county_urls(self):
         # self.please_parse_these_items = models.Property.objects.filter(county=self.franklin_county_object).all()
-        self.please_parse_these_items = models.Property.objects.filter(id__in=[3786025]).all()
+        self.please_parse_these_items = models.Property.objects.filter(id__in=[3354597]).all()
         for item in self.please_parse_these_items:
             property_parameters = {'url': "http://property.franklincountyauditor.com/_web/search/CommonSearch.aspx?mode=PARID"}
             property_parameters['ScriptManager1_TSM'] = " ;;AjaxControlToolkit, Version=4.1.50731.0, Culture=neutral, PublicKeyToken=28f01b0e84b6d53e:en-US:f8fb2a65-e23a-483b-b20e-6db6ef539a22:ea597d4b:b25378d2;Telerik.Web.UI, Version=2013.1.403.45, Culture=neutral, PublicKeyToken=121fae78165ba3d4:en-US:66639117-cae4-4d6c-a3d7-81eea986263a:16e4e7cd:f7645509:24ee1bba:874f8ea2:19620875:f46195d3:490a9d4e"
@@ -163,6 +163,10 @@ class FranklinSpider(scrapy.Spider):
         text_occ_indicated = utils.franklin_row_name_returner(soup, re.compile("Tax Status"), "Owner Occ. Credit")
         self.parsed_prop.owner_occupancy_indicated = utils.franklin_county_credit_parser(text_occ_indicated)
 
+        # Rental Registration
+        rental_registration_yn = utils.franklin_row_name_returner(soup, re.compile("Tax Status"), "Rental Registration")
+        self.parsed_prop.rental_registration = utils.convert_y_n_to_boolean(rental_registration_yn)
+
         # # Homestead Credit
         # hcc = utils.franklin_row_name_returner(soup, re.compile("Tax Status"), "Homestead Credit")
 
@@ -192,7 +196,6 @@ class FranklinSpider(scrapy.Spider):
             pass
 
         # FIND TAX ADDRESS
-
         # table = soup.find('table', id="Owner")
         # rows = table.find_all('tr', recursive=False)
         #

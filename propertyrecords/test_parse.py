@@ -91,9 +91,13 @@ try:
 except IndexError:
     pass
 
+# Rental Registration
+rental_registration_yn = utils.franklin_row_name_returner(soup, re.compile("Tax Status"), "Rental Registration")
+rental_registration = utils.convert_y_n_to_boolean(rental_registration_yn)
+print("rental reg: ", rental_registration)
+
 
 # FIND TAX ADDRESS
-
 table = soup.find('table', id="Owner")
 rows = table.find_all('tr', recursive=False)
 

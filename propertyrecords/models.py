@@ -27,6 +27,7 @@ class Property(models.Model):
     school_district_name = models.CharField(max_length=52, blank=True)
     school_district = models.IntegerField(null=True, blank=True)
     tax_delinquent = models.BooleanField(default=False)
+    rental_registration = models.BooleanField(default=False)
     tax_lien = models.BooleanField(default=False)
     tax_delinquent_year = models.IntegerField(blank=True, null=True)
     cauv_property = models.BooleanField(default=False)
