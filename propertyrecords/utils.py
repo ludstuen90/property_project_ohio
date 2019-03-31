@@ -518,15 +518,18 @@ def name_parser_and_joiner(name_one, name_two):
         return name_one
 
 
-def franklin_row_name_returner(soup, table_id, row_term, *args):
+def franklin_row_name_returner(soup, table_id, row_term, **kwargs):
     table = soup.find('table', id=table_id)
     rows = table.find_all('tr', recursive=False)
-
+    cell_column_number = 1
+    if kwargs.get("cell_column_number", False):
+        cell_column_number = kwargs.get("cell_column_number")
     # FIND ACRES
     for row in rows:
-        if (row.text.find(row_term) > -1):
-            cell = row.findAll('td')[1]
-            if len(args) == 1:
+        if row.text.find(row_term) == 0:
+            cell = row.findAll('td')[cell_column_number]
+            # print("kwargs is: ", kwargs, " table id: ", table_id, " cell: ", cell)
+            if kwargs.get('cell_value', False):
                 # If args passed, return the value of the cell, rather than the text
                 # so that we can continue to perform other data manipulation
                 return cell
@@ -548,7 +551,7 @@ def find_td_cell_value_beneath_current_bssoup(cell, *args):
 
 def franklin_county_tax_address_getter(soup):
     primary_owner_text = franklin_row_name_returner(soup, "Owner", "Tax Bill Mailing")
-    primary_owner_text_cell = franklin_row_name_returner(soup, "Owner", "Tax Bill Mailing", True)
+    primary_owner_text_cell = franklin_row_name_returner(soup, "Owner", "Tax Bill Mailing", cell_value=True)
 
     secondary_owner_text = find_td_cell_value_beneath_current_bssoup(primary_owner_text_cell)
     secondary_owner_cell = find_td_cell_value_beneath_current_bssoup(primary_owner_text_cell, True)

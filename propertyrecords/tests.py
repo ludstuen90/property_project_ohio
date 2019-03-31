@@ -310,7 +310,7 @@ def test_row_value_getter_franklin():
     most_recent_transfer_date = utils.franklin_row_name_returner(soup, "Most Recent Transfer", "Transfer Date")
     calculated_acres = utils.franklin_row_name_returner(soup, "Owner", "Calculated Acres")
     prop_status = utils.franklin_row_name_returner(soup, re.compile("Tax Status"), "Property Class")
-    raw_value = utils.franklin_row_name_returner(soup, re.compile("Tax Status"), "Property Class", True)
+    raw_value = utils.franklin_row_name_returner(soup, re.compile("Tax Status"), "Property Class", cell_value=True)
 
     assert 'SEP-27-2011' == most_recent_transfer_date
     assert '2.02' == calculated_acres
@@ -325,7 +325,7 @@ def test_find_td_cell_value_beneath_current_bssoup():
     dummy_response = pickle.load(pickle_in)
     soup = BeautifulSoup(dummy_response, 'html.parser')
 
-    owner_cell = utils.franklin_row_name_returner(soup, "Owner", "Owner", True)
+    owner_cell = utils.franklin_row_name_returner(soup, "Owner", "Owner", cell_value=True)
     secondary_owner_attempt = utils.find_td_cell_value_beneath_current_bssoup(owner_cell)
 
     assert "VERST ROSEANNE I" == secondary_owner_attempt

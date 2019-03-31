@@ -7,8 +7,8 @@ import utils
 from bs4 import BeautifulSoup
 
 script_dir = os.path.dirname(__file__)
-# relative_path_to_file = "dict.pickle"
-relative_path_to_file = "commercial1.pickle"
+relative_path_to_file = "dict.pickle"
+# relative_path_to_file = "commercial1.pickle"
 # relative_path_to_file = "no2own.pickle"
 # relative_path_to_file = "vaugn2tax.pickle"
 abs_file_path = os.path.join(script_dir, relative_path_to_file)
@@ -42,7 +42,7 @@ use = land_use.next_sibling.get_text()
 # owner_name = next_cell.get_text()
 
 owner_name = utils.franklin_row_name_returner(soup, "Owner", "Owner")
-owner_cell = utils.franklin_row_name_returner(soup, "Owner", "Owner", True)
+owner_cell = utils.franklin_row_name_returner(soup, "Owner", "Owner", cell_value=True)
 secondary_owner_attempt = utils.find_td_cell_value_beneath_current_bssoup(owner_cell)
 names = utils.name_parser_and_joiner(owner_name, secondary_owner_attempt)
 
@@ -103,18 +103,20 @@ for row in rows:
         cell = row.findAll('td')[1]
 
 
-print("TAX: ", utils.franklin_county_tax_address_getter(soup))
+# print("TAX: ", utils.franklin_county_tax_address_getter(soup))
 returned_tax_line = utils.franklin_county_tax_address_getter(soup)
-
 tax_adress = utils.parse_address(returned_tax_line, True)
 
+soupchunk = utils.franklin_row_name_returner(soup, re.compile("Current Market Value"), "Total", cell_column_number=3)
+print("Here we are looking for the current market value: ", soupchunk)
 
-print(utils.franklin_row_name_returner(soup, "Owner", "Tax Bill Mailing"))
-owner_cell = utils.franklin_row_name_returner(soup, "Owner", "Tax Bill Mailing")
-next_row = cell.parent.next_sibling
-cells = next_row.find_all('td')
-secondary_owner_attempt = cells[1].get_text()
-print("Secondary: ", secondary_owner_attempt)
+
+# print(utils.franklin_row_name_returner(soup, "Owner", "Tax Bill Mailing"))
+# owner_cell = utils.franklin_row_name_returner(soup, "Owner", "Tax Bill Mailing")
+# next_row = cell.parent.next_sibling
+# cells = next_row.find_all('td')
+# secondary_owner_attempt = cells[1].get_text()
+# print("Secondary: ", secondary_owner_attempt)
 
 
 # --------------------- PROPERTY TRANSFER PAGE ------------------------
@@ -131,10 +133,10 @@ print("Secondary: ", secondary_owner_attempt)
 
 # --------------------- COMMERCIAL PAGE ------------------------
 
-try:
-    grade = utils.franklin_row_name_returner(soup, "Commercial Building", "Grade")
-    parsed_grade = grade.split(' ')[0]
-    print("GRADE: ", parsed_grade)
-except IndexError:
-    pass
+# try:
+#     grade = utils.franklin_row_name_returner(soup, "Commercial Building", "Grade")
+#     parsed_grade = grade.split(' ')[0]
+#     print("GRADE: ", parsed_grade)
+# except IndexError:
+#     pass
 

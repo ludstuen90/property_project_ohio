@@ -26,7 +26,7 @@ class FranklinSpider(scrapy.Spider):
 
     def retrieve_all_franklin_county_urls(self):
         # self.please_parse_these_items = models.Property.objects.filter(county=self.franklin_county_object).all()
-        self.please_parse_these_items = models.Property.objects.filter(id__in=[3786024]).all()
+        self.please_parse_these_items = models.Property.objects.filter(id__in=[3786025]).all()
         for item in self.please_parse_these_items:
             property_parameters = {'url': "http://property.franklincountyauditor.com/_web/search/CommonSearch.aspx?mode=PARID"}
             property_parameters['ScriptManager1_TSM'] = " ;;AjaxControlToolkit, Version=4.1.50731.0, Culture=neutral, PublicKeyToken=28f01b0e84b6d53e:en-US:f8fb2a65-e23a-483b-b20e-6db6ef539a22:ea597d4b:b25378d2;Telerik.Web.UI, Version=2013.1.403.45, Culture=neutral, PublicKeyToken=121fae78165ba3d4:en-US:66639117-cae4-4d6c-a3d7-81eea986263a:16e4e7cd:f7645509:24ee1bba:874f8ea2:19620875:f46195d3:490a9d4e"
@@ -116,7 +116,7 @@ class FranklinSpider(scrapy.Spider):
 
         # LEGAL DESCRIPTION
         legal_desc_text_1 = utils.franklin_row_name_returner(soup, "Owner", "Legal Description")
-        legal_desc_cell_1 = utils.franklin_row_name_returner(soup, "Owner", "Legal Description", True)
+        legal_desc_cell_1 = utils.franklin_row_name_returner(soup, "Owner", "Legal Description", cell_value=True)
 
         legal_desc_text_2 = utils.find_td_cell_value_beneath_current_bssoup(legal_desc_cell_1)
         legal_desc_cell_2 = utils.find_td_cell_value_beneath_current_bssoup(legal_desc_cell_1, True)
@@ -139,7 +139,7 @@ class FranklinSpider(scrapy.Spider):
         # owner_name = next_cell.get_text()
 
         owner_name = utils.franklin_row_name_returner(soup, "Owner", "Owner")
-        owner_cell = utils.franklin_row_name_returner(soup, "Owner", "Owner", True)
+        owner_cell = utils.franklin_row_name_returner(soup, "Owner", "Owner", cell_value=True)
         secondary_owner_attempt = utils.find_td_cell_value_beneath_current_bssoup(owner_cell)
         names = utils.name_parser_and_joiner(owner_name, secondary_owner_attempt)
         self.parsed_prop.owner = names
