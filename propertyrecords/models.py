@@ -14,7 +14,7 @@ class Property(models.Model):
     account_number = models.CharField(max_length=10, blank=True)
     legal_acres = models.DecimalField(max_digits=6, decimal_places=3, null=True, blank=True)
     legal_description = models.CharField(max_length=250, blank=True)
-    owner = models.CharField(max_length=120, blank=True)
+    owner = models.CharField(max_length=84, blank=True)
     date_sold = models.DateField(null=True, blank=True, help_text="Date a property transfer was recorded. Might not have actually meant property sold for money, in the case of inheriting a property. ")
     date_of_LLC_name_change = models.DateField(null=True, blank=True)
     date_of_mortgage = models.DateField(null=True, blank=True, verbose_name="Estimated Market Value",
@@ -27,8 +27,6 @@ class Property(models.Model):
     school_district_name = models.CharField(max_length=52, blank=True)
     school_district = models.IntegerField(null=True, blank=True)
     tax_delinquent = models.BooleanField(default=False)
-    rental_registration = models.BooleanField(default=False)
-    tax_lien = models.BooleanField(default=False)
     tax_delinquent_year = models.IntegerField(blank=True, null=True)
     cauv_property = models.BooleanField(default=False)
     owner_occupancy_indicated = models.BooleanField(default=False,
@@ -71,7 +69,7 @@ class PropertyTransfer(models.Model):
     guarantee = models.CharField(max_length=74)
     sale_amount = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
     conveyance_fee = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
-    conveyance_number = models.CharField(max_length=35, blank=True)
+    conveyance_number = models.IntegerField(null=True, blank=True)
     transfer_date = models.DateField(null=True, blank=True)
     property = models.ForeignKey(Property, on_delete=models.CASCADE)
 

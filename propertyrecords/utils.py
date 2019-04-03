@@ -126,33 +126,15 @@ def parse_city_state_and_zip_from_line(address_line, state):
     :return: {city: 'RANCHO CUCA MONGA', state: 'CA', zip: 98872}
     """
     last_line_length = len(address_line)
-    new_zip_format = False
-    space_before_zipcode = 6
+    zip_code = address_line[(last_line_length - 5):last_line_length]
 
-
-    if address_line[(last_line_length - 5)] == '-' and address_line[(last_line_length - 11)] == ' ':
-        new_zip_format = True
-
-    elif address_line[(last_line_length - 6)] != ' ':
+    if address_line[(last_line_length - 6)] != ' ':
         raise LookupError("Unable to parse address. Zip code not in expected format.")
-
-    # Logic to set out how to parse city/state and zipcode patterns from end of line, according to flags raised
-    if new_zip_format and state:
-        space_before_zipcode = 11
-        zip_code = address_line[(last_line_length - 10):last_line_length]
-    elif state:
-        # state yes, trad
-        zip_code = address_line[(last_line_length - 5):last_line_length]
-    elif new_zip_format:
-        zip_code = address_line[(last_line_length - 10):last_line_length]
-    else:
-        # state no, trad
-        zip_code = address_line[-5:]
 
     if state:
         # We count back from the zip code, and look for a pattern that looks like a state abbreviation.
         # We hope to find a pattern like: 'Space space space two letters space space'
-        for x in range(last_line_length - space_before_zipcode, 0, -1):
+        for x in range(last_line_length - 6, 0, -1):
             if (
                     address_line[x].isalpha() == False and
                     address_line[x + 1].isalpha() == True and
@@ -169,14 +151,14 @@ def parse_city_state_and_zip_from_line(address_line, state):
     else:
         # We count back from the zip code, and look for a pattern that looks like a state abbreviation.
         # We hope to find a pattern like: 'Space space space two letters space space'
-
-        for x in range(last_line_length - space_before_zipcode, 0, -1):
+        zipcode = address_line[-5:]
+        for x in range(last_line_length - 6, 0, -1):
             if address_line[x].isalpha():
                 city_name = address_line[:(x+1)]
                 break
         return {
             'city': str(city_name),
-            'zipcode': zip_code
+            'zipcode': zipcode
         }
 
 
@@ -208,19 +190,6 @@ def convert_taxable_value_string_to_integer(taxable_value_string):
             raise ValueError("Input contains an unexpected decimal point.")
 
     return Decimal(remove_currency_artifacts)
-
-
-def decimal_converter(input_number):
-    """
-    This method strips a string of its commas, and converts the resulting integer into a decimal object. This is used
-    in Franklin County
-    :param input_number: A string, in the form of something like "72,192.02"
-    :return: the same number, but in the format of a Decimal type
-    """
-
-    input_number_no_comma = input_number.replace(',', '')
-    return Decimal(input_number_no_comma)
-
 
 
 def parse_ohio_state_use_code(use_string):
@@ -281,7 +250,7 @@ def convert_y_n_to_boolean(response_string):
     :param response_string:
     :return:
     """
-    if response_string.upper() == 'Y' or response_string.upper() == 'YES':
+    if response_string.upper() == 'Y':
         return True
     else:
         return False
@@ -500,98 +469,3 @@ def datetime_to_date_string_parser(datetime_string, format):
     date_string = datetime_string.split(' ')[0]
     dt_object = datetime.datetime.strptime(date_string, format)
     return dt_object
-
-
-def calculate_total_number_of_acres(rows):
-    array_of_acres = []
-    for counter, row in enumerate(rows):
-        if counter != 0:
-            try:
-                contents = row.findAll('td')[4].contents
-                array_of_acres.append(contents[0])
-            except IndexError:
-                pass
-    converted_to_num = [float(x) for x in array_of_acres]
-    total_acreage = 0
-    for num in converted_to_num:
-        total_acreage += num
-    return total_acreage
-
-
-def name_parser_and_joiner(name_one, name_two):
-    """
-    Given two names, this method returns the two names with an & sign in the middle, if a secondary owner exists
-    :param name_one: Primary Owner Name
-    :param name_two: Secondary Owner Name (or empty string if not possible)
-    :return: Primary owner name, or - if two names, names joined by & symbol
-    """
-    if len(name_two) > 0:
-        return f'''{name_one} & {name_two}'''
-    else:
-        return name_one
-
-
-def franklin_row_name_returner(soup, table_id, row_term, **kwargs):
-    table = soup.find('table', id=table_id)
-    rows = table.find_all('tr', recursive=False)
-    cell_column_number = 1
-    if kwargs.get("cell_column_number", False):
-        cell_column_number = kwargs.get("cell_column_number")
-    # FIND ACRES
-    for row in rows:
-        if row.text.find(row_term) == 0:
-            cell = row.findAll('td')[cell_column_number]
-            # print("kwargs is: ", kwargs, " table id: ", table_id, " cell: ", cell)
-            if kwargs.get('cell_value', False):
-                # If args passed, return the value of the cell, rather than the text
-                # so that we can continue to perform other data manipulation
-                return cell
-            else:
-                found_value = cell.get_text()
-                return found_value
-
-
-def find_td_cell_value_beneath_current_bssoup(cell, *args):
-    next_row = cell.parent.next_sibling
-    cells = next_row.find_all('td')
-    if len(args) >= 1:
-        return cells[1]
-    else:
-        underneath_td_cell = cells[1].get_text()
-        return underneath_td_cell
-
-
-
-def franklin_county_tax_address_getter(soup):
-    primary_owner_text = franklin_row_name_returner(soup, "Owner", "Tax Bill Mailing")
-    primary_owner_text_cell = franklin_row_name_returner(soup, "Owner", "Tax Bill Mailing", cell_value=True)
-
-    secondary_owner_text = find_td_cell_value_beneath_current_bssoup(primary_owner_text_cell)
-    secondary_owner_cell = find_td_cell_value_beneath_current_bssoup(primary_owner_text_cell, True)
-
-
-    first_address_line_text = find_td_cell_value_beneath_current_bssoup(secondary_owner_cell)
-    first_address_line_cell = find_td_cell_value_beneath_current_bssoup(secondary_owner_cell, True)
-
-    secondary_address_line_text = find_td_cell_value_beneath_current_bssoup(first_address_line_cell)
-
-    names_with_white_space = [primary_owner_text, secondary_owner_text, first_address_line_text, secondary_address_line_text]
-    names_without_white_space = parse_white_space_from_each_line_of_address(names_with_white_space)
-    return names_without_white_space
-
-
-def franklin_county_credit_parser(parsed_value):
-    """
-    This method is coded to handle string values in the form of "2018: Yes 2019: Yes", which is how
-    the system was returning values at the time of parsing. Unknown if values will change to "Yes" at some point
-    in the middle of the year, though ideally this method is built to handle such a change.
-    :param parsed_value:
-    :return: The true-false value of whether the property received a credit at the closest-to-present timeframe.
-    """
-    final_value = parsed_value[-3:]
-    if final_value.upper() == 'YES':
-        return convert_y_n_to_boolean(final_value)
-    elif final_value[-2:].upper() == 'NO':
-        return convert_y_n_to_boolean(final_value[-2:])
-
-

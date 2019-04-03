@@ -1,10 +1,7 @@
 # from django.test import TestCase
 import os
-import re
 from datetime import datetime
 from decimal import Decimal
-
-import bs4
 import pytest
 
 import pickle
@@ -41,15 +38,11 @@ def test_parse_city_state_and_zip_from_line():
     two = 'RANCHO CUCA MONGA CA          98662'
     three = 'ST. PAUL MN            55445'
     four = 'SAINT IGNACIUS             77228'
-    five = 'NEW ALBANY OH 43054-9515'
-    six = 'NEW ALBANY 43054-9515'
 
     result_one = utils.parse_city_state_and_zip_from_line(one, True)
     result_two = utils.parse_city_state_and_zip_from_line(two, True)
     result_three = utils.parse_city_state_and_zip_from_line(three, True)
     result_four = utils.parse_city_state_and_zip_from_line(four, False)
-    result_five = utils.parse_city_state_and_zip_from_line(five, True)
-    result_six = utils.parse_city_state_and_zip_from_line(six, False)
 
     assert result_one == {
         'city': 'LEBANON',
@@ -72,17 +65,6 @@ def test_parse_city_state_and_zip_from_line():
     assert result_four == {
         'city': 'SAINT IGNACIUS',
         'zipcode': '77228'
-    }
-
-    assert result_five == {
-        'city': 'NEW ALBANY',
-        'state': 'OH',
-        'zipcode': '43054-9515'
-    }
-
-    assert result_six == {
-        'city': 'NEW ALBANY',
-        'zipcode': '43054-9515'
     }
 
 
@@ -115,14 +97,10 @@ def test_parse_ohio_state_use_code():
 def test_convert_y_n_to_boolean():
 
     result_y = utils.convert_y_n_to_boolean('Y')
-    result_yes = utils.convert_y_n_to_boolean('yes')
     result_n = utils.convert_y_n_to_boolean('N')
-    result_no = utils.convert_y_n_to_boolean('no')
 
     assert result_y is True
-    assert result_yes is True
     assert result_n is False
-    assert result_no is False
 
 
 def test_cauv_parser():
@@ -271,106 +249,3 @@ def test_datetime_to_date_string_parser():
 
     assert result_two == datetime(1999, 10, 7, 0, 0)
 
-def test_acreage_adder():
-    script_dir = os.path.dirname(__file__)
-    relative_path_to_file = "test_data/franklin_acre_data.pickle"
-    abs_file_path = os.path.join(script_dir, relative_path_to_file)
-    pickle_in = open(abs_file_path, "rb")
-    dummy_response = pickle.load(pickle_in)
-    soup = BeautifulSoup(dummy_response, 'html.parser')
-    table = soup.find('table', id="Land Characteristics")
-    rows = table.find_all('tr', recursive=False)
-    result_one = utils.calculate_total_number_of_acres(rows)
-    assert result_one == 2.02
-
-
-def test_name_parser_and_joiner():
-
-    test_one_name_one = "CITY OF NEW ALBANY"
-    blank_string = ""
-
-    test_two_name_one = 'VERST ROBERT E JR'
-    test_two_name_two = 'VERST ROSEANNE I'
-
-    result_one = utils.name_parser_and_joiner(test_one_name_one, blank_string)
-
-    result_two = utils.name_parser_and_joiner(test_two_name_one, test_two_name_two)
-    assert result_one == "CITY OF NEW ALBANY"
-    assert result_two == "VERST ROBERT E JR & VERST ROSEANNE I"
-
-
-def test_row_value_getter_franklin():
-    script_dir = os.path.dirname(__file__)
-    relative_path_to_file = "test_data/franklin_verst.pickle"
-    abs_file_path = os.path.join(script_dir, relative_path_to_file)
-    pickle_in = open(abs_file_path, "rb")
-    dummy_response = pickle.load(pickle_in)
-    soup = BeautifulSoup(dummy_response, 'html.parser')
-
-    most_recent_transfer_date = utils.franklin_row_name_returner(soup, "Most Recent Transfer", "Transfer Date")
-    calculated_acres = utils.franklin_row_name_returner(soup, "Owner", "Calculated Acres")
-    prop_status = utils.franklin_row_name_returner(soup, re.compile("Tax Status"), "Property Class")
-    raw_value = utils.franklin_row_name_returner(soup, re.compile("Tax Status"), "Property Class", cell_value=True)
-    total_value = utils.franklin_row_name_returner(soup, re.compile("Current Market Value"), "Total", cell_column_number=3)
-
-
-    assert 'SEP-27-2011' == most_recent_transfer_date
-    assert '2.02' == calculated_acres
-    assert 'R - Residential' == prop_status
-    assert type(raw_value) == bs4.element.Tag
-    assert total_value == "752,400"
-
-def test_find_td_cell_value_beneath_current_bssoup():
-    script_dir = os.path.dirname(__file__)
-    relative_path_to_file = "test_data/franklin_verst.pickle"
-    abs_file_path = os.path.join(script_dir, relative_path_to_file)
-    pickle_in = open(abs_file_path, "rb")
-    dummy_response = pickle.load(pickle_in)
-    soup = BeautifulSoup(dummy_response, 'html.parser')
-
-    owner_cell = utils.franklin_row_name_returner(soup, "Owner", "Owner", cell_value=True)
-    secondary_owner_attempt = utils.find_td_cell_value_beneath_current_bssoup(owner_cell)
-
-    assert "VERST ROSEANNE I" == secondary_owner_attempt
-
-
-def test_tax_address_parser_franklin_county():
-    script_dir = os.path.dirname(__file__)
-    relative_path_to_file = "test_data/franklin_vaughters.pickle"
-    abs_file_path = os.path.join(script_dir, relative_path_to_file)
-    pickle_in = open(abs_file_path, "rb")
-    dummy_response = pickle.load(pickle_in)
-    soup = BeautifulSoup(dummy_response, 'html.parser')
-
-    two_tax_addr_return = utils.franklin_county_tax_address_getter(soup)
-
-    assert ['JOHN D VAUGHTERS', 'CAROL M VAUGHTERS', '7296 MORSE RD', 'NEW ALBANY OH 43054-9515'] == two_tax_addr_return
-
-
-    relative_path_to_file = "test_data/franklin_verst.pickle"
-    abs_file_path = os.path.join(script_dir, relative_path_to_file)
-    pickle_in = open(abs_file_path, "rb")
-    dummy_response = pickle.load(pickle_in)
-    soup = BeautifulSoup(dummy_response, 'html.parser')
-
-    one_tax_addr_return = utils.franklin_county_tax_address_getter(soup)
-
-    assert ['ROBERT E VERST JR', '6747 CENTRAL COLLEGE RD', 'NEW ALBANY OH 43054-9307'] == one_tax_addr_return
-
-
-def test_franklin_county_credit_parser():
-
-    occ = "2018: Yes 2019: Yes"
-    hcc = "2018: No 2019: No"
-
-    assert utils.franklin_county_credit_parser(occ) is True
-    assert utils.franklin_county_credit_parser(hcc) is False
-
-
-def test_decimal_converter():
-
-    string_to_test = "72,198.02"
-    result = utils.decimal_converter(string_to_test)
-
-    assert result == Decimal('72198.02')
-    assert type(result) == Decimal
