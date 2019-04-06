@@ -6,6 +6,8 @@ import re
 import scrapy
 from bs4 import BeautifulSoup
 from scrapy import Request, FormRequest
+from scrapy.utils.response import open_in_browser
+from twisted.internet import reactor
 
 from ohio import settings
 from propertyrecords import utils, models
@@ -24,41 +26,40 @@ class FranklinSpider(scrapy.Spider):
     allowed_domains = ['property.franklincountyauditor.com']
 
     def retrieve_all_franklin_county_urls(self):
-        self.please_parse_these_items = models.Property.objects.filter(county=self.franklin_county_object).all()[:100]
+        # self.please_parse_these_items = models.Property.objects.filter(county=self.franklin_county_object).all()[:100]
         # self.please_parse_these_items = models.Property.objects.filter(county=self.franklin_county_object,
         #                                                                last_scraped_one__isnull=False)
-        # self.please_parse_these_items = models.Property.objects.filter(id__in=[3786025]).all()
+        self.please_parse_these_items = models.Property.objects.filter(id__in=[
+                                                                                # 3786024,
+                                                                                # 3786020,
+                                                                                # 3786021,
+                                                                                # 3786019,
+                                                                                # 3786018,
+                                                                                # 3786017,
+                                                                                # 3786016,
+                                                                                # 3786015,
+                                                                                # 3786014,
+                                                                                # 3786013,
+                                                                                # 3786012,
+                                                                                # 3786011,
+                                                                                # 3786010,
+                                                                                # 3786009,
+                                                                                # 3786008,
+                                                                                # 3786007,
+                                                                                # 3786006,
+                                                                                # 3786005
+                                                                                3786002,
+                                                                                3786001,
+                                                                                3786000,
+                                                                                3785999,
+                                                                                3785998
+                                                                               ]).all()
         for item in self.please_parse_these_items:
-            property_parameters = {'url': "http://property.franklincountyauditor.com/_web/search/CommonSearch.aspx?mode=PARID"}
-            property_parameters['ScriptManager1_TSM'] = " ;;AjaxControlToolkit, Version=4.1.50731.0, Culture=neutral, PublicKeyToken=28f01b0e84b6d53e:en-US:f8fb2a65-e23a-483b-b20e-6db6ef539a22:ea597d4b:b25378d2;Telerik.Web.UI, Version=2013.1.403.45, Culture=neutral, PublicKeyToken=121fae78165ba3d4:en-US:66639117-cae4-4d6c-a3d7-81eea986263a:16e4e7cd:f7645509:24ee1bba:874f8ea2:19620875:f46195d3:490a9d4e"
-            property_parameters['__EVENTTARGET']= ""
-            property_parameters['__EVENTARGUMENT']= ""
-            property_parameters['__VIEWSTATE']= "/wEPDwUKMTMyMjI2NDUyNA8UKwACZGcWAmYPZBYEAgcPZBYEAgEPDxYCHgdWaXNpYmxlaGQWAmYPZBYCZg9kFgQCAQ9kFgICAQ9kFgICAQ8QZGQWAGQCAw9kFgJmD2QWAmYPPCsADgIAFCsAAmQXAQUIUGFnZVNpemUCCgEWAhYLDwICFCsAAjwrAAUBBAUDSlVSPCsABQEEBQROQU1FZGUUKwAACyl5VGVsZXJpay5XZWIuVUkuR3JpZENoaWxkTG9hZE1vZGUsIFRlbGVyaWsuV2ViLlVJLCBWZXJzaW9uPTIwMTMuMS40MDMuNDUsIEN1bHR1cmU9bmV1dHJhbCwgUHVibGljS2V5VG9rZW49MTIxZmFlNzgxNjViYTNkNAE8KwAHAAspdFRlbGVyaWsuV2ViLlVJLkdyaWRFZGl0TW9kZSwgVGVsZXJpay5XZWIuVUksIFZlcnNpb249MjAxMy4xLjQwMy40NSwgQ3VsdHVyZT1uZXV0cmFsLCBQdWJsaWNLZXlUb2tlbj0xMjFmYWU3ODE2NWJhM2Q0AWRkZGRmZAIDDw8WAh8AaGRkAggPFCsAAw8WAh4XRW5hYmxlQWpheFNraW5SZW5kZXJpbmdoZGRkZBgBBR5fX0NvbnRyb2xzUmVxdWlyZVBvc3RCYWNrS2V5X18WAQUVUmFkV2luZG93X05hdmlnYXRlVXJs1WEjqavCVdlgjf6WnxLeWu1/AvMnxjPOZlGWSV007EA="
-            property_parameters['__VIEWSTATEGENERATOR'] = "A01010D4"
-            property_parameters['__EVENTVALIDATION']= "/wEdAAsQB2fqAqcqElbYSdl4hUOlimrMKsvipVqgAm6eeFqW4HJKYAFO6I0fqTxQsc4lhuw/VBgahKiSYWm0TH20tWytmzXzYHIa1dmXlvkbftBdgwslnNmVQBKtcUYebedL4DIIE4uP8nfiSzXQ9yZdaHxE13z69BI9GFFQ52nNWBw1jGE7wbUKBFGxkg1vsxgrWVeJ/gVz0FNuJTGXAWFWdI3aBWrIxCGTmNcpF4dAhdp4eeHY92y26Rn23YRfNQ8+AnitmDnVKm0plZ1CLN7mVoC8"
-            property_parameters['PageNum'] = ""
-            property_parameters['SortBy']= "ALT_ID"
-            property_parameters['SortDir'] = "asc"
-            property_parameters['PageSize'] = "25"
-            property_parameters['hdAction'] = "Search"
-            property_parameters['hdIndex'] = ""
-            property_parameters['sIndex'] = "-1"
-            property_parameters['hdListType'] = "PA"
-            property_parameters['hdJur'] = ""
-            property_parameters['hdSelectAllChecked'] = "false"
-            property_parameters['inpParid']= item.parcel_number
-            property_parameters['selSortBy'] = "ALT_ID"
-            property_parameters['selSortDir'] =  "asc"
-            property_parameters['selPageSize']= "25"
-            property_parameters['searchOptions$hdBeta']= ""
-            property_parameters['btSearch'] = ""
-            property_parameters['RadWindow_NavigateUrl_ClientState'] = ""
-            property_parameters['mode'] = "PARID"
-            property_parameters['mask'] = ""
-            property_parameters['param1'] = ""
-            property_parameters['searchimmediate'] = ""
+            # property_parameters = {'url': "http://property.franklincountyauditor.com/_web/search/CommonSearch.aspx?mode=PARID"}
+            # property_parameters['inpParid']=
 
-            yield property_parameters
+
+            yield item.parcel_number
 
     def __init__(self):
         self.HEADERS.update(settings.CONTACT_INFO_HEADINGS)
@@ -70,27 +71,23 @@ class FranklinSpider(scrapy.Spider):
         # We want to assign headers for each request triggered. Override the request object
         # sent over to include Lucia's contact information
         # for parameter_dictionary in self.retrieve_all_franklin_county_urls():
-        # print("!!!", parameter_dictionary)
 
-       # for item in retrieve_all_franklin_county_urls.items():
-        for item in self.retrieve_all_franklin_county_urls():
-            yield scrapy.FormRequest(
-                        url="http://property.franklincountyauditor.com/_web/search/CommonSearch.aspx?mode=PARID",
-                        method='POST',
-                        callback=self.parse,
-                        formdata=item,
-                        meta={'dont_redirect': False, "parc_id": item['inpParid']},
-                        dont_filter=True,
-                        headers=self.HEADERS,
-                    )
-
-    # def commercial_check(self, response):
-
-        # pickle_out = open("commercial.pickle", "wb")
-        # pickle.dump(response.body, pickle_out)
-        # pickle_out.close()
+        # Use the enumerator function to allow an individual cookie jar for each request
+        # This is necessary to keep track of multiple view states
+        for enumerator, item in enumerate(self.retrieve_all_franklin_county_urls()):
+            yield scrapy.Request(
+                url='http://property.franklincountyauditor.com/_web/search/commonsearch.aspx?mode=parid',
+                method='GET',
+                callback=self.parse,
+                meta={'dont_redirect': False, "parc_id": item,
+                      'spider_num': enumerator, 'cookiejar': enumerator},
+                dont_filter=True,
+                headers=self.HEADERS
+            )
 
     def retrieve_info_to_parse(self, response):
+        open_in_browser(response)
+        print("PARSING: ", response.meta['parc_id'])
         parsed_parcel_number = response.meta['parc_id']
         self.parsed_prop, created = models.Property.objects.get_or_create(parcel_number=parsed_parcel_number)
 
@@ -127,7 +124,6 @@ class FranklinSpider(scrapy.Spider):
         self.parsed_prop.land_use = utils.franklin_row_name_returner(soup, re.compile("Tax Status"), "Land Use")
 
         # OWNER
-
         owner_name = utils.franklin_row_name_returner(soup, "Owner", "Owner")
         owner_cell = utils.franklin_row_name_returner(soup, "Owner", "Owner", cell_value=True)
         secondary_owner_attempt = utils.find_td_cell_value_beneath_current_bssoup(owner_cell)
@@ -148,7 +144,6 @@ class FranklinSpider(scrapy.Spider):
 
         # PROPERTY CLASS
         self.parsed_prop.property_class = utils.franklin_row_name_returner(soup, re.compile("Tax Status"), "Property Class")
-        #
 
         # OWNER OCC CREDIT
         text_occ_indicated = utils.franklin_row_name_returner(soup, re.compile("Tax Status"), "Owner Occ. Credit")
@@ -157,9 +152,6 @@ class FranklinSpider(scrapy.Spider):
         # Rental Registration
         rental_registration_yn = utils.franklin_row_name_returner(soup, re.compile("Tax Status"), "Rental Registration")
         self.parsed_prop.rental_registration = utils.convert_y_n_to_boolean(rental_registration_yn)
-
-        # # Homestead Credit
-        # hcc = utils.franklin_row_name_returner(soup, re.compile("Tax Status"), "Homestead Credit")
 
         # Land Use:
         land_use_string = utils.franklin_row_name_returner(soup, re.compile("Tax Status"), "Land Use")
@@ -186,20 +178,15 @@ class FranklinSpider(scrapy.Spider):
         except IndexError:
             pass
 
-        # # FIND ACRES
+        # FIND ACRES
         self.parsed_prop.legal_acres = utils.franklin_row_name_returner(soup, "Owner", "Calculated Acres")
-        # for row in rows:
-        #     if (row.text.find("Tax Bill Mailing") > -1):
-        #         cell = row.findAll('td')[1]
-
 
         # FIND TAX ADDRESS
         returned_tax_line = utils.franklin_county_tax_address_getter(soup)
         length_tax_line = len(returned_tax_line)
-        parsed_tax_address = utils.parse_address(returned_tax_line, True)
-
 
         # FIND IF TAX ADDRESS EXISTS, IF NOT CREATE
+        print("LEN: ", len(returned_tax_line))
         if len(returned_tax_line) >= 1:
             try:
                 tax_record = models.TaxAddress.objects.get(name=returned_tax_line[0], primary_address_line=returned_tax_line[length_tax_line-2])
@@ -210,34 +197,41 @@ class FranklinSpider(scrapy.Spider):
                 tax_record.save()
                 self.parsed_prop.tax_address = tax_record
 
-        self.parsed_prop.tax_address = tax_record
+        try:
+            self.parsed_prop.tax_address = tax_record
+        except UnboundLocalError:
+            # No tax address available, keep scraping
+            pass
 
         self.parsed_prop.last_scraped_one = datetime.datetime.now()
         self.parsed_prop.save()
 
         # ---------- PARSE TAX DATA INFO
         # Find property data if applicable
+        try:
+            tax_year_row = soup.find('td', text=re.compile("Current Market Value")).get_text()
+            tax_year = tax_year_row.split(' ')[0]
+            market_value = utils.franklin_row_name_returner(soup, re.compile("Current Market Value"), "Total",
+                                                            cell_column_number=3)
+            taxable_value = utils.franklin_row_name_returner(soup, re.compile("Taxable Value"), "Total",
+                                                             cell_column_number=3)
+            table = soup.find('table', id=f'''{tax_year} Taxes''')
+            rows = table.find_all('tr', recursive=False)
+            specific_row = rows[1]
+            for iteration, cell in enumerate(specific_row):
+                # find the cell underneath "Total Paid," and grab its value
+                if iteration == 1:
+                    taxes_paid = cell.get_text()
+            self.tax_record, created = models.TaxData.objects.get_or_create(property_record=self.parsed_prop,
+                                                                            tax_year=tax_year)
 
-
-        tax_year_row = soup.find('td', text=re.compile("Current Market Value")).get_text()
-        tax_year = tax_year_row.split(' ')[0]
-        market_value = utils.franklin_row_name_returner(soup, re.compile("Current Market Value"), "Total",
-                                                        cell_column_number=3)
-        taxable_value = utils.franklin_row_name_returner(soup, re.compile("Taxable Value"), "Total",
-                                                         cell_column_number=3)
-        table = soup.find('table', id=f'''{tax_year} Taxes''')
-        rows = table.find_all('tr', recursive=False)
-        specific_row = rows[1]
-        for iteration, cell in enumerate(specific_row):
-            # find the cell underneath "Total Paid," and grab its value
-            if iteration == 1:
-                taxes_paid = cell.get_text()
-        self.tax_record, created = models.TaxData.objects.get_or_create(property_record=self.parsed_prop, tax_year=tax_year)
-
-        self.tax_record.market_value = utils.decimal_converter(market_value)
-        self.tax_record.taxable_value = utils.decimal_converter(taxable_value)
-        self.tax_record.taxes_paid = utils.decimal_converter(taxes_paid)
-        self.tax_record.save()
+            self.tax_record.market_value = utils.decimal_converter(market_value)
+            self.tax_record.taxable_value = utils.decimal_converter(taxable_value)
+            self.tax_record.taxes_paid = utils.decimal_converter(taxes_paid)
+            self.tax_record.save()
+        except AttributeError:
+            # No tax info available, keep scraping as possible.
+            pass
 
         # ITEMS THAT REMAIN!!!!
         # date_of_LLC_name_change
@@ -245,15 +239,9 @@ class FranklinSpider(scrapy.Spider):
         # mortgage_amount - NOT EASILY PARSED
         # property_rating - AVAILABLE FOR SOME COMMERCIAL PROPS
 
-    # def land_parse(self, response):
-    #     soup = BeautifulSoup(response.body, 'html.parser')
-    #     table = soup.find('table', id="Land Characteristics")
-    #     rows = table.find_all('tr', recursive=False)
-    #     print("ROWS: ", type(rows))
-    #     total_acreage = utils.calculate_total_number_of_acres(rows)
-    #     print("ARRAY OF ACRES AL FINAL: ", total_acreage)
-
     def parse_transfer_data(self, response):
+        print("ENTERED PROP TRSFRER")
+        open_in_browser(response)
         parcel_number = response.meta['parc_id']
         property_object = models.Property.objects.get(parcel_number=parcel_number)
 
@@ -281,14 +269,8 @@ class FranklinSpider(scrapy.Spider):
                         conveyance_number=row_array[2],
                         transfer_date=utils.datetime_to_date_string_parser(row_array[0], '%b-%d-%Y')
                     )
-                    # print("Transfer Date: ", row_array[0], "Grantee: ", row_array[1], "conveyance_number", row_array[2],
-                    #       "sale amount: ", row_array[5])
                 except IndexError:
                     pass
-
-        # pickle_out = open("transferdata.pickle", "wb")
-        # pickle.dump(response.body, pickle_out)
-        # pickle_out.close()
 
 
     def parse(self, response):
@@ -297,36 +279,24 @@ class FranklinSpider(scrapy.Spider):
         :param response:
         :return:
         """
-
-        yield Request("http://property.franklincountyauditor.com/_web/Datalets/Datalet.aspx?sIndex=0&idx=1",
-                      dont_filter=True,
-                      headers=self.HEADERS,
-                      meta={"parc_id": response.meta['parc_id']
+        yield FormRequest.from_response(
+            response,
+            formdata={
+                'inpParid': response.meta['parc_id']},
+                meta={"parc_id": response.meta['parc_id'],
+                            'spider_num': response.meta['spider_num'], 'cookiejar': response.meta['spider_num']
                             },
-                      callback=self.retrieve_info_to_parse,
-                      )
+                    dont_filter=True,
+            callback=self.retrieve_info_to_parse,
+        )
 
-        yield Request("http://property.franklincountyauditor.com/_web/datalets/datalet.aspx?mode=sales_summary&sIndex=1&idx=1&LMparent=20",
-                      dont_filter=True,
-                      headers=self.HEADERS,
-                      meta={"parc_id": response.meta['parc_id']
+        yield FormRequest.from_response(
+            response,
+            url="http://property.franklincountyauditor.com/_web/datalets/datalet.aspx?mode=sales_summary&sIndex=1&idx=1&LMparent=20",
+                      meta={"parc_id": response.meta['parc_id'],
+                            'spider_num': response.meta['spider_num'], 'cookiejar': response.meta['spider_num']
                             },
                       callback=self.parse_transfer_data,
+                    dont_filter=True
                       )
 
-        # yield Request(
-        #     "http://property.franklincountyauditor.com/_web/datalets/datalet.aspx?mode=commercial&sIndex=5&idx=18&LMparent=20",
-        #     dont_filter=True,
-        #     headers=self.HEADERS,
-        #     meta={"parc_id": response.meta['parc_id']
-        #           },
-        #     callback=self.commercial_check,
-        #     )
-
-        # yield Request("http://property.franklincountyauditor.com/_web/datalets/datalet.aspx?mode=land_summary&sIndex=0&idx=1&LMparent=20", dont_filter=True,
-        #               headers=self.HEADERS,
-        #               meta={"parc_id": response.meta['parc_id']
-        #                     },
-        #               callback=self.land_parse,
-        #
-        #               )
