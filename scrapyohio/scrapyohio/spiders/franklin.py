@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+import datetime
 import decimal
 import re
 
@@ -23,8 +24,10 @@ class FranklinSpider(scrapy.Spider):
     allowed_domains = ['property.franklincountyauditor.com']
 
     def retrieve_all_franklin_county_urls(self):
-        # self.please_parse_these_items = models.Property.objects.filter(county=self.franklin_county_object).all()
-        self.please_parse_these_items = models.Property.objects.filter(id__in=[3786025]).all()
+        self.please_parse_these_items = models.Property.objects.filter(county=self.franklin_county_object).all()[:100]
+        # self.please_parse_these_items = models.Property.objects.filter(county=self.franklin_county_object,
+        #                                                                last_scraped_one__isnull=False)
+        # self.please_parse_these_items = models.Property.objects.filter(id__in=[3786025]).all()
         for item in self.please_parse_these_items:
             property_parameters = {'url': "http://property.franklincountyauditor.com/_web/search/CommonSearch.aspx?mode=PARID"}
             property_parameters['ScriptManager1_TSM'] = " ;;AjaxControlToolkit, Version=4.1.50731.0, Culture=neutral, PublicKeyToken=28f01b0e84b6d53e:en-US:f8fb2a65-e23a-483b-b20e-6db6ef539a22:ea597d4b:b25378d2;Telerik.Web.UI, Version=2013.1.403.45, Culture=neutral, PublicKeyToken=121fae78165ba3d4:en-US:66639117-cae4-4d6c-a3d7-81eea986263a:16e4e7cd:f7645509:24ee1bba:874f8ea2:19620875:f46195d3:490a9d4e"
@@ -208,6 +211,8 @@ class FranklinSpider(scrapy.Spider):
                 self.parsed_prop.tax_address = tax_record
 
         self.parsed_prop.tax_address = tax_record
+
+        self.parsed_prop.last_scraped_one = datetime.datetime.now()
         self.parsed_prop.save()
 
         # ---------- PARSE TAX DATA INFO

@@ -41,7 +41,6 @@ class Property(models.Model):
         on_delete=models.CASCADE,
         null=True,
         blank=True
-
     )
     tax_address = models.ForeignKey(
         'TaxAddress',
@@ -63,7 +62,6 @@ class Property(models.Model):
     def display_address(self):
         address = PropertyAddress.objects.get(property=self.id)
         return address
-
 
 
 class PropertyTransfer(models.Model):
