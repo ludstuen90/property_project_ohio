@@ -3,6 +3,7 @@ import datetime
 import decimal
 import re
 
+import pytz
 import scrapy
 from bs4 import BeautifulSoup
 from scrapy import FormRequest
@@ -169,7 +170,7 @@ class FranklinSpider(scrapy.Spider):
             # No tax address available, keep scraping
             pass
 
-        self.parsed_prop.last_scraped_one = datetime.datetime.now()
+        self.parsed_prop.last_scraped_one = datetime.datetime.now(pytz.utc)
         self.parsed_prop.save()
 
         # ---------- PARSE TAX DATA INFO
