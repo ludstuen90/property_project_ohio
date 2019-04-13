@@ -13,7 +13,6 @@ class Command(BaseCommand):
         a = input('Is the Franklin County parcel data to import saved inside of the '
                   'propertyrecords/parcel_data folder, named franklin.csv? Enter Y if so, or N if not. ')
         if a.upper() == 'Y':
-            print("A is: ", a)
             franklin_county, created = models.County.objects.get_or_create(name='Franklin')
             script_dir = os.path.dirname(__file__)  # <-- absolute dir this current script is in
             rel_path = "../../parcel_data/franklin.csv" # <-- Look two directores up for relevant CSV files
