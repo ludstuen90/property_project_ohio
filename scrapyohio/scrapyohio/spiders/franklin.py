@@ -5,9 +5,7 @@ import re
 
 import scrapy
 from bs4 import BeautifulSoup
-from scrapy import Request, FormRequest
-from scrapy.utils.response import open_in_browser
-from twisted.internet import reactor
+from scrapy import FormRequest
 
 from ohio import settings
 from propertyrecords import utils, models
@@ -26,39 +24,9 @@ class FranklinSpider(scrapy.Spider):
     allowed_domains = ['property.franklincountyauditor.com']
 
     def retrieve_all_franklin_county_urls(self):
-        # self.please_parse_these_items = models.Property.objects.filter(county=self.franklin_county_object).all()[:100]
-        # self.please_parse_these_items = models.Property.objects.filter(county=self.franklin_county_object,
-        #                                                                last_scraped_one__isnull=False)
-        self.please_parse_these_items = models.Property.objects.filter(id__in=[
-                                                                                # 3786024,
-                                                                                # 3786020,
-                                                                                # 3786021,
-                                                                                # 3786019,
-                                                                                # 3786018,
-                                                                                # 3786017,
-                                                                                # 3786016,
-                                                                                # 3786015,
-                                                                                # 3786014,
-                                                                                # 3786013,
-                                                                                # 3786012,
-                                                                                # 3786011,
-                                                                                # 3786010,
-                                                                                # 3786009,
-                                                                                # 3786008,
-                                                                                # 3786007,
-                                                                                # 3786006,
-                                                                                # 3786005
-                                                                                3786002,
-                                                                                3786001,
-                                                                                3786000,
-                                                                                3785999,
-                                                                                3785998
-                                                                               ]).all()
+        self.please_parse_these_items = models.Property.objects.filter(county=self.franklin_county_object).all()
+
         for item in self.please_parse_these_items:
-            # property_parameters = {'url': "http://property.franklincountyauditor.com/_web/search/CommonSearch.aspx?mode=PARID"}
-            # property_parameters['inpParid']=
-
-
             yield item.parcel_number
 
     def __init__(self):
@@ -86,7 +54,6 @@ class FranklinSpider(scrapy.Spider):
             )
 
     def retrieve_info_to_parse(self, response):
-        open_in_browser(response)
         print("PARSING: ", response.meta['parc_id'])
         parsed_parcel_number = response.meta['parc_id']
         self.parsed_prop, created = models.Property.objects.get_or_create(parcel_number=parsed_parcel_number)
@@ -186,7 +153,6 @@ class FranklinSpider(scrapy.Spider):
         length_tax_line = len(returned_tax_line)
 
         # FIND IF TAX ADDRESS EXISTS, IF NOT CREATE
-        print("LEN: ", len(returned_tax_line))
         if len(returned_tax_line) >= 1:
             try:
                 tax_record = models.TaxAddress.objects.get(name=returned_tax_line[0], primary_address_line=returned_tax_line[length_tax_line-2])
@@ -233,15 +199,7 @@ class FranklinSpider(scrapy.Spider):
             # No tax info available, keep scraping as possible.
             pass
 
-        # ITEMS THAT REMAIN!!!!
-        # date_of_LLC_name_change
-        # date_of_mortgage - NOT EASILY PARSED
-        # mortgage_amount - NOT EASILY PARSED
-        # property_rating - AVAILABLE FOR SOME COMMERCIAL PROPS
-
     def parse_transfer_data(self, response):
-        print("ENTERED PROP TRSFRER")
-        open_in_browser(response)
         parcel_number = response.meta['parc_id']
         property_object = models.Property.objects.get(parcel_number=parcel_number)
 
@@ -271,7 +229,6 @@ class FranklinSpider(scrapy.Spider):
                     )
                 except IndexError:
                     pass
-
 
     def parse(self, response):
         """

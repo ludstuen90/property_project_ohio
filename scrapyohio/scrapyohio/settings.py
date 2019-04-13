@@ -49,7 +49,7 @@ DOWNLOAD_DELAY = 2
 
 # Disable cookies (enabled by default)
 #COOKIES_ENABLED = False
-COOKIES_DEBUG = True
+COOKIES_DEBUG = False
 
 # Disable Telnet Console (enabled by default)
 #TELNETCONSOLE_ENABLED = False
@@ -106,4 +106,4 @@ AUTOTHROTTLE_MAX_DELAY = 60
 #HTTPCACHE_STORAGE = 'scrapy.extensions.httpcache.FilesystemCacheStorage'
 
 
-DUPEFILTER_DEBUG=True
+DUPEFILTER_DEBUG=False
