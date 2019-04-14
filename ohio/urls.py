@@ -15,10 +15,12 @@ Including another URLconf
 """
 from django.conf.urls import url
 from django.contrib import admin
+from django.urls import path
 
 from propertyrecords import views
 
 urlpatterns = [
     url(r'^admin/', admin.site.urls),
-    url('', views.CountyListView.as_view())
+    path('<str:county>', views.CountyListView.as_view(), name='county_search'),
+    path('', views.CountyListView.as_view(), name='county_homepage')
 ]

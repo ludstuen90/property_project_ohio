@@ -8,11 +8,23 @@
 </head>
 <body>
 
-<h1>Lucia's Dashboard of Warren Scraping Progress</h1>
+<h1>Lucia's Dashboard of {{ county_name | title }} Scraping Progress</h1>
+<p>Select a county to see information on its progress: </p>
+<table style="width:25%">
+    <tr>
+       {% for county in all_counties %}
+        <td><a href="{{ county }}">{{ county | title }}</a></td>
+        {% endfor %}
+    </tr>
+</table>
 
-Number of Warren County properties scanned for mortgage information: {{ scanned_for_mort }} ({{ pcrt_scanned }})<br>
-Number of Warren County properties with mortgage information: {{ mort_info }} ( {{ prct_w_mort }})<br>
-Total number of Warren County properties: {{ num_county_prop }}
+{% if parsed_county %}
+<br>
+Number of {{ county_name | title }} County properties scanned for mortgage information: {{ scanned_for_mort }} ({{ pcrt_scanned }})<br>
+Number of {{ county_name | title }} County properties with mortgage information: {{ mort_info }} ( {{ prct_w_mort }})<br>
+Total number of {{ county_name | title }} County properties: {{ num_county_prop }}
+
+{% endif %}
 <br>
 <br><br>
 
