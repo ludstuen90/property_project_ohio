@@ -14,7 +14,6 @@ class CountyListView(list.ListView):
     model = models.Property
 
     # warren_county = models.County.objects.get(name='Warren')
-    paginate_by = 100  # if pagination is desired
 
     def get_context_data(self, **kwargs):
         county = self.kwargs.get('county')
@@ -24,7 +23,7 @@ class CountyListView(list.ListView):
             self.county_object = models.County.objects.get(name__iexact=county)
 
             context['object_list'] = models.Property.objects.filter(county=self.county_object)
-            context['num_county_prop'] = len(models.Property.objects.filter(county=self.county_object))
+            context['num_county_prop'] = len(context['object_list'])
             context['mort_info'] = len(models.Property.objects.filter(county=self.county_object,
                                                                       ).exclude(mortgage_amount__isnull=True
                                                                                 ))
@@ -37,7 +36,6 @@ class CountyListView(list.ListView):
 
             context['county_name'] = self.kwargs.get('county')
             context['parsed_county'] = True
-
         except:
             pass
         return context
