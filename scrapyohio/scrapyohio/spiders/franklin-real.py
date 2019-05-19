@@ -21,12 +21,12 @@ class FranklinSpider(scrapy.Spider):
         "X-MicrosoftAjax": "Delta=true"
     }
 
-    name = 'franklin'
+    name = 'franklin-real'
     allowed_domains = ['recorder.franklincountyohio.gov/']
     start_urls = ['https://countyfusion5.kofiletech.us/countyweb/login.do?countyname=Franklin']
 
     def retrieve_all_franklin_county_urls(self):
-        self.please_parse_these_items = models.Property.objects.filter(county=self.franklin_county_object).all()
+        self.please_parse_these_items = models.Property.objects.filter(county=self.franklin_county_object).all()[:1]
 
         for item in self.please_parse_these_items:
             yield item.parcel_number
@@ -35,9 +35,9 @@ class FranklinSpider(scrapy.Spider):
         self.HEADERS.update(settings.CONTACT_INFO_HEADINGS)
         self.logged_out = False
 
-
     def log_in_function(self):
-       result_of_form_request= FormRequest(url="https://countyfusion5.kofiletech.us/countyweb/login.do?countyname=Franklin",
+        print("Log in request fired")
+        result_of_form_request= FormRequest(url="https://countyfusion5.kofiletech.us/countyweb/login.do?countyname=Franklin",
                             formdata={
                                 "cmd": "login",
                                 "countyname": "Franklin",
@@ -51,24 +51,15 @@ class FranklinSpider(scrapy.Spider):
                                 "startPage": "",
                                 "CountyFusionForceNewSession": "true",
                                 "username": "",
-                                "password":""
+                                "password": ""
                             },
                             )
-
-
-
+        return result_of_form_request
 
     def start_requests(self):
-
         # LOG IN
-        return scrapy.FormRequest.from_response(
-            response,
-            formdata={'username': 'john', 'password': 'secret'},
-            callback=self.after_login
-        )
 
         # LATER ON ASSERT CHECK
-
 
         # Ensure we have a county in the database
         self.franklin_county_object, created = models.County.objects.get_or_create(name="Franklin")
@@ -79,14 +70,34 @@ class FranklinSpider(scrapy.Spider):
         # Use the enumerator function to allow an individual cookie jar for each request
         # This is necessary to keep track of multiple view states
         for enumerator, item in enumerate(self.retrieve_all_franklin_county_urls()):
-            return scrapy.FormRequest.from_response(
-                url='https://countyfusion5.kofiletech.us/countyweb/login.do?countyname=Franklin',
-                response,
-                formdata={'username': 'john', 'password': 'secret'},
-                callback=self.after_login
-            )
+            # session = self.log_in_function()
+            # print("Session: ", session)
+            # print("Session: ", type(session))
 
-
+            yield FormRequest(url="https://countyfusion5.kofiletech.us/countyweb/login.do?countyname=Franklin",
+                        formdata={
+                            "cmd": "login",
+                            "countyname": "Franklin",
+                            "scriptsupport": "yes",
+                            "apptype": "",
+                            "datasource": "",
+                            "userdatasource": "",
+                            "fraudsleuth": "false",
+                            "guest": "true",
+                            "public": "false",
+                            "startPage": "",
+                            "CountyFusionForceNewSession": "true",
+                            "username": "",
+                            "password": ""
+                        },
+                            callback=self.parse
+                        )
+            # return scrapy.FormRequest.from_response(
+            #     url='https://countyfusion5.kofiletech.us/countyweb/login.do?countyname=Franklin',
+            #     response,
+            #     formdata={'username': 'john', 'password': 'secret'},
+            #     callback=self.after_login
+            # )
 
             #     scrapy.Request(
             #     url='https://countyfusion5.kofiletech.us/countyweb/login.do?countyname=Franklin',
