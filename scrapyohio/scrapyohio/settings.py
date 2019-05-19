@@ -25,6 +25,8 @@ BOT_NAME = 'scrapyohio'
 SPIDER_MODULES = ['scrapyohio.spiders']
 NEWSPIDER_MODULE = 'scrapyohio.spiders'
 
+USE_PROXIES = False
+
 
 # ITEM_PIPELINES = {
     # 'scrapyohio.pipelines.PricePipeline': 300,
@@ -70,10 +72,14 @@ COOKIES_DEBUG = False
 # See https://doc.scrapy.org/en/latest/topics/downloader-middleware.html
 DOWNLOADER_MIDDLEWARES = {
     'scrapy.downloadermiddlewares.httpproxy.HttpProxyMiddleware': 100,
-    'rotating_proxies.middlewares.RotatingProxyMiddleware': 610,
-    'rotating_proxies.middlewares.BanDetectionMiddleware': 620,
 
 }
+
+if USE_PROXIES:
+    DOWNLOADER_MIDDLEWARES['rotating_proxies.middlewares.RotatingProxyMiddleware'] = 610
+    DOWNLOADER_MIDDLEWARES['rotating_proxies.middlewares.BanDetectionMiddleware'] = 620
+
+
 cwd = os.path.dirname(os.path.abspath(__file__))
 
 ROTATING_PROXY_LIST_PATH = os.path.join(cwd, 'proxies.txt')
