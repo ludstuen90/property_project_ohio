@@ -78,7 +78,6 @@ cwd = os.path.dirname(os.path.abspath(__file__))
 
 ROTATING_PROXY_LIST_PATH = os.path.join(cwd, 'proxies.txt')
 
-
 # Enable or disable extensions
 # See https://doc.scrapy.org/en/latest/topics/extensions.html
 #EXTENSIONS = {
@@ -111,9 +110,5 @@ AUTOTHROTTLE_MAX_DELAY = 60
 #HTTPCACHE_DIR = 'httpcache'
 #HTTPCACHE_IGNORE_HTTP_CODES = []
 #HTTPCACHE_STORAGE = 'scrapy.extensions.httpcache.FilesystemCacheStorage'
-
-
-
-
 
 DUPEFILTER_DEBUG=False
