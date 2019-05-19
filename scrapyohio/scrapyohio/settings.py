@@ -13,9 +13,9 @@ import django
 import sys
 import os
 
+
 django_project_directory = os.path.join(os.path.dirname(__file__), '../..')
 sys.path.append(django_project_directory)
-
 
 os.environ['DJANGO_SETTINGS_MODULE'] = 'ohio.settings'
 django.setup()
@@ -68,9 +68,16 @@ COOKIES_DEBUG = False
 
 # Enable or disable downloader middlewares
 # See https://doc.scrapy.org/en/latest/topics/downloader-middleware.html
-#DOWNLOADER_MIDDLEWARES = {
-#    'scrapyohio.middlewares.ScrapyohioDownloaderMiddleware': 543,
-#}
+DOWNLOADER_MIDDLEWARES = {
+    'scrapy.downloadermiddlewares.httpproxy.HttpProxyMiddleware': 100,
+    'rotating_proxies.middlewares.RotatingProxyMiddleware': 610,
+    'rotating_proxies.middlewares.BanDetectionMiddleware': 620,
+
+}
+cwd = os.path.dirname(os.path.abspath(__file__))
+
+ROTATING_PROXY_LIST_PATH = os.path.join(cwd, 'proxies.txt')
+
 
 # Enable or disable extensions
 # See https://doc.scrapy.org/en/latest/topics/extensions.html
@@ -104,6 +111,9 @@ AUTOTHROTTLE_MAX_DELAY = 60
 #HTTPCACHE_DIR = 'httpcache'
 #HTTPCACHE_IGNORE_HTTP_CODES = []
 #HTTPCACHE_STORAGE = 'scrapy.extensions.httpcache.FilesystemCacheStorage'
+
+
+
 
 
 DUPEFILTER_DEBUG=False
