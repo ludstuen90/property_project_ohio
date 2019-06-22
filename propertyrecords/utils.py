@@ -7,7 +7,6 @@ from decimal import Decimal
 from bs4 import BeautifulSoup
 
 
-
 def loop_through_csv_file_and_return_array_of_account_ids(absolute_csv_file_path):
     """
     Given a CSV file, this item will return the first item in the list. This is useful for storing the Account IDs
