@@ -7,7 +7,6 @@ from decimal import Decimal
 from bs4 import BeautifulSoup
 
 
-
 def loop_through_csv_file_and_return_array_of_account_ids(absolute_csv_file_path):
     """
     Given a CSV file, this item will return the first item in the list. This is useful for storing the Account IDs
@@ -578,6 +577,16 @@ def franklin_county_tax_address_getter(soup):
     names_with_white_space = [primary_owner_text, secondary_owner_text, first_address_line_text, secondary_address_line_text]
     names_without_white_space = parse_white_space_from_each_line_of_address(names_with_white_space)
     return names_without_white_space
+
+
+def franklin_real_value_finder(input_text, type_to_find):
+    array_of_matches = re.findall(f'''documentRowInfo\[[0-9]*\].{type_to_find} *	*= .*''', input_text)
+    parsed_array = []
+    for x in array_of_matches:
+        match = re.search('".*"', x)
+        parsed_array.append(match.group(0).replace('"', ""))
+
+    return parsed_array
 
 
 def franklin_county_credit_parser(parsed_value):

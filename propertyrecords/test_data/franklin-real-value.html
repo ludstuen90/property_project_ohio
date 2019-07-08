@@ -1,0 +1,594 @@
+
+
+
+
+
+
+
+
+
+
+
+
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html lang="en">
+  <head>
+  	<base href="https://countyfusion5.kofiletech.us/countyweb/search/Franklin/docs_SearchResultList.jsp">
+
+    <title>Search Result List</title>
+
+    <meta http-equiv="pragma" content="no-cache">
+    <meta http-equiv="cache-control" content="no-cache">
+    <meta http-equiv="expires" content="0">
+    <meta http-equiv="keywords" content="keyword1,keyword2,keyword3">
+    <meta http-equiv="description" content="This is my page">
+
+	<!------------------- START STYLE SHEETS -------------------->
+
+	<link rel="stylesheet" type="text/css" href="/countyweb/styles/styles.css">
+	<link rel="stylesheet" type="text/css" href="/FranklinOH/styles/countystyles.css">
+
+	<link rel="stylesheet" type="text/css" media="screen" href="/countyweb/styles/jquery/easyui/easyui.css">
+	<link rel="stylesheet" type="text/css" media="screen" href="/countyweb/styles/jquery/easyui/icon.css">
+
+	<STYLE type="text/css">
+		<!--
+		all.positions {}
+		#instList {
+			position:absolute; top:0px; left:0px; height:100%; width:100%; margin-right:0px;
+		}
+		.datagrid-cell{
+    		font-size:10px;
+    	}
+    	
+    	.datagrid-row-selected {
+			background: #b7d2ff; color:black
+		}
+    	
+		.datagrid-header .datagrid-cell span {
+    		font-weight:bold;
+    		font-size:11px;
+		}
+		-->
+	</STYLE>
+
+    <!-------------------- END STYLE SHEETS --------------------->
+
+
+    <!-------------------- START JAVASCRIPT --------------------->
+
+    <script src="/countyweb/scripts/utils.js?ver=7"></script>
+	<script src="/countyweb/scripts/validate.js?ver=2"></script>
+	<script src="/countyweb/scripts/dhtml.js?ver=2"></script>
+	<script src="/countyweb/scripts/popup.js?ver=5"></script>
+	<script src="/countyweb/scripts/search.js?ver=2"></script>
+	<script src="/countyweb/scripts/searchResults.js?ver=2"></script>
+	<script src="/countyweb/scripts/jquery/jquery-1.10.2.js"></script>
+	<script src="/countyweb/scripts/jquery/easyui/jquery.easyui.min.js"></script>
+	<script src="/countyweb/scripts/jquery/easyui/datagrid.views.js?ver=2"></script>
+	<script src="/countyweb/scripts/jquery/easyui/datagrid.utils.js?ver=1"></script>
+
+    <script language="JavaScript" type="text/javascript">
+
+    	function executeSortColumn(sortCode) {
+    		parent.executeSortColumn(sortCode);
+    	} 
+
+    </script>
+
+  </head>
+
+  <body class="base" onload="handleOnload(documentRowInfo[0]); if (document.getElementById('navCBAll')) document.getElementById('navCBAll').checked = true;">
+
+  	<form name="resultListForm">
+
+    <div id="instList">
+
+    	<table cellpadding="0" cellspacing="0" width="100%" height="100%" class="easyui-datagrid"
+    		data-options="
+    		fitColumns:true,
+    		striped:true,
+    		nowrap:false,
+    		autoRowHeight:false,
+    		singleSelect:true,
+    		selectOnCheck:false,
+    		checkOnSelect:false,
+    		onSelect:function(index,row){jqSetSelectedRow(documentRowInfo[index],false);},
+    		onLoadSuccess:function(data){$(this).datagrid('selectRow', 0);},
+    		onDblClickRow:function(index,row){loadRecord(documentRowInfo[index]); return false;},
+    		view:additionalDataSearchView">
+
+			<thead>
+				<tr>
+					<th data-options="field:'12',width:30,align:'center',resizable:false,fixed:true">
+					</th>
+					<th data-options="field:'1',width:30,align:'center',resizable:false,fixed:true">
+						<input type="checkbox" name="navCBAll" id="navCBAll" onclick="parent.document.getElementById('navCBAll').click();">
+					</th>
+					<th data-options="field:'2',width:120,resizable:false,fixed:true">
+						<a class="headerlink" href="#" onclick="executeSortColumn('InstrumentNumber'); return false;" title="Sort on Instrument Number">Instrument #</a>
+						<img id="asc_InstrumentNumber" border="0" src="/countyweb/images/icons/ascending.gif" style="display:none">
+						<img id="desc_InstrumentNumber" border="0" src="/countyweb/images/icons/descending.gif" style="display:none">					
+					</th>
+					<th data-options="field:'7',width:80,resizable:false">
+						<a class="headerlink" href="#" onclick="executeSortColumn('instType'); return false;" title="Sort on Document Type">Document</a>
+						<img id="asc_instType" border="0" src="/countyweb/images/icons/ascending.gif" style="display:none">
+						<img id="desc_instType" border="0" src="/countyweb/images/icons/descending.gif" style="display:none">
+					</th>
+					<th data-options="field:'3',width:20,align:'center',resizable:false,fixed:true,styler:function(value,row,index){return 'font-weight:bold;';}"></th>
+					<th data-options="field:'4',width:150,resizable:false">
+						<a class="headerlink" href="#" onclick="executeSortColumn('allname'); return false;" title="Sort on Names">Name</a>
+						<img id="asc_allname" border="0" src="/countyweb/images/icons/ascending.gif" style="display:none">
+						<img id="desc_allname" border="0" src="/countyweb/images/icons/descending.gif" style="display:none">
+					</th>
+					<th data-options="field:'5',width:20,align:'center',resizable:false,fixed:true,styler:function(value,row,index){return 'font-weight:bold;';}"></th>
+					<th data-options="field:'6',width:150,resizable:false">Other Name</th>
+					<th data-options="field:'9',width:180,resizable:false">Legal Description</th>
+					<th data-options="field:'8',width:90,align:'center',resizable:false,fixed:true">
+						<a class="headerlink" href="#" onclick="executeSortColumn('RecordDate'); return false;" title="Sort on Recorded Date">Recorded</a>
+						<img id="asc_RecordDate" border="0" src="/countyweb/images/icons/ascending.gif" style="display:none">
+						<img id="desc_RecordDate" border="0" src="/countyweb/images/icons/descending.gif" style="display:none">
+					</th>
+					<th data-options="field:'10',width:90,align:'center',resizable:false,fixed:true">
+						<a class="headerlink" href="#" onclick="executeSortColumn('Book'); return false;" title="Sort on Volume/Page">Vol/Page</a>
+						<img id="asc_Book" border="0" src="/countyweb/images/icons/ascending.gif" style="display:none">
+						<img id="desc_Book" border="0" src="/countyweb/images/icons/descending.gif" style="display:none">
+					</th>
+					<th data-options="field:'11',width:120,align:'center',resizable:false,fixed:true">Marginal</th>
+					<th data-options="field:'17',width:25,resizable:false,fixed:true"></th>
+					<th data-options="field:'additionalData',hidden:true"></th>
+				</tr>
+			</thead>
+    	
+    		<tbody>
+	
+			<script type="text/javascript" language="JavaScript">
+			documentRowInfo[0] 			= new Object();
+			documentRowInfo[0].instId		= "8801259";
+			documentRowInfo[0].instNum	= "201209120135558";
+			documentRowInfo[0].instType 	= "SUBORD OF MORTGAGE";
+			documentRowInfo[0].cursorPosition	= 0;
+			</script>
+			
+			<tr id="0">
+
+				<td>
+					1&nbsp;
+				</td>
+				
+				<!-- field 1: Nav Checkbox -->
+				<td>
+					<input type="checkbox" name="navCB" value="8801259">
+				</td>
+
+				<!--  field 2: instrument -->
+				<td>
+					<span>
+						<a id="inst0" class="linksm" href="#" onclick="loadRecord(documentRowInfo[0]); return false;">201209120135558</a>
+					</span>
+			    </td>
+
+				<!-- field 8: instrument type -->
+				<td>
+					SUBORD OF MORTGAGE				
+				</td>
+
+				<!-- field 4: name type -->
+				<td>
+					R
+				</td>
+				
+				<!--  field 5: names -->
+				<td>
+					<span title="">FIFTH THIRD BANCORP<br> MINGO ANGELA M<br> MINGO CLARENCE E/II</span>
+					
+				</td>
+				
+				<!-- field 6: other name type -->
+				<td>
+					E
+				</td>
+				
+				<!--  field 7: other name -->
+				<td>
+					<span title="">HUNTINGTON NATIONAL BANK</span>
+					
+				</td>
+				
+				<!-- field 9: legal -->
+				<td>
+					Lt/Un  84 UPPER CLARENTON SEC 2 Pcl# 222-003968 Plt  PB 109 PG 56
+					
+						
+				</td>
+
+				<!-- field 9: record date -->
+				<td>
+					09/12/2012
+				</td>
+
+				<!-- field 11: lot -->
+				<td>
+						 
+						
+
+				</td>
+				
+				<!-- field 12: block -->
+				<td>
+						<a class="linksm" href="#" title="Display Marginal Notations"  onclick="buildDocNavIds('0'); parent.parent.showAssocDocsPopupWH('8801259', '201209120135558', 'Marginal Notations', event, 650, 400); return false;" >
+							200808060119984
+						</a>
+
+				</td>
+
+				<td>
+						<img src="/countyweb/images/icons/verified.gif" align="middle">
+				
+			    </td>
+
+				<td>
+				</td>
+			</tr>
+
+			<script type="text/javascript" language="JavaScript">
+			documentRowInfo[1] 			= new Object();
+			documentRowInfo[1].instId		= "8801258";
+			documentRowInfo[1].instNum	= "201209120135557";
+			documentRowInfo[1].instType 	= "MORTGAGE";
+			documentRowInfo[1].cursorPosition	= 1;
+			</script>
+			
+			<tr id="1">
+
+				<td>
+					2&nbsp;
+				</td>
+				
+				<!-- field 1: Nav Checkbox -->
+				<td>
+					<input type="checkbox" name="navCB" value="8801258">
+				</td>
+
+				<!--  field 2: instrument -->
+				<td>
+					<span>
+						<a id="inst1" class="linksm" href="#" onclick="loadRecord(documentRowInfo[1]); return false;">201209120135557</a>
+					</span>
+			    </td>
+
+				<!-- field 8: instrument type -->
+				<td>
+					MORTGAGE				
+				</td>
+
+				<!-- field 4: name type -->
+				<td>
+					R
+				</td>
+				
+				<!--  field 5: names -->
+				<td>
+					<span title="">MINGO ANGELA M<br> MINGO CLARENCE E/II</span>
+					
+				</td>
+				
+				<!-- field 6: other name type -->
+				<td>
+					E
+				</td>
+				
+				<!--  field 7: other name -->
+				<td>
+					<span title="">FIFTH THIRD MORTGAGE CO</span>
+					
+				</td>
+				
+				<!-- field 9: legal -->
+				<td>
+					Lt/Un  84 UPPER CLARENTON SEC 2 Pcl# 222-003968 Plt  PB 109 PG 56
+					
+						
+				</td>
+
+				<!-- field 9: record date -->
+				<td>
+					09/12/2012
+				</td>
+
+				<!-- field 11: lot -->
+				<td>
+						 
+						
+
+				</td>
+				
+				<!-- field 12: block -->
+				<td>
+
+				</td>
+
+				<td>
+						<img src="/countyweb/images/icons/verified.gif" align="middle">
+				
+			    </td>
+
+				<td>
+				</td>
+			</tr>
+
+			<script type="text/javascript" language="JavaScript">
+			documentRowInfo[2] 			= new Object();
+			documentRowInfo[2].instId		= "8503260";
+			documentRowInfo[2].instNum	= "201101050002554";
+			documentRowInfo[2].instType 	= "MORTGAGE";
+			documentRowInfo[2].cursorPosition	= 2;
+			</script>
+			
+			<tr id="2">
+
+				<td>
+					3&nbsp;
+				</td>
+				
+				<!-- field 1: Nav Checkbox -->
+				<td>
+					<input type="checkbox" name="navCB" value="8503260">
+				</td>
+
+				<!--  field 2: instrument -->
+				<td>
+					<span>
+						<a id="inst2" class="linksm" href="#" onclick="loadRecord(documentRowInfo[2]); return false;">201101050002554</a>
+					</span>
+			    </td>
+
+				<!-- field 8: instrument type -->
+				<td>
+					MORTGAGE				
+				</td>
+
+				<!-- field 4: name type -->
+				<td>
+					R
+				</td>
+				
+				<!--  field 5: names -->
+				<td>
+					<span title="">MINGO ANGELA M<br> MINGO CLARENCE E/II</span>
+					
+				</td>
+				
+				<!-- field 6: other name type -->
+				<td>
+					E
+				</td>
+				
+				<!--  field 7: other name -->
+				<td>
+					<span title="">FIFTH THIRD MORTGAGE CO</span>
+					
+				</td>
+				
+				<!-- field 9: legal -->
+				<td>
+					Lt/Un  84 UPPER CLARENTON SEC 2 Pcl# 222-003968 Plt  PB 104 PG 56
+					
+						
+				</td>
+
+				<!-- field 9: record date -->
+				<td>
+					01/05/2011
+				</td>
+
+				<!-- field 11: lot -->
+				<td>
+						 
+						
+
+				</td>
+				
+				<!-- field 12: block -->
+				<td>
+						<a class="linksm" href="#" title="Display Marginal Notations"  onclick="buildDocNavIds('2'); parent.parent.showAssocDocsPopupWH('8503260', '201101050002554', 'Marginal Notations', event, 650, 400); return false;" >
+							201209120135227
+						</a>
+
+				</td>
+
+				<td>
+						<img src="/countyweb/images/icons/verified.gif" align="middle">
+				
+			    </td>
+
+				<td>
+				</td>
+			</tr>
+
+			<script type="text/javascript" language="JavaScript">
+			documentRowInfo[3] 			= new Object();
+			documentRowInfo[3].instId		= "8076081";
+			documentRowInfo[3].instNum	= "200808060119984";
+			documentRowInfo[3].instType 	= "MORTGAGE";
+			documentRowInfo[3].cursorPosition	= 3;
+			</script>
+			
+			<tr id="3">
+
+				<td>
+					4&nbsp;
+				</td>
+				
+				<!-- field 1: Nav Checkbox -->
+				<td>
+					<input type="checkbox" name="navCB" value="8076081">
+				</td>
+
+				<!--  field 2: instrument -->
+				<td>
+					<span>
+						<a id="inst3" class="linksm" href="#" onclick="loadRecord(documentRowInfo[3]); return false;">200808060119984</a>
+					</span>
+			    </td>
+
+				<!-- field 8: instrument type -->
+				<td>
+					MORTGAGE				
+				</td>
+
+				<!-- field 4: name type -->
+				<td>
+					R
+				</td>
+				
+				<!--  field 5: names -->
+				<td>
+					<span title="">MINGO ANGELA M<br> MINGO CLARENCE E</span>
+					
+				</td>
+				
+				<!-- field 6: other name type -->
+				<td>
+					E
+				</td>
+				
+				<!--  field 7: other name -->
+				<td>
+					<span title="">HUNTINGTON NATIONAL BANK</span>
+					
+				</td>
+				
+				<!-- field 9: legal -->
+				<td>
+					Lt/Un  84 UPPER CLARENTON SEC 2 Pcl# 222-003968
+					
+						
+				</td>
+
+				<!-- field 9: record date -->
+				<td>
+					08/06/2008
+				</td>
+
+				<!-- field 11: lot -->
+				<td>
+						 
+						
+
+				</td>
+				
+				<!-- field 12: block -->
+				<td>
+						<a class="linksm" href="#" title="Display Marginal Notations"  onclick="buildDocNavIds('3'); parent.parent.showAssocDocsPopupWH('8076081', '200808060119984', 'Marginal Notations', event, 650, 400); return false;" >
+							201101050002555<span class="multiStyle">&nbsp;+</span>
+						</a>
+
+				</td>
+
+				<td>
+						<img src="/countyweb/images/icons/verified.gif" align="middle">
+				
+			    </td>
+
+				<td>
+				</td>
+			</tr>
+
+			<script type="text/javascript" language="JavaScript">
+			documentRowInfo[4] 			= new Object();
+			documentRowInfo[4].instId		= "8052950";
+			documentRowInfo[4].instNum	= "200806230096457";
+			documentRowInfo[4].instType 	= "MORTGAGE";
+			documentRowInfo[4].cursorPosition	= 4;
+			</script>
+			
+			<tr id="4">
+
+				<td>
+					5&nbsp;
+				</td>
+				
+				<!-- field 1: Nav Checkbox -->
+				<td>
+					<input type="checkbox" name="navCB" value="8052950">
+				</td>
+
+				<!--  field 2: instrument -->
+				<td>
+					<span>
+						<a id="inst4" class="linksm" href="#" onclick="loadRecord(documentRowInfo[4]); return false;">200806230096457</a>
+					</span>
+			    </td>
+
+				<!-- field 8: instrument type -->
+				<td>
+					MORTGAGE				
+				</td>
+
+				<!-- field 4: name type -->
+				<td>
+					R
+				</td>
+				
+				<!--  field 5: names -->
+				<td>
+					<span title="">MINGO ANGELA M<br> MINGO CLARENCE E/II</span>
+					
+				</td>
+				
+				<!-- field 6: other name type -->
+				<td>
+					E
+				</td>
+				
+				<!--  field 7: other name -->
+				<td>
+					<span title="">FIFTH THIRD MORTGAGE CO</span>
+					
+				</td>
+				
+				<!-- field 9: legal -->
+				<td>
+					Lt/Un  84 UPPER CLARENTON SEC 2 Pcl# 222-003968 Plt  PB 109 PG 56
+					
+						
+				</td>
+
+				<!-- field 9: record date -->
+				<td>
+					06/23/2008
+				</td>
+
+				<!-- field 11: lot -->
+				<td>
+						 
+						
+
+				</td>
+				
+				<!-- field 12: block -->
+				<td>
+						<a class="linksm" href="#" title="Display Marginal Notations"  onclick="buildDocNavIds('4'); parent.parent.showAssocDocsPopupWH('8052950', '200806230096457', 'Marginal Notations', event, 650, 400); return false;" >
+							201101070004316
+						</a>
+
+				</td>
+
+				<td>
+						<img src="/countyweb/images/icons/verified.gif" align="middle">
+				
+			    </td>
+
+				<td>
+				</td>
+			</tr>
+
+		</tbody>
+		</table>
+	</div>
+
+	</form>
+
+  </body>
+</html>

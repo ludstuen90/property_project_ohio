@@ -11,7 +11,6 @@ from scrapy import FormRequest
 from ohio import settings
 from propertyrecords import utils, models
 
-
 class FranklinSpider(scrapy.Spider):
     handle_httpstatus_all = True
     HEADERS = {

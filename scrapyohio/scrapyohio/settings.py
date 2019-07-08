@@ -38,6 +38,12 @@ USE_PROXIES = False
 # Obey robots.txt rules
 ROBOTSTXT_OBEY = True
 
+
+# Set per county scraper settings
+if sys.argv[2] == 'franklin-real':
+    RETRY_HTTP_CODES = [502, 503, 504, 522, 524, 408]
+    ROBOTSTXT_OBEY = False
+
 # Configure maximum concurrent requests performed by Scrapy (default: 16)
 CONCURRENT_REQUESTS = 1
 
@@ -51,7 +57,7 @@ DOWNLOAD_DELAY = 2
 
 # Disable cookies (enabled by default)
 #COOKIES_ENABLED = False
-COOKIES_DEBUG = False
+COOKIES_DEBUG = True
 
 # Disable Telnet Console (enabled by default)
 #TELNETCONSOLE_ENABLED = False

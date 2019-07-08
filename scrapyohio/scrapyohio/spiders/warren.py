@@ -231,4 +231,3 @@ class WarrenSpider(scrapy.Spider):
         except AttributeError:
             # It's possible there might not be any last sale dates saved. Account for this!
             pass
-

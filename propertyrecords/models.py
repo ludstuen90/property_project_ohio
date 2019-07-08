@@ -36,6 +36,7 @@ class Property(models.Model):
                                                               "credit or if owner occupancy has been indicated on the "
                                                               "record.")
     last_scraped_one = models.DateTimeField(null=True, blank=True)
+    last_scraped_two = models.DateTimeField(null=True, blank=True)
     county = models.ForeignKey(
         'County',
         on_delete=models.CASCADE,
@@ -101,8 +102,8 @@ class AddressProperties(models.Model):
     later on, so as to keep our code neat and tidy.
     """
 
-    primary_address_line = models.CharField(max_length=72, blank=True)
-    secondary_address_line = models.CharField(max_length=72, blank=True, help_text="Apartment, Floor, Etc. ")
+    primary_address_line = models.CharField(max_length=85, blank=True)
+    secondary_address_line = models.CharField(max_length=85, blank=True, help_text="Apartment, Floor, Etc. ")
     city = models.CharField(max_length=24, blank=True)
     state = models.CharField(max_length=2, blank=True)
     zipcode = models.CharField(blank=True, max_length=11)
