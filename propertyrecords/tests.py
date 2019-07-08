@@ -367,6 +367,14 @@ def test_franklin_county_credit_parser():
     assert utils.franklin_county_credit_parser(hcc) is False
 
 
+def test_franklin_real_value_finder():
+    dirname, filename = os.path.split(os.path.abspath(__file__))
+    f = open(os.path.join(dirname, 'test_data/franklin-real-value.html'), "r")
+    text = f.read()
+    result = utils.franklin_real_value_finder(text, 'instType')
+    assert result == ['SUBORD OF MORTGAGE', 'MORTGAGE', 'MORTGAGE', 'MORTGAGE', 'MORTGAGE']
+
+
 def test_decimal_converter():
 
     string_to_test = "72,198.02"

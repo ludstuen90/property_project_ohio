@@ -579,6 +579,16 @@ def franklin_county_tax_address_getter(soup):
     return names_without_white_space
 
 
+def franklin_real_value_finder(input_text, type_to_find):
+    array_of_matches = re.findall(f'''documentRowInfo\[[0-9]*\].{type_to_find} *	*= .*''', input_text)
+    parsed_array = []
+    for x in array_of_matches:
+        match = re.search('".*"', x)
+        parsed_array.append(match.group(0).replace('"', ""))
+
+    return parsed_array
+
+
 def franklin_county_credit_parser(parsed_value):
     """
     This method is coded to handle string values in the form of "2018: Yes 2019: Yes", which is how

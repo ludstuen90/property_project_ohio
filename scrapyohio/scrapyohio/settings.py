@@ -36,7 +36,13 @@ USE_PROXIES = False
 #USER_AGENT = 'scrapyohio (+http://www.yourdomain.com)'
 
 # Obey robots.txt rules
-ROBOTSTXT_OBEY = False
+ROBOTSTXT_OBEY = True
+
+
+# Set per county scraper settings
+if sys.argv[2] == 'franklin-real':
+    RETRY_HTTP_CODES = [502, 503, 504, 522, 524, 408]
+    ROBOTSTXT_OBEY = False
 
 # Configure maximum concurrent requests performed by Scrapy (default: 16)
 CONCURRENT_REQUESTS = 1

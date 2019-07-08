@@ -36,6 +36,7 @@ class Property(models.Model):
                                                               "credit or if owner occupancy has been indicated on the "
                                                               "record.")
     last_scraped_one = models.DateTimeField(null=True, blank=True)
+    last_scraped_two = models.DateTimeField(null=True, blank=True)
     county = models.ForeignKey(
         'County',
         on_delete=models.CASCADE,
