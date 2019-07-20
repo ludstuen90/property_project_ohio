@@ -1,6 +1,9 @@
 # -*- coding: utf-8 -*-
+import csv
 import datetime
+import os
 import pickle
+import sys
 
 import scrapy
 from scrapy import FormRequest
@@ -46,19 +49,42 @@ class WarrenSpider(scrapy.Spider):
 
     def retrieve_all_warren_county_urls(self):
 
+        scrape_apts_and_hotels_from_list = True
         continue_where_last_scrape_left_off = False
         seven_days_ago = datetime.datetime.today() - datetime.timedelta(days=7)
 
         self.cuyahoga_county_object, created = models.County.objects.get_or_create(name="Cuyahoga")
+
+        if continue_where_last_scrape_left_off and scrape_apts_and_hotels_from_list:
+
+            sys.exit("Both variables continue_where_last_scrape_left_off and scrape_apts_and_hotels_from_list cannot be"
+                     "true at the same time.")
 
         if continue_where_last_scrape_left_off:
             self.all_cuyahoga_properties = models.Property.objects.filter(county=self.cuyahoga_county_object,
                                                                         ).exclude(
                                                                     last_scraped_one__gte=seven_days_ago
                                                                     ).order_by('?')
+
+        elif scrape_apts_and_hotels_from_list:
+            list_of_parcel_ids = []
+            script_dir = os.path.dirname(__file__)  # <-- absolute dir this current script is in
+            rel_path = "../scraper_data_drops/cuyahogareal.csv"  # <-- Look two directories up for relevant CSV files
+            abs_file_path = os.path.join(script_dir, rel_path)
+            with open(abs_file_path, encoding="utf-8") as csvfile:
+                reader = csv.DictReader(csvfile, delimiter=';')
+                for number, row in enumerate(reader):
+                    list_of_parcel_ids.append(row['PARCEL_ID'])
+
+
+
+            self.all_cuyahoga_properties = models.Property.objects.filter(county=self.cuyahoga_county_object,
+                                                                          parcel_number__in=list_of_parcel_ids
+                                                                          ).order_by('?')
         else:
             self.all_cuyahoga_properties = models.Property.objects.filter(county=self.cuyahoga_county_object,
                                                                           ).order_by('?')
+
 
         for item in self.all_cuyahoga_properties:
             yield {'url': "https://recorder.cuyahogacounty.us/searchs/parcelsearchs.aspx", 'parcel_id':

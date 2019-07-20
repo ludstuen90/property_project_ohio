@@ -1,3 +1,5 @@
+import csv
+import os
 import re
 from _decimal import InvalidOperation
 
@@ -25,8 +27,37 @@ class WarrenSpider(scrapy.Spider):
     def retrieve_all_warren_county_urls(self):
         self.cuyahoga_county_object, created = models.County.objects.get_or_create(name="Cuyahoga")
 
-        all_cuyahoga_properties = models.Property.objects.filter(county=self.cuyahoga_county_object,
-                                                                 )
+        scrape_apts_and_hotels_from_list = True
+        # Excludes any properties that have been scraped before... in this way, we can scrape faster
+        rescrape = False
+
+        if scrape_apts_and_hotels_from_list:
+            list_of_parcel_ids = []
+            script_dir = os.path.dirname(__file__)  # <-- absolute dir this current script is in
+            rel_path = "../scraper_data_drops/cuyahogareal.csv"  # <-- Look two directories up for relevant CSV files
+            abs_file_path = os.path.join(script_dir, rel_path)
+
+            with open(abs_file_path, encoding="utf-8") as csvfile:
+                reader = csv.DictReader(csvfile, delimiter=';')
+                for number, row in enumerate(reader):
+                    list_of_parcel_ids.append(row['PARCEL_ID'])
+
+            # Ensure we have a property record for all items
+            for property in list_of_parcel_ids:
+                property, created = models.Property.objects.get_or_create(parcel_number=property,
+                                                                          county=self.cuyahoga_county_object)
+            all_cuyahoga_properties = models.Property.objects.filter(county=self.cuyahoga_county_object,
+                                                                          parcel_number__in=list_of_parcel_ids
+                                                                          ).order_by('?')
+
+
+        else:
+            all_cuyahoga_properties = models.Property.objects.filter(county=self.cuyahoga_county_object,
+                                                                     )
+
+        # If we are not running a rescrape, take out properties that have already been scraped
+        if rescrape is False:
+            all_cuyahoga_properties = all_cuyahoga_properties.exclude(owner='')
 
         for property in all_cuyahoga_properties:
             prop_dict = {
@@ -221,8 +252,8 @@ class WarrenSpider(scrapy.Spider):
             try:
                 conveyance_number = int(conveyance_number_string)
             except ValueError:
-                conveyance_number = None
-
+                conveyance_number = ''
+            print("PROP NUMBER: ", property_object)
             property_transfer_obj, created = models.PropertyTransfer.objects.get_or_create(
                 property=property_object,
                 transfer_date=utils.datetime_to_date_string_parser(date, '%m/%d/%Y'),
