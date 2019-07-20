@@ -10,7 +10,7 @@ class Property(models.Model):
     Here we contain all information related to the property records we search. This record has relationships with
     other classes through foreign key relationships and one-to-one relationships.
     """
-    parcel_number = models.CharField(max_length=13, unique=True)
+    parcel_number = models.CharField(max_length=14, unique=True)
     account_number = models.CharField(max_length=10, blank=True)
     legal_acres = models.DecimalField(max_digits=6, decimal_places=3, null=True, blank=True)
     legal_description = models.CharField(max_length=250, blank=True)
