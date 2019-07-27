@@ -104,7 +104,7 @@ class AddressProperties(models.Model):
 
     primary_address_line = models.CharField(max_length=85, blank=True)
     secondary_address_line = models.CharField(max_length=85, blank=True, help_text="Apartment, Floor, Etc. ")
-    city = models.CharField(max_length=24, blank=True)
+    city = models.CharField(max_length=40, blank=True)
     state = models.CharField(max_length=2, blank=True)
     zipcode = models.CharField(blank=True, max_length=11)
 
