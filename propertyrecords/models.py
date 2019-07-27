@@ -66,8 +66,8 @@ class Property(models.Model):
 
 
 class PropertyTransfer(models.Model):
-    guarantor = models.CharField(max_length=200)
-    guarantee = models.CharField(max_length=200)
+    guarantor = models.CharField(max_length=350)
+    guarantee = models.CharField(max_length=350)
     sale_amount = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
     conveyance_fee = models.DecimalField(max_digits=12, decimal_places=2, null=True, blank=True)
     conveyance_number = models.CharField(max_length=35, blank=True)

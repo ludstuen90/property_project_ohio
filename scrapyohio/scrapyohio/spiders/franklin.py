@@ -29,12 +29,13 @@ class FranklinSpider(scrapy.Spider):
 
     def retrieve_all_franklin_county_urls(self):
         scrape_apts_and_hotels_from_list = True
-        # Excludes any properties that have been scraped before... in this way, we can scrape faster
+        # Excludes any properties that have been scraped before... in this way, we can scrape faster.
+        # If setting Rescrape to True, will need to alter this code to look at different last_scraped_by dates;
+        # as of now, the code just looks for last_scraped as blank
         rescrape = False
         # Ensure we have a county in the database
         self.franklin_county_object, created = models.County.objects.get_or_create(name="Franklin")
         self.please_parse_these_items = models.Property.objects.filter(county=self.franklin_county_object).all()
-
 
         if scrape_apts_and_hotels_from_list:
             list_of_parcel_ids = []
@@ -50,10 +51,10 @@ class FranklinSpider(scrapy.Spider):
                     # list_of_parcel_ids.append(row['Parcel Number'])
 
             # # Ensure we have a property record for all items
-            # for property in list_of_parcel_ids:
-            #     created_property, created = models.Property.objects.get_or_create(parcel_number=property,
-            #                                                               county=self.franklin_county_object)
-            #     created_property.save()
+            for property in list_of_parcel_ids:
+                created_property, created = models.Property.objects.get_or_create(parcel_number=property,
+                                                                          county=self.franklin_county_object)
+                created_property.save()
 
             self.please_parse_these_items = models.Property.objects.filter(county=self.franklin_county_object,
                                                                      parcel_number__in=list_of_parcel_ids
@@ -65,7 +66,6 @@ class FranklinSpider(scrapy.Spider):
         # If we are not running a rescrape, take out properties that have already been scraped
         if rescrape is False:
             self.please_parse_these_items_noscrape = self.please_parse_these_items.filter(last_scraped_one__isnull=True)
-        print("We have the following: ", len(self.please_parse_these_items_noscrape))
         for item in self.please_parse_these_items_noscrape:
             yield item.parcel_number
 
@@ -111,7 +111,7 @@ class FranklinSpider(scrapy.Spider):
             self.property_address.city = city
             self.property_address.zipcode = zip
             self.property_address.save()
-        except UnicodeEncodeError or IndexError:
+        except (UnicodeEncodeError, IndexError):
             pass
 
         # LEGAL DESCRIPTION
@@ -197,10 +197,12 @@ class FranklinSpider(scrapy.Spider):
                 #IF NAME AND ADDRESS IS THE SAME, PULL EXISTING RECORD
 
             except models.TaxAddress.DoesNotExist:
-                tax_record = models.TaxAddress(tax_address=returned_tax_line)
-                tax_record.save()
-                self.parsed_prop.tax_address = tax_record
-
+                try:
+                    tax_record = models.TaxAddress(tax_address=returned_tax_line)
+                    tax_record.save()
+                    self.parsed_prop.tax_address = tax_record
+                except LookupError:
+                    pass
         try:
             self.parsed_prop.tax_address = tax_record
         except UnboundLocalError:
