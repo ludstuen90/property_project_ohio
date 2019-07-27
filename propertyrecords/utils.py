@@ -128,6 +128,11 @@ def parse_city_state_and_zip_from_line(address_line, state):
     new_zip_format = False
     space_before_zipcode = 6
 
+    if address_line[(last_line_length - 5)] == ' ':
+        listed = list(address_line)
+        listed[(last_line_length-5)] = '-'
+        address_line = "".join(listed)
+
 
     if address_line[(last_line_length - 5)] == '-' and address_line[(last_line_length - 11)] == ' ':
         new_zip_format = True
