@@ -14,6 +14,7 @@ from scrapy import FormRequest
 from ohio import settings
 from propertyrecords import utils, models
 
+
 class FranklinSpider(scrapy.Spider):
     handle_httpstatus_all = True
     HEADERS = {
@@ -48,34 +49,24 @@ class FranklinSpider(scrapy.Spider):
                     list_of_parcel_ids.append(f'''{striped_parc_num[0]}{striped_parc_num[1]}''')
                     # list_of_parcel_ids.append(row['Parcel Number'])
 
-            # Ensure we have a property record for all items
-            for property in list_of_parcel_ids:
-                print("PROP IS: ", property)
-
-                for i in range(0, 999999999):
-                    try:
-                        property, created = models.Property.objects.get_or_create(parcel_number=property,
-                                                                                  county=self.franklin_county_object)
-                        print("i is: ", i)
-                        break
-                    except django.db.utils.IntegrityError:
-                        print("IN THE BREAK STATEMENT, : ", i)
-                        continue
+            # # Ensure we have a property record for all items
+            # for property in list_of_parcel_ids:
+            #     created_property, created = models.Property.objects.get_or_create(parcel_number=property,
+            #                                                               county=self.franklin_county_object)
+            #     created_property.save()
 
             self.please_parse_these_items = models.Property.objects.filter(county=self.franklin_county_object,
                                                                      parcel_number__in=list_of_parcel_ids
                                                                      ).order_by('?')
-
-
         else:
             self.please_parse_these_items = models.Property.objects.filter(county=self.franklin_county_object,
                                                                      )
 
         # If we are not running a rescrape, take out properties that have already been scraped
         if rescrape is False:
-            self.please_parse_these_items = self.please_parse_these_items.exclude(owner='')
-
-        for item in self.please_parse_these_items:
+            self.please_parse_these_items_noscrape = self.please_parse_these_items.filter(last_scraped_one__isnull=True)
+        print("We have the following: ", len(self.please_parse_these_items_noscrape))
+        for item in self.please_parse_these_items_noscrape:
             yield item.parcel_number
 
     def __init__(self):
@@ -120,7 +111,7 @@ class FranklinSpider(scrapy.Spider):
             self.property_address.city = city
             self.property_address.zipcode = zip
             self.property_address.save()
-        except UnicodeEncodeError:
+        except UnicodeEncodeError or IndexError:
             pass
 
         # LEGAL DESCRIPTION

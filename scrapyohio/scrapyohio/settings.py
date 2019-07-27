@@ -39,10 +39,7 @@ USE_PROXIES = False
 ROBOTSTXT_OBEY = True
 
 
-# Set per county scraper settings
-if sys.argv[2] == 'franklin-real':
-    RETRY_HTTP_CODES = [502, 503, 504, 522, 524, 408]
-    ROBOTSTXT_OBEY = False
+
 
 # Configure maximum concurrent requests performed by Scrapy (default: 16)
 CONCURRENT_REQUESTS = 1
@@ -124,3 +121,12 @@ AUTOTHROTTLE_MAX_DELAY = 60
 #HTTPCACHE_STORAGE = 'scrapy.extensions.httpcache.FilesystemCacheStorage'
 
 DUPEFILTER_DEBUG=False
+
+# Set per county scraper settings
+if sys.argv[2] == 'franklin-real':
+    RETRY_HTTP_CODES = [502, 503, 504, 522, 524, 408]
+    ROBOTSTXT_OBEY = False
+
+if sys.argv[2] == 'franklin':
+    CONCURRENT_REQUESTS = 5
+    DOWNLOAD_DELAY = 0.2
