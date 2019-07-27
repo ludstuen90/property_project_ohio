@@ -51,12 +51,9 @@ class WarrenSpider(scrapy.Spider):
             all_cuyahoga_properties = models.Property.objects.filter(county=self.cuyahoga_county_object,
                                                                           parcel_number__in=list_of_parcel_ids
                                                                           ).order_by('?')
-
-
         else:
             all_cuyahoga_properties = models.Property.objects.filter(county=self.cuyahoga_county_object,
                                                                      )
-
         # If we are not running a rescrape, take out properties that have already been scraped
         if rescrape is False:
             all_cuyahoga_properties = all_cuyahoga_properties.filter(last_scraped_one__isnull=True)
