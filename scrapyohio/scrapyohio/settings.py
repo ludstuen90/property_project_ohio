@@ -126,6 +126,8 @@ DUPEFILTER_DEBUG=False
 if sys.argv[2] == 'franklin-real':
     RETRY_HTTP_CODES = [502, 503, 504, 522, 524, 408]
     ROBOTSTXT_OBEY = False
+    CONCURRENT_REQUESTS = 5
+    DOWNLOAD_DELAY = 0.2
 
 if sys.argv[2] == 'franklin':
     CONCURRENT_REQUESTS = 5

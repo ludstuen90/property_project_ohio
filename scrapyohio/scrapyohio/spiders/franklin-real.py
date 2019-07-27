@@ -53,10 +53,6 @@ class FranklinSpider(scrapy.Spider):
             self.please_parse_these_items = models.Property.objects.filter(county=self.franklin_county_object,
                                                                            last_scraped_two__isnull=True)
 
-        print("We have the following: ", len(self.please_parse_these_items))
-
-        # self.please_parse_these_items = models.Property.objects.filter(county=self.franklin_county_object).all().filter(last_scraped_two__isnull=True)
-
         for number, property_to_parse in enumerate(self.please_parse_these_items):
             yield scrapy.FormRequest(
                 url='https://countyfusion5.kofiletech.us/countyweb/login.do',
