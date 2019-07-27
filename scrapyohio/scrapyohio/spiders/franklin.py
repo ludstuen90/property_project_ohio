@@ -1,8 +1,11 @@
 # -*- coding: utf-8 -*-
+import csv
 import datetime
 import decimal
+import os
 import re
 
+import django
 import pytz
 import scrapy
 from bs4 import BeautifulSoup
@@ -24,7 +27,53 @@ class FranklinSpider(scrapy.Spider):
     allowed_domains = ['property.franklincountyauditor.com']
 
     def retrieve_all_franklin_county_urls(self):
+        scrape_apts_and_hotels_from_list = True
+        # Excludes any properties that have been scraped before... in this way, we can scrape faster
+        rescrape = False
+        # Ensure we have a county in the database
+        self.franklin_county_object, created = models.County.objects.get_or_create(name="Franklin")
         self.please_parse_these_items = models.Property.objects.filter(county=self.franklin_county_object).all()
+
+
+        if scrape_apts_and_hotels_from_list:
+            list_of_parcel_ids = []
+            script_dir = os.path.dirname(__file__)  # <-- absolute dir this current script is in
+            rel_path = "../scraper_data_drops/franklin-apts-hotels.csv"  # <-- Look two directories up for relevant CSV files
+            abs_file_path = os.path.join(script_dir, rel_path)
+
+            with open(abs_file_path, encoding="utf-8") as csvfile:
+                reader = csv.DictReader(csvfile, delimiter=',')
+                for number, row in enumerate(reader):
+                    striped_parc_num = row['Parcel Number'].split('-')
+                    list_of_parcel_ids.append(f'''{striped_parc_num[0]}{striped_parc_num[1]}''')
+                    # list_of_parcel_ids.append(row['Parcel Number'])
+
+            # Ensure we have a property record for all items
+            for property in list_of_parcel_ids:
+                print("PROP IS: ", property)
+
+                for i in range(0, 999999999):
+                    try:
+                        property, created = models.Property.objects.get_or_create(parcel_number=property,
+                                                                                  county=self.franklin_county_object)
+                        print("i is: ", i)
+                        break
+                    except django.db.utils.IntegrityError:
+                        print("IN THE BREAK STATEMENT, : ", i)
+                        continue
+
+            self.please_parse_these_items = models.Property.objects.filter(county=self.franklin_county_object,
+                                                                     parcel_number__in=list_of_parcel_ids
+                                                                     ).order_by('?')
+
+
+        else:
+            self.please_parse_these_items = models.Property.objects.filter(county=self.franklin_county_object,
+                                                                     )
+
+        # If we are not running a rescrape, take out properties that have already been scraped
+        if rescrape is False:
+            self.please_parse_these_items = self.please_parse_these_items.exclude(owner='')
 
         for item in self.please_parse_these_items:
             yield item.parcel_number
@@ -34,8 +83,6 @@ class FranklinSpider(scrapy.Spider):
         self.logged_out = False
 
     def start_requests(self):
-       # Ensure we have a county in the database
-        self.franklin_county_object, created = models.County.objects.get_or_create(name="Franklin")
         # We want to assign headers for each request triggered. Override the request object
         # sent over to include Lucia's contact information
         # for parameter_dictionary in self.retrieve_all_franklin_county_urls():
