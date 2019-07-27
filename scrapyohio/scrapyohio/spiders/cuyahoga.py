@@ -1,4 +1,5 @@
 import csv
+import datetime
 import os
 import re
 from _decimal import InvalidOperation
@@ -29,6 +30,8 @@ class WarrenSpider(scrapy.Spider):
 
         scrape_apts_and_hotels_from_list = True
         # Excludes any properties that have been scraped before... in this way, we can scrape faster
+        # If setting Rescrape to True, will need to alter this code to look at different last_scraped_by dates;
+        # as of now, the code just looks for last_scraped as blank
         rescrape = False
 
         if scrape_apts_and_hotels_from_list:
@@ -49,15 +52,12 @@ class WarrenSpider(scrapy.Spider):
             all_cuyahoga_properties = models.Property.objects.filter(county=self.cuyahoga_county_object,
                                                                           parcel_number__in=list_of_parcel_ids
                                                                           ).order_by('?')
-
-
         else:
             all_cuyahoga_properties = models.Property.objects.filter(county=self.cuyahoga_county_object,
                                                                      )
-
         # If we are not running a rescrape, take out properties that have already been scraped
         if rescrape is False:
-            all_cuyahoga_properties = all_cuyahoga_properties.exclude(owner='')
+            all_cuyahoga_properties = all_cuyahoga_properties.filter(last_scraped_one__isnull=True)
 
         for property in all_cuyahoga_properties:
             prop_dict = {
@@ -263,3 +263,6 @@ class WarrenSpider(scrapy.Spider):
                 conveyance_fee=utils.convert_taxable_value_string_to_integer(conveyance_amount),
                 conveyance_number=conveyance_number
             )
+            property_transfer_obj.save()
+            property_object.last_scraped_one = datetime.datetime.now(pytz.utc)
+            property_object.save()

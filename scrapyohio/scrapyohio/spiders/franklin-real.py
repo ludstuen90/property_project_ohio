@@ -1,4 +1,6 @@
+import csv
 import datetime
+import os
 
 import pytz
 import scrapy
@@ -27,7 +29,29 @@ class FranklinSpider(scrapy.Spider):
 
     def start_requests(self):
         self.franklin_county_object, created = models.County.objects.get_or_create(name="Franklin")
-        self.please_parse_these_items = models.Property.objects.filter(county=self.franklin_county_object).all().filter(last_scraped_two__isnull=True)
+
+        scrape_apts_and_hotels_from_list = True
+
+        if scrape_apts_and_hotels_from_list:
+            list_of_parcel_ids = []
+            script_dir = os.path.dirname(__file__)  # <-- absolute dir this current script is in
+            rel_path = "../scraper_data_drops/franklin-apts-hotels.csv"  # <-- Look two directories up for relevant CSV files
+            abs_file_path = os.path.join(script_dir, rel_path)
+
+            with open(abs_file_path, encoding="utf-8") as csvfile:
+                reader = csv.DictReader(csvfile, delimiter=',')
+                for number, row in enumerate(reader):
+                    striped_parc_num = row['Parcel Number'].split('-')
+                    list_of_parcel_ids.append(f'''{striped_parc_num[0]}{striped_parc_num[1]}''')
+                    # list_of_parcel_ids.append(row['Parcel Number'])
+
+            self.please_parse_these_items = models.Property.objects.filter(county=self.franklin_county_object,
+                                                                     parcel_number__in=list_of_parcel_ids,
+                                                                       last_scraped_two__isnull=True
+                                                                     ).order_by('?')
+        else:
+            self.please_parse_these_items = models.Property.objects.filter(county=self.franklin_county_object,
+                                                                           last_scraped_two__isnull=True)
 
         for number, property_to_parse in enumerate(self.please_parse_these_items):
             yield scrapy.FormRequest(
