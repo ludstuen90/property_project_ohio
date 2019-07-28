@@ -107,7 +107,7 @@ venv.bak/
 # Pycharm files
 .idea/
 
-# parcel data
+# parcel data, ignore low level
 propertyrecords/parcel_data/
 
 # Store pickles that we used to test our scraper for possible future use

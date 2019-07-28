@@ -21,10 +21,8 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         montgomery_county, created = models.County.objects.get_or_create(name='Montgomery')
-        # took out 2017 and 2018
-        available_years = ['2002', '2001']
-        # year = '2017'
-
+        available_years = ['2018', '2017', '2016', '2015', '2014', '2013', '2012', '2011', '2010', '2009', '2008',
+                           '2002', '2001']
         for year in available_years:
             script_dir = os.path.dirname(__file__)  # <-- absolute dir this current script is in
             rel_path = f'''../../parcel_data/montgomery/sales/{year}''' # <-- Look two directores up for relevant CSV files
