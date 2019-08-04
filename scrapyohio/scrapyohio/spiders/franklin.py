@@ -66,8 +66,12 @@ class FranklinSpider(scrapy.Spider):
         # If we are not running a rescrape, take out properties that have already been scraped
         if rescrape is False:
             self.please_parse_these_items_noscrape = self.please_parse_these_items.filter(last_scraped_one__isnull=True)
-        for item in self.please_parse_these_items_noscrape:
-            yield item.parcel_number
+            for item in self.please_parse_these_items_noscrape:
+                yield item.parcel_number
+
+        else:
+            for item in self.please_parse_these_items:
+                yield item.parcel_number
 
     def __init__(self):
         self.HEADERS.update(settings.CONTACT_INFO_HEADINGS)

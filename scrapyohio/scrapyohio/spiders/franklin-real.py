@@ -49,6 +49,7 @@ class FranklinSpider(scrapy.Spider):
                                                                      parcel_number__in=list_of_parcel_ids,
                                                                        last_scraped_two__isnull=True
                                                                      ).order_by('?')
+
         else:
             self.please_parse_these_items = models.Property.objects.filter(county=self.franklin_county_object,
                                                                            last_scraped_two__isnull=True)
@@ -83,14 +84,19 @@ class FranklinSpider(scrapy.Spider):
                 meta={'property_django_id': property_to_parse.id, 'cookiejar': number},
             )
 
-
     def save_mortgage_value(self, response):
         soup = BeautifulSoup(response.text, 'html.parser')
         result_number = soup.find('span', text='Consideration:').find_next('td').text
+        recorded_date_string = soup.find('span', text='Recorded Date:').find_next('td').text.strip()
+        try:
+            recorded_datetime_obj = datetime.datetime.strptime(recorded_date_string, '%m/%d/%Y %I:%M:%S %p')
+        except ValueError:
+            recorded_datetime_obj = None
         amount_to_save = result_number.strip()
         decimal_converted_amount = utils.convert_taxable_value_string_to_integer(amount_to_save)
         property_to_save = models.Property.objects.get(id=response.meta['property_django_id'])
         property_to_save.mortgage_amount = decimal_converted_amount
+        property_to_save.date_of_mortgage = recorded_datetime_obj
         property_to_save.last_scraped_two = datetime.datetime.now(pytz.utc)
         property_to_save.save()
 
