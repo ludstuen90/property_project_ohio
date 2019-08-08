@@ -275,9 +275,17 @@ def test_datetime_to_date_string_parser():
 
     result_two = utils.datetime_to_date_string_parser('10/07/1999 12:00:00 AM', '%m/%d/%Y')
 
+    result_three = utils.datetime_to_date_string_parser('', '%m/%d/%Y')
+
+    result_four = utils.datetime_to_date_string_parser('09/12/2012 01:58:00 PM', '%m/%d/%Y %I:%M:%S %p')
+
     assert result_one == datetime(1977, 10, 7, 0, 0)
 
     assert result_two == datetime(1999, 10, 7, 0, 0)
+
+    assert result_three is None
+
+    assert result_four == datetime(2012, 9, 12, 13, 58)
 
 def test_acreage_adder():
     script_dir = os.path.dirname(__file__)
