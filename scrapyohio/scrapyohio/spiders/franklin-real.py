@@ -46,8 +46,6 @@ class FranklinSpider(scrapy.Spider):
                     # list_of_parcel_ids.append(row['Parcel Number'])
 
             self.please_parse_these_items = models.Property.objects.filter(county=self.franklin_county_object,
-                                                                     parcel_number='010039902',
-                                                                       last_scraped_two__isnull=True
                                                                      ).order_by('?')
 
         else:
@@ -97,13 +95,14 @@ class FranklinSpider(scrapy.Spider):
         property_to_save = models.Property.objects.get(id=response.meta['property_django_id'])
         property_to_save.mortgage_amount = decimal_converted_amount
         property_to_save.date_of_mortgage = recorded_datetime_obj
-        property_to_save.last_scraped_two = datetime.datetime.now(pytz.utc)
         property_to_save.save()
 
     def open_function(self, response):
         instid = utils.franklin_real_value_finder(response.text, 'instId')
         instnum = utils.franklin_real_value_finder(response.text, 'instNum')
         insttype = utils.franklin_real_value_finder(response.text, 'instType')
+        property_to_save = models.Property.objects.get(id=response.meta['property_django_id'])
+        property_to_save.last_scraped_two = datetime.datetime.now(pytz.utc)
         for number, property_record in enumerate(insttype):
             if property_record == 'MORTGAGE':
                 property_record = {
