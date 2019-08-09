@@ -23,13 +23,20 @@ class Command(BaseCommand):
                 for number, row in enumerate(reader):
                     account_number = row['PID']
                     account_number = account_number.replace('-', '')
+                    string_land_use_code = row['LANDUSE']
+                    try:
+                        land_use_code = int(string_land_use_code)
+                    except ValueError:
+                        pass
+
                     franklin_county_property_item, created = models.Property.objects.get_or_create(
-                        parcel_number=account_number
+                        parcel_number=account_number,
                     )
                     franklin_county_property_item.county = franklin_county
+                    franklin_county_property_item.land_use = land_use_code
                     if row['PID']:
                         franklin_county_property_item.save()
-                    #
+
                     if number % 1000 == 0:
                         print('We have processed the following number of reecords: ', number)
 
