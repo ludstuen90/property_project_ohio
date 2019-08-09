@@ -28,7 +28,7 @@ class FranklinSpider(scrapy.Spider):
     allowed_domains = ['property.franklincountyauditor.com']
 
     def retrieve_all_franklin_county_urls(self):
-        scrape_apts_and_hotels_from_list = True
+        scrape_apts_and_hotels_from_list = False
         # Excludes any properties that have been scraped before... in this way, we can scrape faster.
         # If setting Rescrape to True, will need to alter this code to look at different last_scraped_by dates;
         # as of now, the code just looks for last_scraped as blank
@@ -61,6 +61,7 @@ class FranklinSpider(scrapy.Spider):
                                                                      ).order_by('?')
         else:
             self.please_parse_these_items = models.Property.objects.filter(county=self.franklin_county_object,
+                                                                           parcel_number='010043618'
                                                                      )
 
         # If we are not running a rescrape, take out properties that have already been scraped
