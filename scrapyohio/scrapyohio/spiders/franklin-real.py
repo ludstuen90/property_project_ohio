@@ -46,7 +46,9 @@ class FranklinSpider(scrapy.Spider):
                     # list_of_parcel_ids.append(row['Parcel Number'])
 
             self.please_parse_these_items = models.Property.objects.filter(county=self.franklin_county_object,
+                                                                            parcel_number__in=list_of_parcel_ids
                                                                      ).order_by('?')
+            print("LENGTH: ", len(self.please_parse_these_items))
 
         else:
             self.please_parse_these_items = models.Property.objects.filter(county=self.franklin_county_object,
