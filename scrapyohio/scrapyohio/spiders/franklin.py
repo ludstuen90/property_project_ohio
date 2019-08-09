@@ -70,9 +70,8 @@ class FranklinSpider(scrapy.Spider):
                 yield item.parcel_number
 
         else:
-            self.please_parse_these_items = self.please_parse_these_items.filter(last_scraped_one__isnull=False)
-                for item in self.please_parse_these_items:
-                    yield item.parcel_number
+            for item in self.please_parse_these_items:
+                yield item.parcel_number
 
     def __init__(self):
         self.HEADERS.update(settings.CONTACT_INFO_HEADINGS)
