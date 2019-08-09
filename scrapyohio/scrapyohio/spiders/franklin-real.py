@@ -48,7 +48,6 @@ class FranklinSpider(scrapy.Spider):
             self.please_parse_these_items = models.Property.objects.filter(county=self.franklin_county_object,
                                                                             parcel_number__in=list_of_parcel_ids
                                                                      ).order_by('?')
-            print("LENGTH: ", len(self.please_parse_these_items))
 
         else:
             self.please_parse_these_items = models.Property.objects.filter(county=self.franklin_county_object,
@@ -85,6 +84,7 @@ class FranklinSpider(scrapy.Spider):
             )
 
     def save_mortgage_value(self, response):
+
         soup = BeautifulSoup(response.text, 'html.parser')
         result_number = soup.find('span', text='Consideration:').find_next('td').text
         recorded_date_string = soup.find('span', text='Recorded Date:').find_next('td').text.strip()
@@ -95,6 +95,7 @@ class FranklinSpider(scrapy.Spider):
         amount_to_save = result_number.strip()
         decimal_converted_amount = utils.convert_taxable_value_string_to_integer(amount_to_save)
         property_to_save = models.Property.objects.get(id=response.meta['property_django_id'])
+        print("Saving mortgage value: ", property_to_save.parcel_number)
         property_to_save.mortgage_amount = decimal_converted_amount
         property_to_save.date_of_mortgage = recorded_datetime_obj
         property_to_save.save()
@@ -105,6 +106,7 @@ class FranklinSpider(scrapy.Spider):
         insttype = utils.franklin_real_value_finder(response.text, 'instType')
         property_to_save = models.Property.objects.get(id=response.meta['property_django_id'])
         property_to_save.last_scraped_two = datetime.datetime.now(pytz.utc)
+        property_to_save.save()
         for number, property_record in enumerate(insttype):
             if property_record == 'MORTGAGE':
                 property_record = {
