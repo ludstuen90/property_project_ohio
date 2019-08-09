@@ -61,7 +61,6 @@ class FranklinSpider(scrapy.Spider):
                                                                      ).order_by('?')
         else:
             self.please_parse_these_items = models.Property.objects.filter(county=self.franklin_county_object,
-                                                                           parcel_number='010043618'
                                                                      )
 
         # If we are not running a rescrape, take out properties that have already been scraped
