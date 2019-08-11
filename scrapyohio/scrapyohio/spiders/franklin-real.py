@@ -43,12 +43,9 @@ class FranklinSpider(scrapy.Spider):
                 for number, row in enumerate(reader):
                     striped_parc_num = row['Parcel Number'].split('-')
                     list_of_parcel_ids.append(f'''{striped_parc_num[0]}{striped_parc_num[1]}''')
-                    # list_of_parcel_ids.append(row['Parcel Number'])
 
             self.please_parse_these_items = models.Property.objects.filter(county=self.franklin_county_object,
-                                                                           parcel_number__in=list_of_parcel_ids,
-                                                                            last_scraped_two__isnull=True
-
+                                                                            parcel_number__in=list_of_parcel_ids
                                                                      ).order_by('?')
 
         else:
@@ -86,6 +83,7 @@ class FranklinSpider(scrapy.Spider):
             )
 
     def save_mortgage_value(self, response):
+
         soup = BeautifulSoup(response.text, 'html.parser')
         result_number = soup.find('span', text='Consideration:').find_next('td').text
         recorded_date_string = soup.find('span', text='Recorded Date:').find_next('td').text.strip()
@@ -96,15 +94,18 @@ class FranklinSpider(scrapy.Spider):
         amount_to_save = result_number.strip()
         decimal_converted_amount = utils.convert_taxable_value_string_to_integer(amount_to_save)
         property_to_save = models.Property.objects.get(id=response.meta['property_django_id'])
+        print("Saving mortgage value: ", property_to_save.parcel_number)
         property_to_save.mortgage_amount = decimal_converted_amount
         property_to_save.date_of_mortgage = recorded_datetime_obj
-        property_to_save.last_scraped_two = datetime.datetime.now(pytz.utc)
         property_to_save.save()
 
     def open_function(self, response):
         instid = utils.franklin_real_value_finder(response.text, 'instId')
         instnum = utils.franklin_real_value_finder(response.text, 'instNum')
         insttype = utils.franklin_real_value_finder(response.text, 'instType')
+        property_to_save = models.Property.objects.get(id=response.meta['property_django_id'])
+        property_to_save.last_scraped_two = datetime.datetime.now(pytz.utc)
+        property_to_save.save()
         for number, property_record in enumerate(insttype):
             if property_record == 'MORTGAGE':
                 property_record = {
