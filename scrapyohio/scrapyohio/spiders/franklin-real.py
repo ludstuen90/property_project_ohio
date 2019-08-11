@@ -43,7 +43,6 @@ class FranklinSpider(scrapy.Spider):
                 for number, row in enumerate(reader):
                     striped_parc_num = row['Parcel Number'].split('-')
                     list_of_parcel_ids.append(f'''{striped_parc_num[0]}{striped_parc_num[1]}''')
-                    # list_of_parcel_ids.append(row['Parcel Number'])
 
             self.please_parse_these_items = models.Property.objects.filter(county=self.franklin_county_object,
                                                                             parcel_number__in=list_of_parcel_ids
@@ -129,6 +128,7 @@ class FranklinSpider(scrapy.Spider):
                 break
 
     def request_results_page(self, response):
+
 
         yield scrapy.Request(
             url=f'''https://countyfusion5.kofiletech.us/countyweb/search/Franklin/docs_SearchResultList.jsp?scrollPos=0&searchSessionId=searchJobMain''',

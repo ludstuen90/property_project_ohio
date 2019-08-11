@@ -2,8 +2,8 @@
 import csv
 import datetime
 import os
-import pickle
 import sys
+from decimal import Decimal
 
 import scrapy
 from scrapy import FormRequest
@@ -38,7 +38,7 @@ form_data = {'__EVENTTARGET': '',
              '__VIEWSTATEGENERATOR': 'B99DED13',
              '__EVENTVALIDATION': '/wEWBgKXtO2JDQLn5fPPBALa8JHqAgKS0KzHDQK72KCUAgLCqo+IBEh/UvTvj3m26LhHjPat6rAAAAAA',
              'txtRecStart': '12/4/1800',
-             'txtRecEnd': '12/4/2018',
+             'txtRecEnd': datetime.datetime.now().strftime('%m/%d/%Y'),
              'lstQuery': '1',
              'ValidateButton': 'Begin Search',
     }
@@ -63,7 +63,7 @@ class WarrenSpider(scrapy.Spider):
         if continue_where_last_scrape_left_off:
             self.all_cuyahoga_properties = models.Property.objects.filter(county=self.cuyahoga_county_object,
                                                                         ).exclude(
-                                                                    last_scraped_one__gte=seven_days_ago
+                                                                    last_scraped_two__gte=seven_days_ago
                                                                     ).order_by('?')
 
         elif scrape_apts_and_hotels_from_list:
@@ -76,16 +76,12 @@ class WarrenSpider(scrapy.Spider):
                 for number, row in enumerate(reader):
                     list_of_parcel_ids.append(row['PARCEL_ID'])
 
-
-
             self.all_cuyahoga_properties = models.Property.objects.filter(county=self.cuyahoga_county_object,
                                                                           parcel_number__in=list_of_parcel_ids
                                                                           ).order_by('?')
         else:
             self.all_cuyahoga_properties = models.Property.objects.filter(county=self.cuyahoga_county_object,
                                                                           ).order_by('?')
-
-
         for item in self.all_cuyahoga_properties:
             yield {'url': "https://recorder.cuyahogacounty.us/searchs/parcelsearchs.aspx", 'parcel_id':
                 item.parcel_number}
@@ -99,17 +95,27 @@ class WarrenSpider(scrapy.Spider):
 
         # We want to assign headers for each request triggered. Override the request object
         # sent over to include Lucia's contact information
-        for package in self.retrieve_all_warren_county_urls():
+        for enumerator, package in enumerate(self.retrieve_all_warren_county_urls()):
             form_data['ParcelID'] = package['parcel_id']
 
             yield FormRequest(
                     url=package['url'],
                     formdata=form_data,
                     method='POST',
-                    meta={'page': 1, 'parcel_id': package['parcel_id']},
+                    meta={'page': 1, 'parcel_id': package['parcel_id'], 'cookiejar': enumerator},
                     dont_filter=True,
                     headers=HEADERS,
             )
+
+
+    def mortgage_processor(self, response):
+        soup = BeautifulSoup(response.text, 'html.parser')
+        result = soup.find('span', id='ctl00_ContentPlaceHolder1_label7').get_text()
+        no_dollar_sign = result.replace('$', '')
+        no_comma = no_dollar_sign.replace(',', '')
+        property_object = models.Property.objects.get(parcel_number=response.meta['parcel_id'])
+        property_object.mortgage_amount = Decimal(no_comma)
+        property_object.save()
 
     def parse(self, response, *args, **kwargs):
         """
@@ -118,38 +124,43 @@ class WarrenSpider(scrapy.Spider):
         :return:
         """
         if response.url == 'https://recorder.cuyahogacounty.us/LockedOut.aspx':
-            # If we recive this page, it's because our IP address has been blocked!
+            # If we receive this page, it's because our IP address has been blocked!
             raise CloseSpider('ip_address_blocked')
-
-        print("RESPONSE URL: ", response.url)
 
         soup = BeautifulSoup(response.text, 'html.parser')
         property_object = models.Property.objects.get(parcel_number=response.meta['parcel_id'])
         primary_owner = property_object.owner
-        deed_date = utils.parse_recorder_items(soup, primary_owner, 'DEED')
-        property_object.last_scraped_one = datetime.datetime.now()
-        if deed_date:
-            mortgage_date = utils.parse_recorder_items(soup, primary_owner, 'MORT')
-            print("Searched: ", response.meta['parcel_id'], "we found mortgage date of: ", mortgage_date,
-                  " and deed date of ", deed_date)
-            try:
-                property_object.date_sold = datetime.datetime.strptime(deed_date, '%m/%d/%Y')
-            except TypeError:
-                # No Deed found
-                pass
-            try:
-                property_object.date_of_mortgage = datetime.datetime.strptime(mortgage_date, '%m/%d/%Y')
-            except TypeError:
-                # No mortgage found
-                pass
+        try:
+            deed_response = utils.parse_recorder_items(soup, primary_owner, 'DEED')
+            deed_date = deed_response['date']
+            property_object.date_sold = datetime.datetime.strptime(deed_date, '%m/%d/%Y')
+        except TypeError:
+            pass
+        property_object.last_scraped_two = datetime.datetime.now()
+        # if deed_date:
+        try:
+            mortgage_response = utils.parse_recorder_items(soup, primary_owner, 'MORT')
+            mortgage_date = mortgage_response['date']
+            property_object.date_of_mortgage = datetime.datetime.strptime(mortgage_date, '%m/%d/%Y')
 
-            property_object.save()
-        else:
-            property_object.save()
-            print('no deed')
-
-
-
-
-
-
+        except TypeError:
+            pass
+        property_object.save()
+        try:
+            if mortgage_date is not None:
+                    req_num = int(mortgage_response['row']) - 1
+                    yield FormRequest.from_response(
+                        response,
+                        formname="aspnetForm",
+                        formxpath="//form[@id='aspnetForm']",
+                        formdata={
+                                  '__EVENTARGUMENT': f'''Select${req_num}''',
+                                  '__EVENTTARGET': 'ctl00$ContentPlaceHolder1$GridView1'},
+                        dont_click=True,
+                        dont_filter=True,
+                        callback=self.mortgage_processor,
+                        meta={'parcel_id': response.meta['parcel_id'], 'cookiejar': response.meta['cookiejar']}
+                    )
+        except UnboundLocalError:
+            # No mortgage available
+            pass
