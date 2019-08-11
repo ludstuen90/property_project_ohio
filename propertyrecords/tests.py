@@ -248,17 +248,16 @@ def test_cuyahoga_recorder_parser():
     lowercase_search_result = utils.parse_recorder_items(soup1, '2015 west 53rd llc', 'MORT')
     period_search_result = utils.parse_recorder_items(soup1, '2015 WEST, 53RD LLC.', 'MORT')
     extra_space_search_result = utils.parse_recorder_items(soup1, '2015 WEST, 53RD            LLC.', 'MORT')
-    no_results_result = utils.parse_recorder_items(soup2, 'CASE # CV#16861346', 'DEED')
 
-    assert deed_search_result == '3/26/2013'
-    assert mortgage_search_result == '10/23/2013'
-    assert lowercase_search_result == '10/23/2013'
-    assert period_search_result == '10/23/2013'
-    assert extra_space_search_result == '10/23/2013'
-    assert no_results_result is None
+    assert deed_search_result['date'] == '3/26/2013'
+    assert mortgage_search_result['date'] == '10/23/2013'
+    assert lowercase_search_result['date'] == '10/23/2013'
+    assert period_search_result['date'] == '10/23/2013'
+    assert extra_space_search_result['date'] == '10/23/2013'
 
     with pytest.raises(TypeError):
         utils.parse_recorder_items(soup1, '2015 WEST 53RD LLC', 'COFFEE')
+        utils.parse_recorder_items(soup2, 'CASE # CV#16861346', 'DEED')
 
 
 def test_convert_to_string_and_drop_final_zero():
@@ -277,7 +276,7 @@ def test_datetime_to_date_string_parser():
 
     result_three = utils.datetime_to_date_string_parser('', '%m/%d/%Y')
 
-    result_four = utils.datetime_to_date_string_parser('09/12/2012 01:58:00 PM', '%m/%d/%Y %I:%M:%S %p')
+    result_four = utils.datetime_to_date_string_parser('09/12/2012', '%m/%d/%Y')
 
     assert result_one == datetime(1977, 10, 7, 0, 0)
 
@@ -285,7 +284,7 @@ def test_datetime_to_date_string_parser():
 
     assert result_three is None
 
-    assert result_four == datetime(2012, 9, 12, 13, 58)
+    assert result_four == datetime(2012, 9, 12, 0, 0)
 
 def test_acreage_adder():
     script_dir = os.path.dirname(__file__)

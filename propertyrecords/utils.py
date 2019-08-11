@@ -450,7 +450,6 @@ def name_cleaner(name):
 
 
 def parse_recorder_items(soup, primary_owner_name, type_of_parse):
-
     if type_of_parse == 'DEED':
         search_terms = 'DECT|DEED|DESH|DEAF'
     elif type_of_parse == 'MORT':
@@ -463,23 +462,21 @@ def parse_recorder_items(soup, primary_owner_name, type_of_parse):
     cols = [header.string for header in soup.find_all('th')]
 
     try:
-
         cols.index('Doc. Type')
         rows = soup.find('table', id='ctl00_ContentPlaceHolder1_GridView1').find_all('tr')
         rows_length = len(rows) - 1
-
         # Here, we loop through all of the table rows starting from the bottom. As soon as we find
         # a document type matching the type of search we're doing, we'll analyze it.
         # If it matches, we return the date it was filed; if not, we return None.
         for i in range(rows_length, 0, -1):
             if rows[i].find_all('td')[2].contents[0] in search_terms:
                 if type_of_parse == 'DEED':
-                    return rows[i].find_all('td')[5].contents[0]
+                    return {'date': rows[i].find_all('td')[5].contents[0], 'row': i}
                 elif type_of_parse == 'MORT':
-                    return rows[i].find_all('td')[5].contents[0]
+                    return {'date': rows[i].find_all('td')[5].contents[0], 'row': i}
 
     except ValueError:
-        # We found no reuslts in our search of the recorder site
+        # We found no results in our search of the recorder site
         return None
 
 def convert_to_string_and_drop_final_zero(integer):
@@ -540,7 +537,6 @@ def franklin_row_name_returner(soup, table_id, row_term, **kwargs):
     for row in rows:
         if row.text.find(row_term) == 0:
             cell = row.findAll('td')[cell_column_number]
-            # print("kwargs is: ", kwargs, " table id: ", table_id, " cell: ", cell)
             if kwargs.get('cell_value', False):
                 # If args passed, return the value of the cell, rather than the text
                 # so that we can continue to perform other data manipulation

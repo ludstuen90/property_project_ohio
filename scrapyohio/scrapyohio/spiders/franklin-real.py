@@ -46,8 +46,9 @@ class FranklinSpider(scrapy.Spider):
                     # list_of_parcel_ids.append(row['Parcel Number'])
 
             self.please_parse_these_items = models.Property.objects.filter(county=self.franklin_county_object,
-                                                                     parcel_number__in=list_of_parcel_ids,
-                                                                       last_scraped_two__isnull=True
+                                                                           parcel_number__in=list_of_parcel_ids,
+                                                                            last_scraped_two__isnull=True
+
                                                                      ).order_by('?')
 
         else:
@@ -126,6 +127,7 @@ class FranklinSpider(scrapy.Spider):
                 break
 
     def request_results_page(self, response):
+
 
         yield scrapy.Request(
             url=f'''https://countyfusion5.kofiletech.us/countyweb/search/Franklin/docs_SearchResultList.jsp?scrollPos=0&searchSessionId=searchJobMain''',
