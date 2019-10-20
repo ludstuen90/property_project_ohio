@@ -27,7 +27,6 @@ NEWSPIDER_MODULE = 'scrapyohio.spiders'
 
 USE_PROXIES = False
 
-
 # ITEM_PIPELINES = {
     # 'scrapyohio.pipelines.PricePipeline': 300,
 # }
@@ -37,9 +36,6 @@ USE_PROXIES = False
 
 # Obey robots.txt rules
 ROBOTSTXT_OBEY = True
-
-
-
 
 # Configure maximum concurrent requests performed by Scrapy (default: 16)
 CONCURRENT_REQUESTS = 1
@@ -132,3 +128,4 @@ if sys.argv[2] == 'franklin-real':
 if sys.argv[2] == 'franklin':
     CONCURRENT_REQUESTS = 5
     DOWNLOAD_DELAY = 0.2
+
