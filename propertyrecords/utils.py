@@ -165,6 +165,10 @@ def parse_city_state_and_zip_from_line(address_line, state):
             ):
                 state_name = f'''{address_line[x+1]}{address_line[x+2]}'''
                 city_name = address_line[0:x]
+
+        # add check to take out comma if at end of city name
+        if city_name[-1:] == ',':
+            city_name = city_name[:-1]
         return {
             'city': str(city_name),
             'state': state_name,
@@ -178,6 +182,9 @@ def parse_city_state_and_zip_from_line(address_line, state):
             if address_line[x].isalpha():
                 city_name = address_line[:(x+1)]
                 break
+
+        if city_name[-1:] == ',':
+            city_name = city_name[:-1]
         return {
             'city': str(city_name),
             'zipcode': zip_code

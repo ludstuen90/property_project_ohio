@@ -27,11 +27,6 @@ NEWSPIDER_MODULE = 'scrapyohio.spiders'
 
 USE_PROXIES = False
 
-if sys.argv[2] == 'montgomery':
-    print("We are scraping montgomery")
-    USE_PROXIES = True
-
-
 # ITEM_PIPELINES = {
     # 'scrapyohio.pipelines.PricePipeline': 300,
 # }
