@@ -482,7 +482,6 @@ def parse_recorder_items(soup, primary_owner_name, type_of_parse):
 def convert_to_string_and_drop_final_zero(integer):
     return str(integer)[:-1]
 
-
 def datetime_to_date_string_parser(datetime_string, format):
     """
     Given a datetime string, like '10/7/1977 12:00:00 AM' and a format of of the date,
