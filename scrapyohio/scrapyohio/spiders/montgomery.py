@@ -31,30 +31,8 @@ class MontgomerySpider(scrapy.Spider):
                                                                                  )
         else:
             self.please_parse_these_items = models.Property.objects.all().filter(county=self.montgomery_county_object,
-                                                                             last_scraped_one__isnull=True
-                                                                             )
-
-
-
-
-        # # Ensure we have a property record for all items
-        # for property in list_of_parcel_ids:
-        #     created_property, created = models.Property.objects.get_or_create(parcel_number=property,
-        #                                                               county=self.montgomery_county_object)
-        #     created_property.save()
-        #
-        # self.please_parse_these_items = models.Property.objects.filter(county=self.montgomery_county_object,
-        #                                                          parcel_number__in=list_of_parcel_ids
-        #                                                          ).order_by('?')
-        # else:
-        #self.please_parse_these_items = models.Property.objects.filter(county=self.montgomery_county_object)
-        # If we are not running a rescrape, take out properties that have already been scraped
-        # if rescrape is False:
-        #     self.please_parse_these_items_noscrape = self.please_parse_these_items.filter(last_scraped_one__isnull=True)
-        #     for item in self.please_parse_these_items_noscrape:
-        #         yield item.parcel_number
-        #
-        # else:
+                                                                                 last_scraped_one__isnull=True
+                                                                                 )
         for item in self.please_parse_these_items:
             yield item.parcel_number
 
