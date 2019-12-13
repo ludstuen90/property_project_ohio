@@ -44,6 +44,7 @@ def test_parse_city_state_and_zip_from_line():
     five = 'NEW ALBANY OH 43054-9515'
     six = 'NEW ALBANY 43054-9515'
     seven = 'VANDALIA OH 45377 9583'
+    eight = 'DAYTON, OH  45409'
 
     result_one = utils.parse_city_state_and_zip_from_line(one, True)
     result_two = utils.parse_city_state_and_zip_from_line(two, True)
@@ -52,6 +53,7 @@ def test_parse_city_state_and_zip_from_line():
     result_five = utils.parse_city_state_and_zip_from_line(five, True)
     result_six = utils.parse_city_state_and_zip_from_line(six, False)
     result_seven = utils.parse_city_state_and_zip_from_line(seven, True)
+    result_eight = utils.parse_city_state_and_zip_from_line(eight, True)
 
     assert result_one == {
         'city': 'LEBANON',
@@ -91,6 +93,11 @@ def test_parse_city_state_and_zip_from_line():
         'city': 'VANDALIA',
         'state': 'OH',
         'zipcode': '45377-9583'
+    }
+    assert result_eight == {
+        'city': 'DAYTON',
+        'state': 'OH',
+        'zipcode': '45409'
     }
 
 
