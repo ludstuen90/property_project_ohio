@@ -1,5 +1,7 @@
 # -*- coding: utf-8 -*-
 import os
+import re
+
 import scrapy
 from bs4 import BeautifulSoup
 from scrapy import FormRequest
@@ -95,8 +97,11 @@ class CuyahogaCourtsScraper(scrapy.Spider):
     def goodies_page(self, response):
         open_in_browser(response)
         soup = BeautifulSoup(response.body, 'html.parser')
-        soup.find("td", value="394").next_sibling.get_text().strip(
-            '<span id="SheetContentPlaceHolder_caseSummary_lblPrayerAmt" class="summaryTextBoxAlt"></span>\n')
+        prayer_amount = soup.find("td", text=re.compile("Prayer Amount:"), class_="tdtitle").find_next().text
+        print("PRAYER AMOUNT AL FINAL: ", prayer_amount)
+        stripped_amount = prayer_amount.strip()
+        print("Let's try stripping to see what we get:", stripped_amount, "!!!")
+
 
     def real_reasults(self, response):
         soup = BeautifulSoup(response.body, 'html.parser')
@@ -183,7 +188,7 @@ class CuyahogaCourtsScraper(scrapy.Spider):
                 "ctl00$SheetContentPlaceHolder$foreclosureSearch$txtCaseSequence": "",
                 "ctl00$SheetContentPlaceHolder$foreclosureSearch$txtCity": "",
                 "ctl00$SheetContentPlaceHolder$foreclosureSearch$txtFromDate": "",
-                "ctl00$SheetContentPlaceHolder$foreclosureSearch$txtParcelNbr": "00103021",
+                "ctl00$SheetContentPlaceHolder$foreclosureSearch$txtParcelNbr": "00201041",
                 "ctl00$SheetContentPlaceHolder$foreclosureSearch$txtStreetName": "",
                 "ctl00$SheetContentPlaceHolder$foreclosureSearch$txtStreetNbr": "",
                 "ctl00$SheetContentPlaceHolder$foreclosureSearch$txtToDate": "",
@@ -199,3 +204,5 @@ class CuyahogaCourtsScraper(scrapy.Spider):
         )
 
 
+#001-08-056
+#00103021
