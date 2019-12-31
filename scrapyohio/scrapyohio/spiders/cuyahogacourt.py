@@ -1,20 +1,11 @@
 # -*- coding: utf-8 -*-
-import csv
-import datetime
-import decimal
 import os
-import re
-
-import django
-import pytz
 import scrapy
 from bs4 import BeautifulSoup
 from scrapy import FormRequest
 from scrapy.utils.response import open_in_browser
 
 from ohio import settings
-from propertyrecords import utils, models
-
 
 class CuyahogaCourtsScraper(scrapy.Spider):
     handle_httpstatus_all = True
@@ -50,7 +41,6 @@ class CuyahogaCourtsScraper(scrapy.Spider):
         # Use the enumerator function to allow an individual cookie jar for each request
         # This is necessary to keep track of multiple view states
         for enumerator, item in enumerate(self.retrieve_all_franklin_county_urls()):
-            print("HI")
             yield scrapy.Request(
                 url='https://cpdocket.cp.cuyahogacounty.us/tos.aspx',
                 method='GET',
@@ -63,7 +53,7 @@ class CuyahogaCourtsScraper(scrapy.Spider):
 
     def parse(self, response):
         print("Here in response: ", response)
-        # Load the forecloseure search thing
+        # Load the foreclosure  search thing
 
         yield FormRequest.from_response(
 
@@ -77,7 +67,6 @@ class CuyahogaCourtsScraper(scrapy.Spider):
             dont_filter=True,
             callback=self.initial_search,
             )
-
 
     def initial_search(self, response):
         yield FormRequest.from_response(
@@ -105,10 +94,11 @@ class CuyahogaCourtsScraper(scrapy.Spider):
 
     def goodies_page(self, response):
         open_in_browser(response)
+        soup = BeautifulSoup(response.body, 'html.parser')
+        soup.find("td", value="394").next_sibling.get_text().strip(
+            '<span id="SheetContentPlaceHolder_caseSummary_lblPrayerAmt" class="summaryTextBoxAlt"></span>\n')
 
     def real_reasults(self, response):
-        print("In real REASDULTS")
-
         soup = BeautifulSoup(response.body, 'html.parser')
         matched = soup.select('#__VIEWSTATE')
         if matched:
@@ -121,11 +111,6 @@ class CuyahogaCourtsScraper(scrapy.Spider):
         evg = soup.select('#__EVENTVALIDATION')
         if evg:
             eventvalidation_value = evg[0].get('value')
-
-
-        print("!!!!!!!!!!!!", viewstate_value)
-        print("!!!!!!!!!!!!", viewstategenerator_value)
-        print("!!!!!!!!!!!!", eventvalidation_value)
 
         yield FormRequest(
             "https://cpdocket.cp.cuyahogacounty.us/ForeclosureSearchResults.aspx",
@@ -156,8 +141,6 @@ class CuyahogaCourtsScraper(scrapy.Spider):
         )
 
     def please_open(self, response):
-        print("Final Option")
-
         yield scrapy.Request(
             url='https://cpdocket.cp.cuyahogacounty.us/ForeclosureSearchResults.aspx',
             headers={"Sec-Fetch-Mode": "navigate",
@@ -172,18 +155,9 @@ class CuyahogaCourtsScraper(scrapy.Spider):
             dont_filter=True,
         )
 
-
-
     def real_search_page(self, response):
-        print("REsults page !!")
-        # open_in_browser(response)
 
         soup = BeautifulSoup(response.body, 'html.parser')
-        viewstate = soup.findAll("input", {"type": "hidden", "name": "__VIEWSTATE"})
-
-        #print("VIEWSTATE", viewstate)
-        # print("__VIEWSTATEGENERATOR", response.css('input#__VIEWSTATEGENERATOR::attr(value)').extract(),)
-        # print("__EVENTVALIDATION", response.css('input#__EVENTVALIDATION::attr(value)').extract(),)
 
         yield FormRequest(
             "https://cpdocket.cp.cuyahogacounty.us/Search.aspx",
