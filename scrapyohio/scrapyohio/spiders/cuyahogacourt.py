@@ -1,11 +1,12 @@
 # -*- coding: utf-8 -*-
 import os
 import re
+import csv
+
 
 import scrapy
 from bs4 import BeautifulSoup
 from scrapy import FormRequest
-from scrapy.utils.response import open_in_browser
 
 from ohio import settings
 
@@ -17,18 +18,62 @@ class CuyahogaCourtsScraper(scrapy.Spider):
         "X-MicrosoftAjax": "Delta=true",
         "X-Requested-With": "XMLHttpRequest",
         "Cache-Control": "no-cache",
-        "Origin": "https://cpdocket.cp.cuyahogacounty.us"
+        "Origin": "https://cpdocket.cp.cuyahogacounty.us",
+        "Info": "The Ohio Center for Investigative Journalism, Eye on Ohio, is requesting these public records for "
+        "use in a journalism project, and to conserve valuable public funds and government employees' time "
+        "instead of filing multiple freedom of information act requests.",
+        "Questions": "If you have questions or concerns, please contact Lucia Walinchus at 646-397-7761 or "
+         "Lucia[the at symbol}eyeonohio.com.",
     }
 
     name = 'cuyahogacourt'
     allowed_domains = ['cpdocket.cp.cuyahogacounty.us']
 
-    def retrieve_all_franklin_county_urls(self):
+    def retrieve_all_cuyahoga_county_urls(self):
         script_dir = os.path.dirname(__file__)  # <-- absolute dir this current script is in
         rel_path = "../scraper_data_drops/Cuyahoga Land Bank Transfers.CSV"
+        rel_path_script = "../../cuyahoga_court_results.txt"
+        "/home/lukas/codigo/property_project_ohio/scrapyohio/scrapyohio/scraper_data_drops/Cuyahoga Land Bank Transfers.CSV"
+        """
+        
+f= open("/home/lukas/codigo/property_project_ohio/scrapyohio/cuyahoga_court_results.txt","r")
+
+array_of_known_ids = []
+items = csv.reader(f, delimiter=";")   
+
+for x in items: 
+    print(x[0])
+    array_of_known_ids.append(x[0])
+
+
+not_found_array = []
+with open("/home/lukas/codigo/property_project_ohio/scrapyohio/scrapyohio/scraper_data_drops/Cuyahoga Land Bank Transfers.CSV", "r") as file:
+    reader = csv.reader(file)
+    for row in reader:
+        if row[4] not in array_of_known_ids:
+            not_found_array.append(row[4])
+         
+        """
         abs_file_path = os.path.join(script_dir, rel_path)
-        print(abs_file_path)
-        yield "00108026"
+
+        list_of_ids_already_processed = []
+        abs_file_cuyahoga_path = os.path.join(script_dir, rel_path_script)
+        with open(abs_file_cuyahoga_path,"r") as file:
+            reader = csv.reader(file, delimiter=";")
+            for row in reader:
+                list_of_ids_already_processed.append(row[0])
+
+        complete_list_of_all_parcel_ids_to_process = []
+        with open(abs_file_path, "r") as file:
+            reader = csv.reader(file)
+            for iteration, row in enumerate(reversed(list(csv.reader(file)))):
+                if iteration > 0:
+                    if row[4] not in list_of_ids_already_processed:
+                        complete_list_of_all_parcel_ids_to_process.append(row[4])
+
+        print("!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!", len(complete_list_of_all_parcel_ids_to_process))
+        for item in complete_list_of_all_parcel_ids_to_process:
+            yield item
 
     def __init__(self):
         self.HEADERS.update(settings.CONTACT_INFO_HEADINGS)
@@ -42,7 +87,7 @@ class CuyahogaCourtsScraper(scrapy.Spider):
 
         # Use the enumerator function to allow an individual cookie jar for each request
         # This is necessary to keep track of multiple view states
-        for enumerator, item in enumerate(self.retrieve_all_franklin_county_urls()):
+        for enumerator, item in enumerate(self.retrieve_all_cuyahoga_county_urls()):
             yield scrapy.Request(
                 url='https://cpdocket.cp.cuyahogacounty.us/tos.aspx',
                 method='GET',
@@ -54,7 +99,10 @@ class CuyahogaCourtsScraper(scrapy.Spider):
             )
 
     def parse(self, response):
-        print("Here in response: ", response)
+        print("Here in response: ", response, "looking at ", response.meta['parc_id'])
+        with open("examined_parcels.txt", 'w') as out_file:
+            out_file.write(f"""{response.meta['parc_id']}\n""")
+
         # Load the foreclosure  search thing
 
         yield FormRequest.from_response(
@@ -95,15 +143,24 @@ class CuyahogaCourtsScraper(scrapy.Spider):
         )
 
     def goodies_page(self, response):
-        open_in_browser(response)
+        # open_in_browser(response)
         soup = BeautifulSoup(response.body, 'html.parser')
         prayer_amount = soup.find("td", text=re.compile("Prayer Amount:"), class_="tdtitle").find_next().text
         print("PRAYER AMOUNT AL FINAL: ", prayer_amount)
         stripped_amount = prayer_amount.strip()
+
+
+        case_number = soup.find("td", text=re.compile("Case Number:"), class_="tdtitle").find_next().text
+        case_stripped = case_number.strip()
+
+        filing_date = soup.find("td", text=re.compile("Filing Date:"), class_="tdtitle").find_next().text
+        filing_date_stripped = filing_date.strip()
+
         print("Let's try stripping to see what we get:", stripped_amount, "!!!")
+        with open('cuyahoga_court_results.txt', 'a') as file:
+            file.write(f"""{response.meta['parc_id']};{case_stripped};{filing_date_stripped};{stripped_amount}\n""")
 
-
-    def real_reasults(self, response):
+    def real_results(self, response):
         soup = BeautifulSoup(response.body, 'html.parser')
         matched = soup.select('#__VIEWSTATE')
         if matched:
@@ -154,7 +211,7 @@ class CuyahogaCourtsScraper(scrapy.Spider):
                      "Upgrade-Insecure-Requests": "1"
                         },
             method='GET',
-            callback=self.real_reasults,
+            callback=self.real_results,
             meta={"parc_id": response.meta['parc_id'],
                   'spider_num': response.meta['spider_num'], 'cookiejar': response.meta['spider_num']},
             dont_filter=True,
@@ -188,7 +245,7 @@ class CuyahogaCourtsScraper(scrapy.Spider):
                 "ctl00$SheetContentPlaceHolder$foreclosureSearch$txtCaseSequence": "",
                 "ctl00$SheetContentPlaceHolder$foreclosureSearch$txtCity": "",
                 "ctl00$SheetContentPlaceHolder$foreclosureSearch$txtFromDate": "",
-                "ctl00$SheetContentPlaceHolder$foreclosureSearch$txtParcelNbr": "00201041",
+                "ctl00$SheetContentPlaceHolder$foreclosureSearch$txtParcelNbr": response.meta['parc_id'],
                 "ctl00$SheetContentPlaceHolder$foreclosureSearch$txtStreetName": "",
                 "ctl00$SheetContentPlaceHolder$foreclosureSearch$txtStreetNbr": "",
                 "ctl00$SheetContentPlaceHolder$foreclosureSearch$txtToDate": "",
@@ -203,6 +260,4 @@ class CuyahogaCourtsScraper(scrapy.Spider):
             callback=self.please_open,
         )
 
-
-#001-08-056
-#00103021
+#  cat cuyahoga_court_results.txt | wc -l
