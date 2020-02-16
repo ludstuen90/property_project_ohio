@@ -81,7 +81,12 @@ if USE_PROXIES:
 
 cwd = os.path.dirname(os.path.abspath(__file__))
 
-ROTATING_PROXY_LIST_PATH = os.path.join(cwd, 'proxies.txt')
+# PROXY LIST FOR MOST SCRAPING
+ROTATING_PROXY_LIST_PATH = os.path.join(cwd, 'proxiescuya.txt')
+
+
+# DEV PROXY LIST
+# ROTATING_PROXY_LIST_PATH = os.path.join(cwd, 'devproxy.txt')
 
 # Enable or disable extensions
 # See https://doc.scrapy.org/en/latest/topics/extensions.html
@@ -116,7 +121,7 @@ AUTOTHROTTLE_MAX_DELAY = 60
 #HTTPCACHE_IGNORE_HTTP_CODES = []
 #HTTPCACHE_STORAGE = 'scrapy.extensions.httpcache.FilesystemCacheStorage'
 
-DUPEFILTER_DEBUG=False
+DUPEFILTER_DEBUG = False
 
 # Set per county scraper settings
 if sys.argv[2] == 'franklin-real':
