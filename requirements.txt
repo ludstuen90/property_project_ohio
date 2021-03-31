@@ -14,7 +14,7 @@ django-environ==0.4.5
 hyperlink==18.0.0
 idna==2.7
 incremental==17.5.0
-lxml==4.2.5
+lxml==4.6.3
 more-itertools==4.3.0
 parsel==1.5.1
 pluggy==0.8.0
